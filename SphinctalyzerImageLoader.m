@@ -16,7 +16,7 @@ if LoadMulti == 0
     end
     % Repeat over all input channels
     for i = 2:size(InputCells, 1)
-        [ChName,ChPath] = uigetfile({'.tif';'.tiff'},['Select ',InputCells{i,1},' Tiff Stack'],ChPath);
+        [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},['Select ',InputCells{i,1},' Tiff Stack'],ChPath);
         %Load channel and assign relevant data to Sphinctalyzer structure
         ChannelOutputs = tiffread2([ChPath,ChName]);
         if size(ChannelOutputs, 2) ~= size(SphinctalyzerOutputs, 2) |...
@@ -31,7 +31,7 @@ if LoadMulti == 0
 else
     %Find multichannel Tiff file through GUI-note that tiff stacks must be
     %saved in TC
-    [ChName,ChPath] = uigetfile({'.tif';'.tiff'},'Select Multi-channel Tiff Stack');
+    [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},'Select Multi-channel Tiff Stack');
     %Load data
     ChannelOutputs = tiffread2([ChPath, ChName]);
     

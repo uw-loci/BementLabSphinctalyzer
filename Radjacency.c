@@ -73,7 +73,7 @@ void mexFunction(int nlhs, mxArray** plhs ,  int nrhs, const mxArray** prhs)
     if (nrhs != 2)
 	{
         
-		mxErrMsgTxt("Too few arguments");
+		mexErrMsgTxt("Too few arguments");
 		
 	}
     
@@ -94,7 +94,7 @@ void mexFunction(int nlhs, mxArray** plhs ,  int nrhs, const mxArray** prhs)
 	
     if (R < 0.0)
 	{
-        mxErrMsgTxt("R must be > 0");
+        mexErrMsgTxt("R must be > 0");
 	}
 	
 	R              *= R;

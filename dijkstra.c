@@ -99,7 +99,7 @@ void mexFunction(int nlhs, mxArray** plhs ,  int nrhs, const mxArray** prhs)
     if (nrhs != 3)
 	{
         
-		mxErrMsgTxt("Too few arguments");
+		mexErrMsgTxt("Too few arguments");
 		
 	}
     
@@ -107,7 +107,7 @@ void mexFunction(int nlhs, mxArray** plhs ,  int nrhs, const mxArray** prhs)
 	
 	if (!mxIsSparse(prhs[0]) || mxGetM(prhs[0]) != mxGetN(prhs[0]))
 	{
-        mxErrMsgTxt("Graph must be a square matrix");
+        mexErrMsgTxt("Graph must be a square matrix");
 	}
 	
     A        = mxGetPr(prhs[0]);
@@ -124,7 +124,7 @@ void mexFunction(int nlhs, mxArray** plhs ,  int nrhs, const mxArray** prhs)
 	
     if (s < 0 || s > n)
 	{
-        mxErrMsgTxt("Source identifier is out of range");
+        mexErrMsgTxt("Source identifier is out of range");
 	}
 	
 	/* Input 3 */
@@ -133,7 +133,7 @@ void mexFunction(int nlhs, mxArray** plhs ,  int nrhs, const mxArray** prhs)
 	
     if (d < 0 || d > n)
 	{
-        mxErrMsgTxt("Destination identifier is out of range");
+        mexErrMsgTxt("Destination identifier is out of range");
 	}
 	
 	

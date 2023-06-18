@@ -1,23 +1,38 @@
-function SphinctalyzerInitializer
+function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, startSlice, stopSlice, speed, multiCheck, shapeParam, detectionParam, smoothParam, stepParam, filePath, fileName)
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
-InputCells={
-    % Channel Name    DisplayFrame   Isreference? Use \Delta for ?, other symbols found at https://www.clemson.edu/ces/crb/procedures/greek/mat_greek.htm
-    'dTomato-rGBD',            36,             1
-    'GFP-wGBD',                     22,             0};
-% One variable per line, as many lines as you want
-% Change ONLY ONE IsReference to 1 to use that as the reference channel
-Range = 9:40;  % Select the range of images to scan in form first frame:last frame
-inspeed = 3;  % Select maximum inward speed of ring
-outspeed = 3;  % Select maximum outward speed of ring
-LoadMulti = 1; % 0 for loading each channel individually, 1 for loading a multi-channel tiff
-ScanShape = 1; % 1 for closed loop (circle) scan
-DetectionMethod = 3; % Zero for basic brightest-point dilation,
-SmoothNo=0;
-% 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
-% idiots
-Step=8; %Line segment length for livewire operation
+guiInput = 1;
+if guiInput == 0
+    filePath = '';
+    fileName = '';
+    InputCells={
+        % Channel Name    DisplayFrame   Isreference? Use \Delta for ?, other symbols found at https://www.clemson.edu/ces/crb/procedures/greek/mat_greek.htm
+        'dTomato-rGBD',            36,             1
+        'GFP-wGBD',                     22,             0};
+    % One variable per line, as many lines as you want
+    % Change ONLY ONE IsReference to 1 to use that as the reference channel
+    Range = 9:40;  % Select the range of images to scan in form first frame:last frame
+    inspeed = 3;  % Select maximum inward speed of ring
+    outspeed = 3;  % Select maximum outward speed of ring
+    LoadMulti = 1; % 0 for loading each channel individually, 1 for loading a multi-channel tiff
+    ScanShape = 1; % 1 for closed loop (circle) scan
+    DetectionMethod = 3; % Zero for basic brightest-point dilation,
+    SmoothNo=0;
+    % 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
+    % idiots
+    Step=8; %Line segment length for livewire operation
+else
+    InputCells = cellInputParam;
+    Range = startSlice:stopSlice;
+    inspeed = speed;
+    outspeed = speed;
+    LoadMulti = multiCheck;
+    ScanShape = shapeParam;
+    DetectionMethod = detectionParam;
+    SmoothNo = smoothParam;
+    Step = stepParam;
+end
 
 %% Parse inputs for errors
 % Make sure that no more than one reference frame is chosen
@@ -40,7 +55,7 @@ if ~ismember(DetectionMethod, [0 1 2 3])
 end
 
 %% Load images and initialize output matrix
-[SphinctalyzerOutputs, SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti);
+[SphinctalyzerOutputs, SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, fileName, filePath, guiInput);
 
 %% Select initial regions
 if ScanShape == 1

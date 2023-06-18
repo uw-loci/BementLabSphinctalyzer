@@ -76,7 +76,12 @@ for i = 1:size(SphinctalyzerOutputs,2)
         SphinctalyzerOutputs(i).InRange=0;
     end
 end
-[SaveName, SavePath]=uiputfile({'*.mat'},'Where would you like to save the results?',[ChPath, 'SphinctalyzerResults.mat']);
-SaveFileName=[SavePath,SaveName];
 
+if guiInput == 0
+    [SaveName, SavePath]=uiputfile({'*.mat'},'Where would you like to save the results?',[ChPath, 'SphinctalyzerResults.mat']);
+    SaveFileName=[SavePath,SaveName];
+else
+    mkdir ../Sphincdata/data/sphinc/
+    SaveFileName = '../Sphincdata/data/sphinc/sphinctalyzerResults.mat';
+end
 end

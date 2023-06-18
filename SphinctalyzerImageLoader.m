@@ -1,11 +1,13 @@
-function [SphinctalyzerOutputs,SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti)
+function [SphinctalyzerOutputs,SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, ChName, ChPath, guiInput)
 
 %% This function uses the sphinctalyzer input cell array to load images from tiff files and initialize the sphinctalyzer output array
 %11/17/2014 Matthew Larson
 %% Load raw images from files
 if LoadMulti == 0
     %Find first channel file through GUI
-    [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},['Select ',InputCells{1,1},' Tiff Stack']);
+    if guiInput == 0
+        [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},['Select ',InputCells{1,1},' Tiff Stack']);
+    end
     %Load first channel and assign relevant data to Sphinctalyzer structure
     ChannelOutputs = tiffread2(strcat(ChPath,ChName));
     SphinctalyzerOutputs=struct((matlab.lang.makeValidName([InputCells{1,1}, 'Filename'])), {ChannelOutputs.filename}, (matlab.lang.makeValidName([InputCells{1,1}, 'Data'])), {ChannelOutputs.data});
@@ -16,7 +18,9 @@ if LoadMulti == 0
     end
     % Repeat over all input channels
     for i = 2:size(InputCells, 1)
-        [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},['Select ',InputCells{i,1},' Tiff Stack'],ChPath);
+        if guiInput == 0
+            [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},['Select ',InputCells{i,1},' Tiff Stack'],ChPath);
+        end
         %Load channel and assign relevant data to Sphinctalyzer structure
         ChannelOutputs = tiffread2([ChPath,ChName]);
         if size(ChannelOutputs, 2) ~= size(SphinctalyzerOutputs, 2) |...
@@ -31,7 +35,9 @@ if LoadMulti == 0
 else
     %Find multichannel Tiff file through GUI-note that tiff stacks must be
     %saved in TC
-    [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},'Select Multi-channel Tiff Stack');
+    if guiInput == 0
+        [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},'Select Multi-channel Tiff Stack');
+    end
     %Load data
     ChannelOutputs = tiffread2([ChPath, ChName]);
     

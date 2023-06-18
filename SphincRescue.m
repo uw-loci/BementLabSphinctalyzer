@@ -1,12 +1,17 @@
- function SphincRescue
+function SphincRescue(ParentFolderPath)
+guiInput = 1;
+
 h='Yes';
 i=2;
 path={};
-path{1}=uigetdir;
+if guiInput == 0
+    path{1}=uigetdir;
+else
+    path{1} = ParentFolderPath;
+end
 for i=1:length(path)
     OutlinerFolderLoader(path{i});
 end
-
 
 function OutlinerFolderLoader(path)
 

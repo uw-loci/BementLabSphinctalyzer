@@ -78,10 +78,12 @@ for i = 1:size(SphinctalyzerOutputs,2)
 end
 
 if guiInput == 0
-    [SaveName, SavePath]=uiputfile({'*.mat'},'Where would you like to save the results?',[ChPath, 'SphinctalyzerResults.mat']);
+    [SaveName, SavePath]=uiputfile({'*.mat'},'Where would you like to save the results?',[ChPath, 'sphinctalyzerResults.mat']);
     SaveFileName=[SavePath,SaveName];
 else
-    mkdir ../Sphincdata/data/sphinc/
-    SaveFileName = '../Sphincdata/data/sphinc/sphinctalyzerResults.mat';
+    currDate = strrep(datestr(datetime), ' ', '_');
+    pathString = strcat('../Sphincdata/data_',currDate,'/sphinc/');
+    mkdir (pathString)
+    SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
 end
 end

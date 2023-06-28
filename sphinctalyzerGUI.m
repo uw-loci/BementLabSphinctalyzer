@@ -21,7 +21,10 @@ function sphinctalyzerGUI
     cellInputsPanel = uipanel('Parent',guiCtrl,'Title','Cell Inputs Table','FontSize',10,'Units','normalized','Position',[0 0.78 1 0.116]);
     
     cellInputs = uitable('Parent',cellInputsPanel,'ColumnName',{'Display Frame', 'Is Reference?'},'RowName', {'        ', '        ', '        '},...
-        'Units','normalized','Position',[0.193 0.04 0.614 0.9],'Enable','on');
+        'Units','normalized','Position',[0.05 0.04 0.614 0.9],'Enable','on');
+
+    changeChannelNames = uicontrol('Parent',cellInputsPanel,'Style','pushbutton','String','Change Channel Names','Enable','off','FontSize',10,...
+        'Units','normalized','Position',[0.714 0.04 0.236 0.9],'callback',{@prompt_names});
     
     slicesPanel = uipanel('Parent',guiCtrl,'visible','on','BorderType','none','FontSize',9,'Units','normalized','Position',[0 0.68 1 .0864]);
     
@@ -60,7 +63,7 @@ function sphinctalyzerGUI
     
     sphinctalyzeButton = uicontrol('Parent', guiCtrl, 'Style', 'pushbutton', 'String', 'Sphinctalyze', 'FontSize', 12, 'Units', 'normalized', 'Position', [0.29 0.42 0.405 0.035],'Enable','off',...
         'Callback',{@sphinctalyze});
-    
+ 
     %% Import Image
     function loadImg(hObject,Img,eventdata,handles)
          [fileName, pathName] = uigetfile({'*.tif;*.tiff;'},'MultiSelect','off');
@@ -73,12 +76,17 @@ function sphinctalyzerGUI
          ff = fullfile(pathName,fileName);
          Img = imread(ff);
          r = bfGetReader(ff);
+         seriesCount = r.getSeriesCount();
          nChannels = r.getSizeC(); 
-         nTimepoints = r.getSizeT();
+         nTimepoints = r.getSizeT(); 
+         nFocalplanes = r.getSizeZ(); 
          control.imagePath = pathName;
          control.imageName = fileName;
+         control.seriesCount = seriesCount;
          control.nTimepoints = nTimepoints;
          control.nChannels = nChannels;
+         control.Focalplanes = nFocalplanes;
+         control.iSeries = seriesCount;
          for i = 1:nChannels
              cellInputs.RowName{i, 1} = "channel" + i;
              cellInputs.Data{i, 1} = 1;
@@ -92,6 +100,11 @@ function sphinctalyzerGUI
          set(sru1, 'Enable', 'on')
          set(sru2, 'Enable', 'on')
          set(sphinctalyzeButton, 'Enable', 'on')
+         set(changeChannelNames, 'Enable', 'on')
+         set([sru3 sru4 sru5],'Enable','off')
+         set(sru1, 'Value', 1)
+         set(sru2, 'Value', 0)
+         set([sru3 sru5], 'String', '')
          control.start = 1;
          control.end = nTimepoints;
     end
@@ -120,6 +133,27 @@ function sphinctalyzerGUI
         set(sru5,'UserData',usr_input)
         control.end = usr_input;
     end
+
+    %% Prompt for Channel Names
+
+    function prompt_names(varargin, eventdata)
+        if control.nChannels == 1
+            prompt = cellInputs.RowName{1, 1};
+        elseif control.nChannels == 2
+            prompt = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}};
+        elseif control.nChannels == 3
+            prompt = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}, cellInputs.RowName{3, 1}};
+        end
+        newChannelNames = inputdlg(prompt);
+        if ~isempty(newChannelNames)
+            a = cellfun(@isempty, newChannelNames);
+            if ~any(a(:,1) == 1)
+                set(cellInputs, 'RowName', newChannelNames)
+                disp("both channel names must be changed")
+            end
+        end
+    end
+
     
     %% Update Parameters
     function get_textbox_speed(enterSpeed, eventdata)
@@ -155,8 +189,10 @@ function sphinctalyzerGUI
     function sphinctalyze(hObject,eventdata)
         if control.nChannels == 1
             cellArray = {cellInputs.RowName{1}, cellInputs.Data{1, :}};
+            channelNames = cellInputs.RowName{1};
         elseif control.nChannels == 2
             cellArray = {cellInputs.RowName{1}, cellInputs.Data{1, :}; cellInputs.RowName{2}, cellInputs.Data{2, :}};
+            channelNames = {cellInputs.RowName{1}, cellInputs.RowName{2}};
         else
             error("not supported yet")
         end

@@ -1,30 +1,42 @@
-function SphinctalyzerMoviePlotterMulti
+function SphinctalyzerMoviePlotterMulti(ParentFolderPath,channelColors,axesNames,darkBackgroundFlag)
+    if nargin == 0
+        guiInput = 0;
+        channelColors = 0;
+        axesNames = 0;
+        darkBackgroundFlag = 0;
+    else 
+        guiInput = 1;
+    end
+    
+    validnames=dir(fullfile([pwd,'/poi_library'], '*.jar'));
+    for i=1:size(validnames,1)
+        javaaddpath(fullfile([pwd,'/poi_library'],validnames(i).name));
+    end
+    h='Yes';
+    i=2;
+    path={};
+    if guiInput == 0
+        path{1}=uigetdir;
+    elseif guiInput == 1
+        path{1}=ParentFolderPath;
+    end
+    for i=1:length(path)
+        OutlinerFolderLoader(path{i},channelColors,axesNames,darkBackgroundFlag,guiInput);
+    end
 
-validnames=dir(fullfile([pwd,'/poi_library'], '*.jar'));
-for i=1:size(validnames,1)
-    javaaddpath(fullfile([pwd,'/poi_library'],validnames(i).name));
-end
-h='Yes';
-i=2;
-path={};
-path{1}=uigetdir;
-for i=1:length(path)
-    OutlinerFolderLoader(path{i});
-end
 
-
-function LineNo=OutlinerFolderLoader(path)
+function LineNo=OutlinerFolderLoader(path,channelColors,axesNames,darkBackgroundFlag,guiInput)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
 validnames=dir(fullfile(path, '*.mat'));
-LineNo=2;
-for i=1:size(validnames,1)
-    CurrentName=validnames(i).name;
-    if ~isempty(findstr(CurrentName,'sphinc'))
-    LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo);
+    LineNo=2;
+    for i=1:size(validnames,1)
+        CurrentName=validnames(i).name;
+        if ~isempty(findstr(CurrentName,'sphinc'))
+            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput);
+        end
     end
-end
 end
 %check for subdirectories
 allnames=dir(path);
@@ -32,10 +44,10 @@ allnames(~[allnames.isdir]) = [];  %remove non-directories
 tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
-    OutlinerFolderLoader(fullfile(path,allnames(i).name));
+    OutlinerFolderLoader(fullfile(path,allnames(i).name),channelColors,axesNames,darkBackgroundFlag,guiInput);
 end
 
-function LineNo=SphinctalyzerMP(filename, path,LineNo)
+function LineNo=SphinctalyzerMP(filename,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput)
 frmrate=2; %this is the framerate in frames/second
 normalization=1;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
@@ -55,7 +67,15 @@ ChannelsOn=[ 1 2 ]; %Channels listed will be used
 
 xmin=-150; % minimum x axis, in pixels
 xmax=0;% maximum x axis, in pixels
-ColorMat={[1 0 0],[0 .6 0],[0 0 1]}; %These are the color strings for each channel
+if guiInput == 1
+    ColorMat = channelColors;
+    yAxisTitle = axesNames{2};
+    xAxisTitle = axesNames{1};
+else
+    ColorMat={[1 0 0],[0 .6 0],[0 0 1]}; %These are the color strings for each channel
+    yAxisTitle = 'Normalized Gray Value';
+    xAxisTitle = 'Position relative to wound center';
+end
 TypeString='Smooth'; %'Mean' 'Median' or 'Smooth'
 
 load([path,'/',filename]);
@@ -79,7 +99,7 @@ InterpolationX=InterpolationFrames;
 if normalization == 1;
     ylims=[-.1,1.1];
     yticks=[0:.2:1];
-    ystring='Normalized gray value ';
+    ystring=strcat(yAxisTitle, ' ');
     if PreWoundFrame == 1;
         for i=1:size(ChannelStrings,1)
             IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
@@ -124,7 +144,7 @@ elseif normalization == 3;
 elseif normalization == 4
     ylims=[-.1,1.1];
     yticks=[0:.2:1];
-    ystring='Normalized gray value ';
+    ystring=strcat(yAxisTitle, ' ');
     if PreWoundFrame == 1;
         for i=1:size(ChannelStrings,1)
             for j=min(Range):max(Range)
@@ -235,11 +255,21 @@ for i= 1:size(Zr,1)
     if MicronsPerPixel==1
     xlabel(sprintf('Distance (pixels) from wound center\nTime = %.1f %s',(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
-        xlabel(sprintf('Position relative to wound center (\\mum)\nTime = %.1f %s', (((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
+        xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
         set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*MicronsPerPixel)))
     end
+    lgd = legend(ChannelStrings,'Location','NorthWest','FontSize',24,'FontName','Arial');
     ylabel(ystring)
-    legend(ChannelStrings,'Location','NorthWest','FontSize',24,'FontName','Arial');
+    if guiInput == 1
+        if darkBackgroundFlag == 1
+            set(gcf, 'Color', 'k')
+            set(gca, 'Color', 'k')
+            set(gca, 'XColor', [1 1 1])
+            set(gca, 'YColor', [1 1 1])
+            lgd.TextColor = [0 0 0];
+        end
+    end
+    
     %annotation(gcf,'textbox',...
     %[0.789 .826 .1125 .088],...
     %'String',{'Wound'},...
@@ -398,6 +428,7 @@ for i=1:size(ChannelStrings,1)
     end
     IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
 end
+
 xlwrite([savepath, 'Results.xls'],Peaks,'Percent Above Background',['C' num2str(LineNo)]);
 xlwrite([savepath, 'Results.xls'],ChannelStrings,'Percent Above Background',['B' num2str(LineNo)]);
 xlwrite([savepath, 'Results.xls'],ChannelStrings,'AUCs',['B' num2str(LineNo)]);

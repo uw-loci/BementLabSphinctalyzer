@@ -1,5 +1,9 @@
 function SphincRescue(ParentFolderPath)
-guiInput = 1;
+if nargin == 0
+    guiInput = 0;
+else
+    guiInput = 1;
+end
 
 h='Yes';
 i=2;

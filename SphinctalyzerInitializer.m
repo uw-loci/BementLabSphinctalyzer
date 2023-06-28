@@ -2,7 +2,12 @@ function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, startSlice, sto
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
-guiInput = 1;
+if nargin == 0
+    guiInput = 0;
+else
+    guiInput = 1;
+end
+
 if guiInput == 0
     filePath = '';
     fileName = '';

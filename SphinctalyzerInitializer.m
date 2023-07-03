@@ -24,6 +24,7 @@ if guiInput == 0
     ScanShape = 1; % 1 for closed loop (circle) scan
     DetectionMethod = 3; % Zero for basic brightest-point dilation,
     SmoothNo=0;
+    colormap = 'gray';
     % 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
     % idiots
     Step=8; %Line segment length for livewire operation

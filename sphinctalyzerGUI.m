@@ -61,7 +61,20 @@ function sphinctalyzerGUI
     stepLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Step','FontSize',10,'Units','normalized','Position',[0 .05 .85 .125]);
     enterStep = uicontrol('Parent',guiPanel1,'Style','edit','String','8','BackgroundColor','w','Min',0,'Max',1,'UserData',8,'Units','normalized','Position',[.85 .075 .14 .125],'Callback',{@get_textbox_step});
     
-    sphinctalyzeButton = uicontrol('Parent', guiCtrl, 'Style', 'pushbutton', 'String', 'Sphinctalyze', 'FontSize', 12, 'Units', 'normalized', 'Position', [0.29 0.42 0.405 0.035],'Enable','off',...
+    colorMapSelection = uicontrol('Parent',guiCtrl, ...
+        'Style','popupmenu', ...
+        'String',{'Default Colormap' 'MATLAB Color: JET' 'MATLAB Color: Gray' 'MATLAB Color: hsv' 'MATLAB Color: Hot' 'MATLAB Color: Cool'}, ...
+        'Units','normalized', ...
+        'Position',[0.29 0.42 0.405 0.035], ...
+        'Callback',{@changeColorMap});
+
+    sphinctalyzeButton = uicontrol('Parent', guiCtrl, ...
+        'Style', 'pushbutton', ...
+        'String', 'Sphinctalyze', ...
+        'FontSize', 12, ...
+        'Units', 'normalized', ...
+        'Position', [0.29 0.38 0.405 0.035], ...
+        'Enable','off',...
         'Callback',{@sphinctalyze});
  
     %% Import Image
@@ -107,6 +120,26 @@ function sphinctalyzerGUI
          set([sru3 sru5], 'String', '')
          control.start = 1;
          control.end = nTimepoints;
+    end
+
+    %% Change Color Map
+    function changeColorMap(src,eventdata)
+        selection = src.Value;
+        colorMaps = src.String;
+        switch colorMaps{selection}
+            case 'Default Colormap'
+                control.colormap = 'gray';  
+            case 'MATLAB Color: JET'
+                control.colormap = 'jet'; 
+            case 'MATLAB Color: Gray'
+                control.colormap = 'gray'; 
+            case 'MATLAB Color: hsv'
+                control.colormap = 'hsv'; 
+            case 'MATLAB Color: Hot'
+                control.colormap = 'hot'; 
+            case 'MATLAB Color: Cool'
+                control.colormap = 'cool'; 
+        end
     end
     
     %% Selecting a specific slice range 
@@ -200,7 +233,7 @@ function sphinctalyzerGUI
 
         file = SphinctalyzerInitializer(cellArray,control.start,control.end,get(enterSpeed,'UserData'),get(loadMulti, 'Value'),...
             get(enterShape,'UserData'),get(enterDetection, 'UserData'),get(enterSmooth,'UserData'),get(enterStep,'UserData'),...
-            control.imagePath,control.imageName);
+            control.imagePath,control.imageName,control.colormap);
         
         [ParentFolderPath] = fileparts(file);
         [ParentFolderPath] = fileparts(ParentFolderPath);
@@ -217,13 +250,18 @@ function sphinctalyzerGUI
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';
         handle.Parent.Position = [0.25 0 0.6 0.5];
+        % Enable maintain fit to window for movie
+        toolMenu = findall(0,'tag','uimgr.uimenugroup_Tools'); % get the tools menu object from implay
+        set(toolMenu(1).Children(1),'Checked', 'on'); % check the "Maintain Fit to window" in the tools menu (just happens to be the first child)
+        fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
+        fcnHandle(); % Run the callback function for "Maintain Fit to window"
 
         SphinctalyzerImageSlider(control, channelNames, ParentFolderPath)
         
         moviePlotOptions = uipanel('Parent',guiCtrl, ...
             'Title','Movie Plot Options', ...
             'Units','normalized', ...
-            'Position',[0 0.15 1 0.25]);
+            'Position',[0 0.11 1 0.25]);
         
         changeAxesTitles = uicontrol('Parent',moviePlotOptions, ...
             'Style','pushbutton', ...
@@ -269,7 +307,7 @@ function sphinctalyzerGUI
             'Style','pushbutton', ...
             'String', 'Plot Movie', ...
             'Units','normalized', ...
-            'Position',[0.29 0.1 0.405 0.035], ...
+            'Position',[0.29 0.07 0.405 0.035], ...
             'Callback', {@plot_movie}, ...
             'FontSize',12);
 

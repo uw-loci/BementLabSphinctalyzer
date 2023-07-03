@@ -1,4 +1,4 @@
-function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells)
+function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colorMap)
 % Open new figure
 figure
 
@@ -11,7 +11,7 @@ end
 %loop through images
 for i = i
     imagesc(SphinctalyzerOutputs(InputCells{i,2}).(matlab.lang.makeValidName([InputCells{i,1},'Data']))); %display image
-    colormap gray
+    colormap (colorMap)
     axis image
     title(['Trace the brightest path, then double click'])%, InputCells{i,1}])
     position=[];

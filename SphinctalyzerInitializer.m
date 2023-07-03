@@ -1,4 +1,4 @@
-function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, startSlice, stopSlice, speed, multiCheck, shapeParam, detectionParam, smoothParam, stepParam, filePath, fileName)
+function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, startSlice, stopSlice, speed, multiCheck, shapeParam, detectionParam, smoothParam, stepParam, filePath, fileName,colormap)
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
@@ -64,7 +64,7 @@ end
 
 %% Select initial regions
 if ScanShape == 1
-    [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells);
+    [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colormap);
 else
     error('ScanShape must be 1, because I only do circles for now.....')
 end

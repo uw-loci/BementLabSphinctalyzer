@@ -68,8 +68,19 @@ labelTitle = uicontrol('Parent',imgPanel,'Style','text','String',...
     'FontSize',fz2,'Units','normalized','Position',[titleX titleY titleWidth titleHeight]);
 
 dataPanel = uipanel('Parent',guiCtrl,'Units','normalized','Position',[0 0 1 0.25]);
-sphincData = uitable('Parent',dataPanel,'ColumnName',{'Peak Intensity', 'Peak Locations', 'Halfwidths', 'AUCs', 'Percent Above Background'},'RowName', channelNames,...
-        'Units','normalized','Position',[0 0 1 1]);
+table = zeros(length(channelNames), 5);
+for i = 1:BFcontrol.nChannels
+    for j = 1:5
+        sheet = xlsSheets{j};
+        table(i, j) = sheet(i + 1, BFcontrol.start);
+    end
+end
+sphincData = uitable('Parent',dataPanel, ...
+    'ColumnName',{'Peak Intensity', 'Peak Locations', 'Halfwidths', 'AUCs', 'Percent Above Background'}, ...
+    'RowName', channelNames,...
+    'Units','normalized', ...
+    'Position',[0 0 1 1], ...
+    'Data',table);
 
 if nSlider == 0  
     bfRederinfo = bfGetReader(fullPath2image);
@@ -170,7 +181,7 @@ end
             for m = 1:BFcontrol.nChannels
                 for n = 1:5
                     sheet = xlsSheets{n};
-                    sphincData.Data{m, n} = sheet(m + 1, iTimepoint);
+                    sphincData.Data(m, n) = sheet(m + 1, iTimepoint);
                 end
             end
         end

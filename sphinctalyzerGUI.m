@@ -346,6 +346,11 @@ function sphinctalyzerGUI
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';
         handle.Parent.Position = [0.25 0 0.6 0.5];
+        % Enable maintain fit to window for movie
+        toolMenu = findall(0,'tag','uimgr.uimenugroup_Tools'); % get the tools menu object from implay
+        set(toolMenu(1).Children(1),'Checked', 'on'); % check the "Maintain Fit to window" in the tools menu (just happens to be the first child)
+        fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
+        fcnHandle(); % Run the callback function for "Maintain Fit to window"
     end
     end
 end

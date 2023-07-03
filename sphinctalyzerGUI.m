@@ -316,7 +316,11 @@ function sphinctalyzerGUI
         prompt = {'x-axis', 'y-axis'};
         title = 'Edit Axes Titles';
         dims = [1 35];
-        setappdata(guiCtrl,'axesNames',inputdlg(prompt,title,dims,getappdata(guiCtrl,'axesNames')))
+        axesNames = inputdlg(prompt,title,dims,getappdata(guiCtrl,'axesNames'));
+        if ~isempty(axesNames)
+            setappdata(guiCtrl,'axesNames',axesNames)
+        end
+        %setappdata(guiCtrl,'axesNames',inputdlg(prompt,title,dims,getappdata(guiCtrl,'axesNames')))
     end
 
 %% Change Channel Colors

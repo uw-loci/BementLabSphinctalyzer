@@ -4,6 +4,7 @@
 ## Dependencies
 <ul>
   <li>MATLAB (preferably 2022b, but other versions should work fine)</li>
+  <li>Xcode if using a Mac operating system (for compiling mex files)</li>
 </ul>
 
 ## Setup Instructions

@@ -1,4 +1,4 @@
-function SphinctalyzerImageSlider(BFcontrol, channelNames, ParentFolderPath)
+function SphinctalyzerImageSlider(BFcontrol, channelNames, ParentFolderPath, timePerFrame)
 %visualize the image read by Bio-Formats(BF) with or without slider(s)
 %input argument BFcontrol
 set(0,'units','pixels');
@@ -68,15 +68,20 @@ labelTitle = uicontrol('Parent',imgPanel,'Style','text','String',...
     'FontSize',fz2,'Units','normalized','Position',[titleX titleY titleWidth titleHeight]);
 
 dataPanel = uipanel('Parent',guiCtrl,'Units','normalized','Position',[0 0 1 0.25]);
-table = zeros(length(channelNames), 5);
+table = zeros(length(channelNames), 6);
 for i = 1:BFcontrol.nChannels
-    for j = 1:5
-        sheet = xlsSheets{j};
-        table(i, j) = sheet(i + 1, BFcontrol.start);
+    for j = 1:6
+        if j == 6
+            peakLocationsSheet = xlsSheets{2};
+            table(i, j) = (peakLocationsSheet(i + 1, BFcontrol.start) - peakLocationsSheet(i + 1, BFcontrol.end)) / ((BFcontrol.start - BFcontrol.end) * timePerFrame);
+        else
+            sheet = xlsSheets{j};
+            table(i, j) = sheet(i + 1, BFcontrol.start);
+        end
     end
 end
 sphincData = uitable('Parent',dataPanel, ...
-    'ColumnName',{'Peak Intensity', 'Peak Locations', 'Halfwidths', 'AUCs', 'Percent Above Background'}, ...
+    'ColumnName',{'Peak Intensity', 'Peak Locations', 'Halfwidths', 'AUCs', 'Percent Above Background', 'Wound Closing Velocity'}, ...
     'RowName', channelNames,...
     'Units','normalized', ...
     'Position',[0 0 1 1], ...

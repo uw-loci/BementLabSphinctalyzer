@@ -281,7 +281,7 @@ function sphinctalyzerGUI
         fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
         fcnHandle(); % Run the callback function for "Maintain Fit to window"
 
-        SphinctalyzerImageSlider(control, channelNames, ParentFolderPath)
+        SphinctalyzerImageSlider(control, channelNames, ParentFolderPath, getappdata(guiCtrl, 'timePerFrame'))
         
         moviePlotOptions = uipanel('Parent',guiCtrl, ...
             'Title','Movie Plot Options', ...

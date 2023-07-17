@@ -1,0 +1,407 @@
+function sphinctalyzerGUI
+    clear,clc, home, close all
+    addpath(genpath(fullfile('./../bfmatlab')));
+
+    defaultBackground = get(0,'defaultUicontrolBackgroundColor');
+
+    %Set Values
+    control = struct('imagePath','','imageName','','seriesCount',1,'nTimepoints',1,'nChannels',1,'nFocalplanes',1,...
+        'start',0,'end',0,'colormap','gray','iSeries',1,'iChannel',1,'iTimepoint',1,'iFocalplane',1);
+
+    %Figure for GUI
+    guiCtrl = figure('Resize','on','Color',defaultBackground','Units','normalized','Position',[0.007 0.05 0.260 0.85],'Visible','on',...
+        'MenuBar','none','name','sphinctalyzer','NumberTitle','off','UserData',0);
+    
+    %Set Defualt Time Per Frame
+    setappdata(guiCtrl,'timePerFrame',10)
+    
+    imgOpen = uicontrol('Parent',guiCtrl,'Style','pushbutton','String','Open File',...
+        'FontSize',12,'Enable','on','Units','normalized','Position',[0.29 .91 .405 .035],...
+        'callback','ClickedCallback','Callback', {@loadImg});
+    
+    loadMulti = uicontrol('Parent',guiCtrl,'Style','checkbox','Enable','on','String','Load Multi-channel Image','Min',0,'Max',1,'Units',...
+        'normalized','Position', [.29 .95 .8 .05], 'Value', 1);
+    
+    cellInputsPanel = uipanel('Parent',guiCtrl,'Title','Cell Inputs Table','FontSize',10,'Units','normalized','Position',[0 0.78 1 0.116]);
+    
+    cellInputs = uitable('Parent',cellInputsPanel,'ColumnName',{'Display Frame', 'Is Reference?'},'RowName', {'        ', '        ', '        '},...
+        'Units','normalized','Position',[0.05 0.04 0.614 0.9],'Enable','on');
+
+    changeChannelNames = uicontrol('Parent',cellInputsPanel,'Style','pushbutton','String','Change Channel Names','Enable','off','FontSize',10,...
+        'Units','normalized','Position',[0.714 0.04 0.236 0.9],'callback',{@prompt_names});
+    
+    slicesPanel = uipanel('Parent',guiCtrl,'visible','on','BorderType','none','FontSize',9,'Units','normalized','Position',[0 0.68 1 .0864]);
+    
+    hsr = uibuttongroup('parent',slicesPanel,'title','Slices Range','visible','on','Units','normalized','Position',[0 0 1 1]);
+    % Create three radio buttons in the button group.
+    sru1 = uicontrol('Style','radiobutton','String','Whole stack','Units','normalized',...
+        'pos',[0 0.6 0.5 0.5 ],'parent',hsr,'HandleVisibility','on','FontSize',10,'Enable','off');
+    sru2 = uicontrol('Style','radiobutton','String','Slices','Units','normalized',...
+        'pos',[0 0.1 0.5 0.5],'parent',hsr,'HandleVisibility','on','FontSize',10,'Enable','off');
+    sru3 = uicontrol('Style','edit','String','','Units','normalized',...
+        'pos',[0.25 0.1 0.1 0.5],'parent',hsr,'HandleVisibility','on','Enable','off','BackgroundColor','w',...
+        'Userdata',[],'Callback',{@get_textbox_sru3});
+    sru4 = uicontrol('Style','text','String','To','Units','normalized',...
+        'pos',[ 0.40 -0.05 0.1 0.5],'parent',hsr,'HandleVisibility','on','Enable','off','FontSize',10);
+    sru5 = uicontrol('Style','edit','String','','Units','normalized',...
+        'pos',[0.55 0.1 0.1 0.5],'parent',hsr,'HandleVisibility','on','Enable','off','BackgroundColor','w',...
+        'Userdata',[],'Callback',{@get_textbox_sru5});
+    set(hsr,'SelectionChangeFcn',@selcbk);
+    
+    guiPanel1 = uipanel('Parent',guiCtrl,'Title','Sphinctalyzer Parameters','Units','normalized','FontSize',10,'Position',[0 0.48 1 .186]);
+    
+    speedLabel = uicontrol('Parent',guiPanel1,'Style','text','String','inspeed and outspeed','FontSize',10,'Units','normalized','Position',[0 0.85 .85 .125]);
+    enterSpeed = uicontrol('Parent',guiPanel1,'Style','edit','String','3','BackgroundColor','w','Min',0,'Max',1,'UserData',3,'Units','normalized','Position',[0.85 0.875 .14 .125],'Callback',{@get_textbox_speed});
+    
+    shapeLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Scan Shape','FontSize',10,'Units','normalized','Position',[0 .65 .85 .125]);
+    enterShape = uicontrol('Parent',guiPanel1,'Style','edit','String','1','BackgroundColor','w','Min',0,'Max',1,'UserData',1,'Units','normalized','Position',[0.85 .675 .14 .125],'Callback',{@get_textbox_shape});
+    
+    detectionLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Detection Method','FontSize',10,'Units','normalized','Position',[0 .45 .85 .125]);
+    enterDetection = uicontrol('Parent',guiPanel1,'Style','edit','String','3','BackgroundColor','w','Min',0,'Max',1,'UserData',3,'Units','normalized','Position',[.85 .475 .14 .125],'Callback',{@get_textbox_detection});
+    
+    smoothLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Smooth Number','FontSize',10,'Units','normalized','Position',[0 .25 .85 .125]);
+    enterSmooth = uicontrol('Parent',guiPanel1,'Style','edit','String','0','BackgroundColor','w','Min',0,'Max',1,'UserData',0,'Units','normalized','Position',[.85 .275 .14 .125],'Callback',{@get_textbox_smooth});
+    
+    stepLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Step','FontSize',10,'Units','normalized','Position',[0 .05 .85 .125]);
+    enterStep = uicontrol('Parent',guiPanel1,'Style','edit','String','8','BackgroundColor','w','Min',0,'Max',1,'UserData',8,'Units','normalized','Position',[.85 .075 .14 .125],'Callback',{@get_textbox_step});
+    
+    changeDefaultTimePerFrame = uicontrol('Parent',guiCtrl, ...
+        'Style','pushbutton', ...
+        'String','Change Default Time per Frame', ...
+        'Enable','on', ...
+        'Units','normalized', ...
+        'Position',[0.063 0.43 0.405 0.035],'callback',{@change_defaultTimePerFrame});
+
+    colorMapSelection = uicontrol('Parent',guiCtrl, ...
+        'Style','popupmenu', ...
+        'String',{'Default Colormap' 'MATLAB Color: JET' 'MATLAB Color: Gray' 'MATLAB Color: hsv' 'MATLAB Color: Hot' 'MATLAB Color: Cool'}, ...
+        'Units','normalized', ...
+        'Position',[0.531 0.42 0.405 0.035], ...
+        'Callback',{@changeColorMap});
+
+    sphinctalyzeButton = uicontrol('Parent', guiCtrl, ...
+        'Style', 'pushbutton', ...
+        'String', 'Sphinctalyze', ...
+        'FontSize', 12, ...
+        'Units', 'normalized', ...
+        'Position', [0.29 0.38 0.405 0.035], ...
+        'Enable','off',...
+        'Callback',{@sphinctalyze});
+ 
+    %% Import Image
+    function loadImg(hObject,Img,eventdata,handles)
+         [fileName, pathName] = uigetfile({'*.tif;*.tiff;'},'MultiSelect','off');
+         if isequal(fileName,0)
+                disp('User selected Cancel')
+                return;
+            else
+                disp(['User selected ', fullfile(pathName,fileName)])
+         end
+         ff = fullfile(pathName,fileName);
+         Img = imread(ff);
+         r = bfGetReader(ff);
+         seriesCount = r.getSeriesCount();
+         nChannels = r.getSizeC(); 
+         nTimepoints = r.getSizeT(); 
+         nFocalplanes = r.getSizeZ(); 
+         control.imagePath = pathName;
+         control.imageName = fileName;
+         control.seriesCount = seriesCount;
+         control.nTimepoints = nTimepoints;
+         control.nChannels = nChannels;
+         control.Focalplanes = nFocalplanes;
+         control.iSeries = seriesCount;
+         for i = 1:nChannels
+             cellInputs.RowName{i, 1} = "channel" + i;
+             cellInputs.Data{i, 1} = 1;
+             if i ~= 1
+                 cellInputs.Data{i, 2} = 0;
+             else 
+                 cellInputs.Data{i, 2} = 1;
+             end
+         end
+         set(cellInputs, 'ColumnEditable',true(1,2))
+         set(sru1, 'Enable', 'on')
+         set(sru2, 'Enable', 'on')
+         set(sphinctalyzeButton, 'Enable', 'on')
+         set(changeChannelNames, 'Enable', 'on')
+         set([sru3 sru4 sru5],'Enable','off')
+         set(sru1, 'Value', 1)
+         set(sru2, 'Value', 0)
+         set([sru3 sru5], 'String', '')
+         control.start = 1;
+         control.end = nTimepoints;
+    end
+
+    %% Change Color Map
+    function changeColorMap(src,eventdata)
+        selection = src.Value;
+        colorMaps = src.String;
+        switch colorMaps{selection}
+            case 'Default Colormap'
+                control.colormap = 'gray';  
+            case 'MATLAB Color: JET'
+                control.colormap = 'jet'; 
+            case 'MATLAB Color: Gray'
+                control.colormap = 'gray'; 
+            case 'MATLAB Color: hsv'
+                control.colormap = 'hsv'; 
+            case 'MATLAB Color: Hot'
+                control.colormap = 'hot'; 
+            case 'MATLAB Color: Cool'
+                control.colormap = 'cool'; 
+        end
+    end
+    
+    %% Selecting a specific slice range 
+    function selcbk(hsr,eventdata)
+        if strcmp(get(get(hsr,'SelectedObject'),'String'),'Slices')
+            set([sru3 sru4 sru5],'Enable','on')
+        else
+            set([sru3 sru4 sru5],'Enable','off')
+            control.start = 1;
+            control.end = control.nTimepoints;
+        end
+    end
+    
+    function get_textbox_sru3(sru3,eventdata)
+        usr_input = get(sru3,'String');
+        usr_input = str2double(usr_input);
+        set(sru3,'UserData',usr_input)
+        control.start = usr_input;
+    end
+    
+    function get_textbox_sru5(sru5,eventdata)  
+        usr_input = get(sru5,'String');
+        usr_input = str2double(usr_input);
+        set(sru5,'UserData',usr_input)
+        control.end = usr_input;
+    end
+
+    %% Prompt for Channel Names
+
+    function prompt_names(varargin, eventdata)
+        if control.nChannels == 1
+            prompt = cellInputs.RowName{1, 1};
+        elseif control.nChannels == 2
+            prompt = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}};
+        elseif control.nChannels == 3
+            prompt = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}, cellInputs.RowName{3, 1}};
+        end
+        newChannelNames = inputdlg(prompt);
+        if ~isempty(newChannelNames)
+            a = cellfun(@isempty, newChannelNames);
+            if ~any(a(:,1) == 1)
+                set(cellInputs, 'RowName', newChannelNames)
+                disp("both channel names must be changed")
+            end
+        end
+    end
+
+    
+    %% Update Parameters
+    function get_textbox_speed(enterSpeed, eventdata)
+        usr_input = get(enterSpeed, 'String');
+        usr_input = str2double(usr_input);
+        set(enterSpeed, 'UserData', usr_input)
+    end
+    
+    function get_textbox_shape(enterShape, eventdata)
+        usr_input = get(enterShape, 'String');
+        usr_input = str2double(usr_input);
+        set(enterShape, 'UserData', usr_input)
+    end
+    
+    function get_textbox_detection(enterDetection, eventdata)
+        usr_input = get(enterDetection, 'String');
+        usr_input = str2double(usr_input);
+        set(enterDetection, 'UserData', usr_input)
+    end
+    
+    function get_textbox_smooth(enterSmooth, eventdata)
+        usr_input = get(enterSmooth, 'String');
+        usr_input = str2double(usr_input);
+        set(enterSmooth, 'UserData', usr_input)
+    end
+    
+    function get_textbox_step(enterStep, eventdata)
+        usr_input = get(enterStep, 'String');
+        usr_input = str2double(usr_input);
+        set(enterStep, 'UserData', usr_input)
+    end
+    
+    function change_defaultTimePerFrame(src,eventdata)
+        prompt = {sprintf('Default Time per Frame is currently %d seconds. Change to:',getappdata(guiCtrl,'timePerFrame'))};
+        title = 'Edit Default Time per Frame';
+        dims = [1 35];
+        newTimePerFrame = inputdlg(prompt,title,dims);
+        if ~isempty(newTimePerFrame)
+            if ~isempty(newTimePerFrame{1})
+                setappdata(guiCtrl,'timePerFrame',str2double(newTimePerFrame{1}))
+            end
+        end
+    end
+
+    %% Sphinctalyze 
+    function sphinctalyze(hObject,eventdata)
+        if control.nChannels == 1
+            cellArray = {cellInputs.RowName{1}, cellInputs.Data{1, :}};
+            channelNames = cellInputs.RowName{1};
+        elseif control.nChannels == 2
+            cellArray = {cellInputs.RowName{1}, cellInputs.Data{1, :}; cellInputs.RowName{2}, cellInputs.Data{2, :}};
+            channelNames = {cellInputs.RowName{1}, cellInputs.RowName{2}};
+        else
+            error("not supported yet")
+        end
+        control.iTimepoint = control.start;
+
+        file = SphinctalyzerInitializer(cellArray,control.start,control.end,get(enterSpeed,'UserData'),get(loadMulti, 'Value'),...
+            get(enterShape,'UserData'),get(enterDetection, 'UserData'),get(enterSmooth,'UserData'),get(enterStep,'UserData'),...
+            control.imagePath,control.imageName,control.colormap);
+        
+        [ParentFolderPath] = fileparts(file);
+        [ParentFolderPath] = fileparts(ParentFolderPath);
+        SphincRescue(ParentFolderPath)
+        
+        setappdata(guiCtrl,'channelColors',{[1 0 0],[0 .6 0],[0 0 1]})
+        setappdata(guiCtrl,'darkBackgroundFlag',0)
+        setappdata(guiCtrl,'axesNames',{'Position relative to wound center' 'Normalized gray value'})
+        SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
+            getappdata(guiCtrl,'channelColors'), ...
+            getappdata(guiCtrl,'axesNames'), ...
+            getappdata(guiCtrl,'darkBackgroundFlag'), ...
+            getappdata(guiCtrl,'timePerFrame'))
+        
+        handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
+        handle.Parent.Units = 'normalized';
+        handle.Parent.Position = [0.25 0 0.6 0.5];
+        % Enable maintain fit to window for movie
+        toolMenu = findall(0,'tag','uimgr.uimenugroup_Tools'); % get the tools menu object from implay
+        set(toolMenu(1).Children(1),'Checked', 'on'); % check the "Maintain Fit to window" in the tools menu (just happens to be the first child)
+        fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
+        fcnHandle(); % Run the callback function for "Maintain Fit to window"
+
+        SphinctalyzerImageSlider(control, channelNames, ParentFolderPath)
+        
+        moviePlotOptions = uipanel('Parent',guiCtrl, ...
+            'Title','Movie Plot Options', ...
+            'Units','normalized', ...
+            'Position',[0 0.11 1 0.25]);
+        
+        changeAxesTitles = uicontrol('Parent',moviePlotOptions, ...
+            'Style','pushbutton', ...
+            'String','Change Axes Titles', ...
+            'FontSize',10, ...
+            'Units','normalized', ...
+            'Position',[0.24 0.83 .4 .125], ...
+            'Callback',{@change_axes_titles});
+        
+        darkBackgroundLabel = uicontrol('Parent',moviePlotOptions, ...
+            'Style','text', ...
+            'String','Dark Background', ...
+            'FontSize',10, ...
+            'Units','normalized', ...
+            'Position',[0 0.65 .85 .125]);
+
+        darkBackground = uicontrol('Parent',moviePlotOptions, ...
+            'Style','checkbox', ...
+            'Enable','on', ...
+            'String','', ...
+            'Min',0,'Max',1, ...
+            'Units','normalized', ...
+            'Position', [.85 .675 .18 .125], ...
+            'Value', 0, ...
+            'Callback', {@darkBackgroundCbx});
+        
+        timePerFrameLabel = uicontrol('Parent',moviePlotOptions, ...
+            'Style','text', ...
+            'String','Time Per Frame', ...
+            'FontSize',10, ...
+            'Units','normalized', ...
+            'Position',[0 .45 .85 .125]);
+        enterTimePerFrame = uicontrol('Parent',moviePlotOptions, ...
+            'Style','edit', ...
+            'String',num2str(getappdata(guiCtrl,'timePerFrame')), ...
+            'BackgroundColor', ...
+            'w', ...
+            'Min',0,'Max',1, ...
+            'UserData',getappdata(guiCtrl,'timePerFrame'),'Units', ...
+            'normalized', ...
+            'Position',[.85 .475 .14 .125], ...
+            'Callback',{@get_timePerFrame});
+
+        for i = 1:control.nChannels
+            channelColorLabel(i) = uicontrol('Parent',moviePlotOptions, ...
+                'Style','text', ...
+                'String',cellInputs.RowName{i}, ...
+                'FontSize',10, ...
+                'Units','normalized', ...
+                'Position',[0 .45-(i*0.2) .85 .125]);
+            enterChannelColor(i) = uicontrol('Parent',moviePlotOptions, ...
+                'Style','popupmenu', ...
+                'String',{'red';'green';'blue';'cyan';'magenta';'yellow';'black';'white'}, ...
+                'Units','normalized', ...
+                'Position',[0.8 .475-(i*0.2) .18 .125], ...
+                'Value',i, ...
+                'Callback', {@cc_button, i});
+        end
+
+        plotMovie = uicontrol('Parent',guiCtrl, ...
+            'Style','pushbutton', ...
+            'String', 'Plot Movie', ...
+            'Units','normalized', ...
+            'Position',[0.29 0.07 0.405 0.035], ...
+            'Callback', {@plot_movie}, ...
+            'FontSize',12);
+
+%% Change Axes Titles
+    function change_axes_titles(src, eventdata)
+        prompt = {'x-axis', 'y-axis'};
+        title = 'Edit Axes Titles';
+        dims = [1 35];
+        axesNames = inputdlg(prompt,title,dims,getappdata(guiCtrl,'axesNames'));
+        if ~isempty(axesNames)
+            setappdata(guiCtrl,'axesNames',axesNames)
+        end
+        %setappdata(guiCtrl,'axesNames',inputdlg(prompt,title,dims,getappdata(guiCtrl,'axesNames')))
+    end
+
+%% Change Channel Colors
+    function cc_button(src,eventData,channelNumber)
+        colors = {[1 0 0],[0 0.6 0],[0 0 1],[0 1 1],[1 0 1],[1 1 0],[0 0 0],[1 1 1]};
+        chosenColor = colors{src.Value};
+        currentColors = getappdata(guiCtrl,'channelColors');
+        currentColors{channelNumber} = chosenColor;
+        setappdata(guiCtrl,'channelColors',currentColors)
+    end
+
+%% Dark Background Flag
+    function darkBackgroundCbx(src,eventData)
+        setappdata(guiCtrl,'darkBackgroundFlag',src.Value)
+    end
+
+%% Time Per Frame
+    function get_timePerFrame(src,eventData)
+        usr_input = get(src,'String');
+        usr_input = str2double(usr_input);
+        setappdata(guiCtrl,'timePerFrame',usr_input)
+    end
+
+%% Plot Movie
+    function plot_movie(src,eventData)
+        SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
+            getappdata(guiCtrl,'channelColors'), ...
+            getappdata(guiCtrl,'axesNames'), ...
+            getappdata(guiCtrl,'darkBackgroundFlag'), ...
+            getappdata(guiCtrl,'timePerFrame'))
+        handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
+        handle.Parent.Units = 'normalized';
+        handle.Parent.Position = [0.25 0 0.6 0.5];
+        % Enable maintain fit to window for movie
+        toolMenu = findall(0,'tag','uimgr.uimenugroup_Tools'); % get the tools menu object from implay
+        set(toolMenu(1).Children(1),'Checked', 'on'); % check the "Maintain Fit to window" in the tools menu (just happens to be the first child)
+        fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
+        fcnHandle(); % Run the callback function for "Maintain Fit to window"
+    end
+    end
+end

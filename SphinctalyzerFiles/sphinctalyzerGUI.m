@@ -13,7 +13,7 @@ function sphinctalyzerGUI
         'MenuBar','none','name','sphinctalyzer','NumberTitle','off','UserData',0);
     
     %Set Defualt Time Per Frame
-    setappdata(guiCtrl,'timePerFrame',10)
+    setappdata(guiCtrl,'timePerFrame',6)
     
     imgOpen = uicontrol('Parent',guiCtrl,'Style','pushbutton','String','Open File',...
         'FontSize',12,'Enable','on','Units','normalized','Position',[0.29 .91 .405 .035],...

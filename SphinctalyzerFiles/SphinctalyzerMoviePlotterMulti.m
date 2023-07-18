@@ -268,7 +268,8 @@ for i= 1:size(Zr,1)
             set(gca, 'Color', 'k')
             set(gca, 'XColor', [1 1 1])
             set(gca, 'YColor', [1 1 1])
-            lgd.TextColor = [0 0 0];
+            lgd.Color = [0 0 0];
+            lgd.TextColor = [1 1 1];
         end
     end
     

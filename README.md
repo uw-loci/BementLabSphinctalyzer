@@ -3,7 +3,15 @@
 
 ## Dependencies
 <ul>
-  <li>MATLAB (preferably 2022b, but other versions should work fine)</li>
+  <li>MATLAB (preferably 2022b, but other versions should work fine). The follow Add-Ons should be installed:
+  <ul>
+    <li>Statistics and Machine Learning Toolbox</li>
+    <li>Bioinformatics Toolbox</li>
+    <li>Image Processing Toolbox</li>
+    <li>Curve Fitting Toolbox</li>
+    <li>Mapping Toolbox</li>
+  </ul>
+  </li>
   <li>Xcode if using a Mac operating system (for compiling mex files)</li>
 </ul>
 

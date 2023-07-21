@@ -12,8 +12,13 @@ function sphinctalyzerGUI
     guiCtrl = figure('Resize','on','Color',defaultBackground','Units','normalized','Position',[0.007 0.05 0.260 0.85],'Visible','on',...
         'MenuBar','none','name','sphinctalyzer','NumberTitle','off','UserData',0);
     
-    %Set Defualt Time Per Frame
+    %Set Default Time Per Frame
     setappdata(guiCtrl,'timePerFrame',6)
+
+    %Set Default Axes Names and Values
+    setappdata(guiCtrl,'axesNames',{'Distance (pixels) from wound center','Normalized Gray Value'})
+    setappdata(guiCtrl,'xMinStepMax',[-150 50 0])
+    setappdata(guiCtrl,'yMinStepMax',[-0.1 0.3 1.1])
     
     imgOpen = uicontrol('Parent',guiCtrl,'Style','pushbutton','String','Open File',...
         'FontSize',12,'Enable','on','Units','normalized','Position',[0.29 .91 .405 .035],...
@@ -334,12 +339,43 @@ function sphinctalyzerGUI
     function get_textbox_normalization(enterNormalization, eventdata)
         usr_input = get(enterNormalization, 'String');
         usr_input = str2double(usr_input);
+        axesNames = getappdata(guiCtrl,'axesNames');
+        switch usr_input
+            case 1
+                axesNames{2} = 'Normalized Gray Value';
+                setappdata(guiCtrl,'yMinStepMax',[-0.1 0.1 1.1])
+            case 2
+                axesNames{2} = 'Fold Over Background';
+                setappdata(guiCtrl,'yMinStepMax',[-1 1 6])
+            case 3
+                axesNames{2} = 'Gray Value';
+                setappdata(guiCtrl,'yMinStepMax',[0 500 4100])
+            otherwise
+                axesNames{2} = 'Normalized Gray Value';
+                setappdata(guiCtrl,'yMinStepMax',[-0.1 .1 1.1])
+        end
+        setappdata(guiCtrl,'axesNames',axesNames)
         set(enterNormalization, 'UserData', usr_input)
     end
 
     function get_textbox_micronsPerPixel(enterMicronsPerPixel, eventdata)
+        prev_input = get(enterMicronsPerPixel, 'UserData');
+        xMinStepMax = getappdata(guiCtrl,'xMinStepMax');
+        xMinStepMax = round(xMinStepMax / prev_input);
+        setappdata(guiCtrl,'xMinStepMax',xMinStepMax)
         usr_input = get(enterMicronsPerPixel, 'String');
         usr_input = str2double(usr_input);
+        axesNames = getappdata(guiCtrl,'axesNames');
+        switch usr_input
+            case 1
+                axesNames{1} = 'Distance (pixels) from wound center';
+            otherwise
+                axesNames{1} = 'Position (Microns) relative to wound center';
+                xMinStepMax = getappdata(guiCtrl,'xMinStepMax');
+                xMinStepMax = usr_input * xMinStepMax;
+                setappdata(guiCtrl,'xMinStepMax',xMinStepMax)
+        end
+        setappdata(guiCtrl,'axesNames',axesNames)
         set(enterMicronsPerPixel, 'UserData', usr_input)
     end
     
@@ -378,7 +414,6 @@ function sphinctalyzerGUI
         
         setappdata(guiCtrl,'channelColors',{[1 0 0],[0 .6 0],[0 0 1]})
         setappdata(guiCtrl,'darkBackgroundFlag',0)
-        setappdata(guiCtrl,'axesNames',{'Position relative to wound center' 'Normalized gray value'})
         setappdata(guiCtrl,'legendLocation','NorthWest')
         SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
             getappdata(guiCtrl,'channelColors'), ...
@@ -387,7 +422,9 @@ function sphinctalyzerGUI
             getappdata(guiCtrl,'timePerFrame'), ...
             get(enterNormalization,'UserData'), ...
             getappdata(guiCtrl,'legendLocation'), ...
-            get(enterMicronsPerPixel,'UserData'))
+            get(enterMicronsPerPixel,'UserData'), ...
+            getappdata(guiCtrl,'xMinStepMax'), ...
+            getappdata(guiCtrl,'yMinStepMax'))
         
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';
@@ -495,9 +532,51 @@ function sphinctalyzerGUI
 
 %% Change Axes
     function change_x_axis(src, eventdata)
+        prompts = {'Enter x-axis title:','Enter minimum x value:','Enter x step value:', 'Enter maximum x value'};
+        axesNames = getappdata(guiCtrl,'axesNames');
+        xMinStepMax = getappdata(guiCtrl,'xMinStepMax');
+        dims = [1 35];
+        definput = {axesNames{1}, num2str(xMinStepMax(1)), num2str(xMinStepMax(2)), num2str(xMinStepMax(3))};
+        dlgtitle = 'Edit X Axis';
+        answer = inputdlg(prompts,dlgtitle,dims, definput);
+        if ~isempty(answer{1})
+            axesNames{1} = answer{1};
+            setappdata(guiCtrl,'axesNames',axesNames)
+        end
+        for i=2:4
+            if ~isempty(answer{i})
+                if ~isnan(str2double(answer{i}))
+                    xMinStepMax(i-1) = str2double(answer{i});
+                end
+            end
+        end
+        if ~isempty(xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
+            setappdata(guiCtrl,'xMinStepMax',xMinStepMax)
+        end
     end
 
     function change_y_axis(src,eventdata)
+        prompts = {'Enter y-axis title:','Enter minimum y value:','Enter y step value:', 'Enter maximum y value'};
+        axesNames = getappdata(guiCtrl,'axesNames');
+        yMinStepMax = getappdata(guiCtrl,'yMinStepMax');
+        dims = [1 35];
+        definput = {axesNames{2}, num2str(yMinStepMax(1)), num2str(yMinStepMax(2)), num2str(yMinStepMax(3))};
+        dlgtitle = 'Edit Y Axis';
+        answer = inputdlg(prompts,dlgtitle,dims, definput);
+        if ~isempty(answer{1})
+            axesNames{2} = answer{1};
+            setappdata(guiCtrl,'axesNames',axesNames)
+        end
+        for i=2:4
+            if ~isempty(answer{i})
+                if ~isnan(str2double(answer{i}))
+                    yMinStepMax(i-1) = str2double(answer{i});
+                end
+            end
+        end
+        if ~isempty(yMinStepMax(1):yMinStepMax(2):yMinStepMax(3))
+            setappdata(guiCtrl,'yMinStepMax',yMinStepMax)
+        end
     end
 
 %% Change Channel Colors
@@ -537,7 +616,9 @@ function sphinctalyzerGUI
             getappdata(guiCtrl,'timePerFrame'), ...
             get(enterNormalization,'UserData'), ...
             getappdata(guiCtrl,'legendLocation'), ...
-            get(enterMicronsPerPixel,'UserData'))
+            get(enterMicronsPerPixel,'UserData'), ...
+            getappdata(guiCtrl,'xMinStepMax'), ...
+            getappdata(guiCtrl,'yMinStepMax'))
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';
         handle.Parent.Position = [0.25 0 0.6 0.5];

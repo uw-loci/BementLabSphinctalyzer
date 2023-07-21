@@ -1,5 +1,7 @@
 function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
-    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization,legendLocation, micronsPerPixel)
+    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
+    xMinStepMax, ...
+    yMinStepMax)
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -9,6 +11,8 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         normalization = 0;
         legendLocation = 'NorthWest';
         micronsPerPixel = 1; %if 1, will display x axis in pixels.  All other values convert to microns
+        xMinStepMax = 0;
+        yMinStepMax = 0;
     else 
         guiInput = 1;
     end
@@ -27,12 +31,16 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     end
     for i=1:length(path)
         OutlinerFolderLoader(path{i}, ...
-            channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel);
+            channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
+            xMinStepMax, ...
+            yMinStepMax);
     end
 
 
 function LineNo=OutlinerFolderLoader(path, ...
-    channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel)
+    channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
+    xMinStepMax, ...
+    yMinStepMax)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -42,7 +50,9 @@ validnames=dir(fullfile(path, '*.mat'));
         CurrentName=validnames(i).name;
         if ~isempty(findstr(CurrentName,'sphinc'))
             LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo, ...
-                channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel);
+                channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
+                xMinStepMax, ...
+                yMinStepMax);
         end
     end
 end
@@ -53,11 +63,15 @@ tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
     OutlinerFolderLoader(fullfile(path,allnames(i).name), ...
-        channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel);
+        channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
+        xMinStepMax, ...
+        yMinStepMax);
 end
 
 function LineNo=SphinctalyzerMP(filename,path,LineNo, ...
-    channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel)
+    channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
+    xMinStepMax, ...
+    yMinStepMax)
 frmrate=2; %this is the framerate in frames/second
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
@@ -72,19 +86,41 @@ TimeUnit='seconds'; %This string will be used as the time label
 SelectChannels=0; %0 to use all channels, 1 to use only select channels
 ChannelsOn=[ 1 2 ]; %Channels listed will be used
 
-xmin=-150; % minimum x axis, in pixels
-xmax=0;% maximum x axis, in pixels
 if guiInput == 1
+    if micronsPerPixel == 1
+        xmin = xMinStepMax(1);
+        xstep = xMinStepMax(2);
+        xmax = xMinStepMax(3);
+    else
+        xmin = round(xMinStepMax(1) / micronsPerPixel);
+        xmax = round(xMinStepMax(3) / micronsPerPixel);
+    end
     ColorMat = channelColors;
     yAxisTitle = axesNames{2};
     xAxisTitle = axesNames{1};
     TimePerFrame = secondsPerFrame; %This is the time between frames during imaging (second/frame)
 else
+    xmin=-150; % minimum x axis, in pixels
+    xmax=0;% maximum x axis, in pixels
     ColorMat={[1 0 0],[0 .6 0],[0 0 1]}; %These are the color strings for each channel
     yAxisTitle = 'Normalized Gray Value';
-    xAxisTitle = 'Position relative to wound center';
+    if micronsPerPixel == 1
+        xAxistitle = 'Distance (pixels) from wound center';
+    else
+        xAxisTitle = 'Position (Microns) relative to wound center';
+    end
     TimePerFrame = 10; %This is the time between frames during imaging (second/frame)
     normalization=1;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
+    switch normalization
+        case 1
+            yAxisTitle = 'Normalized Gray Value';
+        case 2
+            yAxisTitle = 'Fold over Background';
+        case 3
+            yAxisTitle = 'Gray Value';
+        case 4
+            yAxisTitle = 'Normalized Gray Value';
+    end
 end
 TypeString='Smooth'; %'Mean' 'Median' or 'Smooth'
 
@@ -109,7 +145,7 @@ InterpolationX=InterpolationFrames;
 if normalization == 1;
     ylims=[-.1,1.1];
     yticks=[0:.2:1];
-    ystring=strcat(yAxisTitle, ' ');
+    ystring=yAxisTitle;
     if PreWoundFrame == 1;
         for i=1:size(ChannelStrings,1)
             IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
@@ -128,7 +164,7 @@ if normalization == 1;
 elseif normalization == 2;
     ylims=[-1 6];
     yticks=[0:1:5];
-    ystring='Fold above background';
+    ystring=yAxisTitle;
     if PreWoundFrame == 1;
         for i=1:size(ChannelStrings,1)
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
@@ -150,11 +186,11 @@ elseif normalization == 3;
     
     ylims=[0 4100];
     yticks=[0:500:4000];
-    ystring='Gray Value';
+    ystring=yAxisTitle;
 elseif normalization == 4
     ylims=[-.1,1.1];
     yticks=[0:.2:1];
-    ystring=strcat(yAxisTitle, ' ');
+    ystring=yAxisTitle;
     if PreWoundFrame == 1;
         for i=1:size(ChannelStrings,1)
             for j=min(Range):max(Range)
@@ -256,17 +292,26 @@ for i= 1:size(Zr,1)
     hold on
     end
     set(gcf,'Position',[1 1 1000 500]);
-    xlim(gca,[-150 0]);
-    ylim(gca,ylims);
-    set(gca,'YTick',yticks)
-    set(gca,'YTickLabel',yticks)
-    set(gca,'FontSize',24)
-    set(gca,'FontName','Arial','FontWeight','bold')
-    if micronsPerPixel==1
-    xlabel(sprintf('Distance (pixels) from wound center\nTime = %.1f %s',(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
-    else
+    if guiInput == 1
+        xlim(gca,[xmin, xmax])
+        ylim(gca,[yMinStepMax(1),yMinStepMax(3)])
+        set(gca,'YTick',yMinStepMax(1):yMinStepMax(2):yMinStepMax(3))
+        set(gca,'XTick',xmin:round(xMinStepMax(2)/micronsPerPixel):xmax)
+        set(gca,'XTickLabel',xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
+        set(gca,'FontSize',24)
+        set(gca,'FontName','Arial','FontWeight','bold')
         xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
-        set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
+    else
+        xlim(gca,[-150 0]);
+        ylim(gca,ylims);
+        set(gca,'YTick',yticks)
+        set(gca,'YTickLabel',yticks)
+        set(gca,'FontSize',24)
+        set(gca,'FontName','Arial','FontWeight','bold')
+        xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
+        if micronsPerPixel ~= 1
+            set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
+        end
     end
     lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',24,'FontName','Arial');
     ylabel(ystring)

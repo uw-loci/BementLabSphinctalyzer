@@ -1,2 +1,4 @@
 # Ignore the Sphincdata folder and all of its contents
 Sphincdata/*
+# Ignore the GUI asv file
+SphinctalyzerFiles/sphinctalyzerGUI.asv

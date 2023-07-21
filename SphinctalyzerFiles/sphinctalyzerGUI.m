@@ -46,25 +46,41 @@ function sphinctalyzerGUI
     sru5 = uicontrol('Style','edit','String','','Units','normalized',...
         'pos',[0.55 0.1 0.1 0.5],'parent',hsr,'HandleVisibility','on','Enable','off','BackgroundColor','w',...
         'Userdata',[],'Callback',{@get_textbox_sru5});
-    set(hsr,'SelectionChangeFcn',@selcbk);
+    set(hsr,'SelectionChangeFcn',@selcbk);;
     
     guiPanel1 = uipanel('Parent',guiCtrl,'Title','Sphinctalyzer Parameters','Units','normalized','FontSize',10,'Position',[0 0.48 1 .186]);
     
     speedLabel = uicontrol('Parent',guiPanel1,'Style','text','String','inspeed and outspeed','FontSize',10,'Units','normalized','Position',[0 0.85 .85 .125]);
     enterSpeed = uicontrol('Parent',guiPanel1,'Style','edit','String','3','BackgroundColor','w','Min',0,'Max',1,'UserData',3,'Units','normalized','Position',[0.85 0.875 .14 .125],'Callback',{@get_textbox_speed});
     
-    shapeLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Scan Shape','FontSize',10,'Units','normalized','Position',[0 .65 .85 .125]);
-    enterShape = uicontrol('Parent',guiPanel1,'Style','edit','String','1','BackgroundColor','w','Min',0,'Max',1,'UserData',1,'Units','normalized','Position',[0.85 .675 .14 .125],'Callback',{@get_textbox_shape});
+    shapeLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Scan Shape','FontSize',10,'Units','normalized','Position',[0 .7 .85 .125]);
+    enterShape = uicontrol('Parent',guiPanel1,'Style','edit','String','1','BackgroundColor','w','Min',0,'Max',1,'UserData',1,'Units','normalized','Position',[0.85 .725 .14 .125],'Callback',{@get_textbox_shape});
     
-    detectionLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Detection Method','FontSize',10,'Units','normalized','Position',[0 .45 .85 .125]);
-    enterDetection = uicontrol('Parent',guiPanel1,'Style','edit','String','3','BackgroundColor','w','Min',0,'Max',1,'UserData',3,'Units','normalized','Position',[.85 .475 .14 .125],'Callback',{@get_textbox_detection});
+    detectionLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Detection Method','FontSize',10,'Units','normalized','Position',[0 .55 .85 .125]);
+    enterDetection = uicontrol('Parent',guiPanel1,'Style','edit','String','3','BackgroundColor','w','Min',0,'Max',1,'UserData',3,'Units','normalized','Position',[.85 .575 .14 .125],'Callback',{@get_textbox_detection});
     
-    smoothLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Smooth Number','FontSize',10,'Units','normalized','Position',[0 .25 .85 .125]);
-    enterSmooth = uicontrol('Parent',guiPanel1,'Style','edit','String','0','BackgroundColor','w','Min',0,'Max',1,'UserData',0,'Units','normalized','Position',[.85 .275 .14 .125],'Callback',{@get_textbox_smooth});
+    smoothLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Smooth Number','FontSize',10,'Units','normalized','Position',[0 .4 .85 .125]);
+    enterSmooth = uicontrol('Parent',guiPanel1,'Style','edit','String','0','BackgroundColor','w','Min',0,'Max',1,'UserData',0,'Units','normalized','Position',[.85 .425 .14 .125],'Callback',{@get_textbox_smooth});
     
-    stepLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Step','FontSize',10,'Units','normalized','Position',[0 .05 .85 .125]);
-    enterStep = uicontrol('Parent',guiPanel1,'Style','edit','String','8','BackgroundColor','w','Min',0,'Max',1,'UserData',8,'Units','normalized','Position',[.85 .075 .14 .125],'Callback',{@get_textbox_step});
-    
+    stepLabel = uicontrol('Parent',guiPanel1,'Style','text','String','Step','FontSize',10,'Units','normalized','Position',[0 .25 .85 .125]);
+    enterStep = uicontrol('Parent',guiPanel1,'Style','edit','String','8','BackgroundColor','w','Min',0,'Max',1,'UserData',8,'Units','normalized','Position',[.85 .275 .14 .125],'Callback',{@get_textbox_step});
+
+    normalizationLabel = uicontrol('Parent',guiPanel1, ...
+        'Style','text', ...
+        'String','Normalization', ...
+        'FontSize',10, ...
+        'Units', 'normalized', ...
+        'Position',[0 .1 .85 .125]);
+    enterNormalization = uicontrol('Parent',guiPanel1, ...
+        'Style','edit', ...
+        'String','1', ...
+        'BackgroundColor','w', ...
+        'Min',0,'Max',1, ...
+        'UserData',1, ...
+        'Units','normalized', ...
+        'Position',[.85 .125 .14 .125], ...
+        'Callback',{@get_textbox_normalization});
+
     changeDefaultTimePerFrame = uicontrol('Parent',guiCtrl, ...
         'Style','pushbutton', ...
         'String','Change Default Time per Frame', ...
@@ -229,6 +245,12 @@ function sphinctalyzerGUI
         usr_input = str2double(usr_input);
         set(enterStep, 'UserData', usr_input)
     end
+
+    function get_textbox_normalization(enterNormalization, eventdata)
+        usr_input = get(enterNormalization, 'String');
+        usr_input = str2double(usr_input);
+        set(enterNormalization, 'UserData', usr_input)
+    end
     
     function change_defaultTimePerFrame(src,eventdata)
         prompt = {sprintf('Default Time per Frame is currently %d seconds. Change to:',getappdata(guiCtrl,'timePerFrame'))};
@@ -270,7 +292,8 @@ function sphinctalyzerGUI
             getappdata(guiCtrl,'channelColors'), ...
             getappdata(guiCtrl,'axesNames'), ...
             getappdata(guiCtrl,'darkBackgroundFlag'), ...
-            getappdata(guiCtrl,'timePerFrame'))
+            getappdata(guiCtrl,'timePerFrame'), ...
+            get(enterNormalization,'UserData'))
         
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';

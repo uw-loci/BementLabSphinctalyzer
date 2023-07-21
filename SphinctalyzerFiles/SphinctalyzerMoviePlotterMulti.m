@@ -1,5 +1,5 @@
 function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
-    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization,legendLocation)
+    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization,legendLocation, micronsPerPixel)
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -8,6 +8,7 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         secondsPerFrame = 0;
         normalization = 0;
         legendLocation = 'NorthWest';
+        micronsPerPixel = 1; %if 1, will display x axis in pixels.  All other values convert to microns
     else 
         guiInput = 1;
     end
@@ -25,11 +26,13 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         path{1}=ParentFolderPath;
     end
     for i=1:length(path)
-        OutlinerFolderLoader(path{i},channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation);
+        OutlinerFolderLoader(path{i}, ...
+            channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel);
     end
 
 
-function LineNo=OutlinerFolderLoader(path,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation)
+function LineNo=OutlinerFolderLoader(path, ...
+    channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -38,7 +41,8 @@ validnames=dir(fullfile(path, '*.mat'));
     for i=1:size(validnames,1)
         CurrentName=validnames(i).name;
         if ~isempty(findstr(CurrentName,'sphinc'))
-            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation);
+            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo, ...
+                channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel);
         end
     end
 end
@@ -48,10 +52,12 @@ allnames(~[allnames.isdir]) = [];  %remove non-directories
 tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
-    OutlinerFolderLoader(fullfile(path,allnames(i).name),channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation);
+    OutlinerFolderLoader(fullfile(path,allnames(i).name), ...
+        channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel);
 end
 
-function LineNo=SphinctalyzerMP(filename,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation)
+function LineNo=SphinctalyzerMP(filename,path,LineNo, ...
+    channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel)
 frmrate=2; %this is the framerate in frames/second
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
@@ -60,7 +66,6 @@ InterpolationFrames = 1; %1 for uninterpolated, larger integers for smoother out
 SpecifyRange=0; %0 to use full scanned range, 1 to use range from next line
 CropRange=3:5; %Format is first frame:last frame.  Frames not scanned in loaded data will not be used.
 
-MicronsPerPixel=.192; %if 1, will display x axis in pixels.  All other values convert to microns
 TimeZeroFrame=1; %This frame will be used as timepoint zero
 TimeUnit='seconds'; %This string will be used as the time label
 
@@ -214,10 +219,10 @@ for i=1:size(ChannelStrings,1)
             [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals);
 
         Peaks(i,j)=PeakIntensity;
-        Halfwidths(i,j)=HalfWidth*MicronsPerPixel;
-        AUCs(i,j)=PeakAUC*MicronsPerPixel;
+        Halfwidths(i,j)=HalfWidth*micronsPerPixel;
+        AUCs(i,j)=PeakAUC*micronsPerPixel;
       %  if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
-        PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*MicronsPerPixel;
+        PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*micronsPerPixel;
        % else
        % end
                 catch
@@ -257,11 +262,11 @@ for i= 1:size(Zr,1)
     set(gca,'YTickLabel',yticks)
     set(gca,'FontSize',24)
     set(gca,'FontName','Arial','FontWeight','bold')
-    if MicronsPerPixel==1
+    if micronsPerPixel==1
     xlabel(sprintf('Distance (pixels) from wound center\nTime = %.1f %s',(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
         xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
-        set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*MicronsPerPixel)))
+        set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
     end
     lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',24,'FontName','Arial');
     ylabel(ystring)
@@ -412,10 +417,10 @@ for i=1:size(ChannelStrings,1)
             [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals);
 
         Peaks(i,j)=PeakIntensity;
-        Halfwidths(i,j)=HalfWidth*MicronsPerPixel;
-        AUCs(i,j)=PeakAUC*MicronsPerPixel;
+        Halfwidths(i,j)=HalfWidth*micronsPerPixel;
+        AUCs(i,j)=PeakAUC*micronsPerPixel;
       %  if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
-        PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*MicronsPerPixel;
+        PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*micronsPerPixel;
        % else
        % end
                 catch

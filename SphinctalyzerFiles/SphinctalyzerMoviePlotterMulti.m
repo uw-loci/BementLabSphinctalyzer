@@ -1,5 +1,5 @@
 function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
-    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization)
+    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization,legendLocation)
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -7,6 +7,7 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         darkBackgroundFlag = 0;
         secondsPerFrame = 0;
         normalization = 0;
+        legendLocation = 'NorthWest';
     else 
         guiInput = 1;
     end
@@ -24,11 +25,11 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         path{1}=ParentFolderPath;
     end
     for i=1:length(path)
-        OutlinerFolderLoader(path{i},channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization);
+        OutlinerFolderLoader(path{i},channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation);
     end
 
 
-function LineNo=OutlinerFolderLoader(path,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization)
+function LineNo=OutlinerFolderLoader(path,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -37,7 +38,7 @@ validnames=dir(fullfile(path, '*.mat'));
     for i=1:size(validnames,1)
         CurrentName=validnames(i).name;
         if ~isempty(findstr(CurrentName,'sphinc'))
-            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization);
+            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation);
         end
     end
 end
@@ -47,10 +48,10 @@ allnames(~[allnames.isdir]) = [];  %remove non-directories
 tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
-    OutlinerFolderLoader(fullfile(path,allnames(i).name),channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization);
+    OutlinerFolderLoader(fullfile(path,allnames(i).name),channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation);
 end
 
-function LineNo=SphinctalyzerMP(filename,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization)
+function LineNo=SphinctalyzerMP(filename,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation)
 frmrate=2; %this is the framerate in frames/second
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
@@ -262,7 +263,7 @@ for i= 1:size(Zr,1)
         xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
         set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*MicronsPerPixel)))
     end
-    lgd = legend(ChannelStrings,'Location','NorthWest','FontSize',24,'FontName','Arial');
+    lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',24,'FontName','Arial');
     ylabel(ystring)
     if guiInput == 1
         if darkBackgroundFlag == 1

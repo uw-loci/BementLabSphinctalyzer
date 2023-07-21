@@ -294,7 +294,8 @@ function sphinctalyzerGUI
             getappdata(guiCtrl,'axesNames'), ...
             getappdata(guiCtrl,'darkBackgroundFlag'), ...
             getappdata(guiCtrl,'timePerFrame'), ...
-            get(enterNormalization,'UserData'))
+            get(enterNormalization,'UserData'), ...
+            getappdata(guiCtrl,'legendLocation'))
         
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';
@@ -430,6 +431,9 @@ function sphinctalyzerGUI
 
 %% Legend Location
     function get_legend_location(src,eventData)
+        legend_locations = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+        selected_legend_location = legend_locations{src.Value};
+        setappdata(guiCtrl,'legendLocation',selected_legend_location)
     end
 
 %% Plot Movie
@@ -438,7 +442,9 @@ function sphinctalyzerGUI
             getappdata(guiCtrl,'channelColors'), ...
             getappdata(guiCtrl,'axesNames'), ...
             getappdata(guiCtrl,'darkBackgroundFlag'), ...
-            getappdata(guiCtrl,'timePerFrame'))
+            getappdata(guiCtrl,'timePerFrame'), ...
+            get(enterNormalization,'UserData'), ...
+            getappdata(guiCtrl,'legendLocation'))
         handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
         handle.Parent.Units = 'normalized';
         handle.Parent.Position = [0.25 0 0.6 0.5];

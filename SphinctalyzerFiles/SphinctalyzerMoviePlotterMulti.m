@@ -1,10 +1,12 @@
-function SphinctalyzerMoviePlotterMulti(ParentFolderPath,channelColors,axesNames,darkBackgroundFlag,secondsPerFrame)
+function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
+    channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization)
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
         axesNames = 0;
         darkBackgroundFlag = 0;
         secondsPerFrame = 0;
+        normalization = 0;
     else 
         guiInput = 1;
     end
@@ -22,11 +24,11 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath,channelColors,axesNames
         path{1}=ParentFolderPath;
     end
     for i=1:length(path)
-        OutlinerFolderLoader(path{i},channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame);
+        OutlinerFolderLoader(path{i},channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization);
     end
 
 
-function LineNo=OutlinerFolderLoader(path,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame)
+function LineNo=OutlinerFolderLoader(path,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -35,7 +37,7 @@ validnames=dir(fullfile(path, '*.mat'));
     for i=1:size(validnames,1)
         CurrentName=validnames(i).name;
         if ~isempty(findstr(CurrentName,'sphinc'))
-            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame);
+            LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization);
         end
     end
 end
@@ -45,12 +47,11 @@ allnames(~[allnames.isdir]) = [];  %remove non-directories
 tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
-    OutlinerFolderLoader(fullfile(path,allnames(i).name),channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame);
+    OutlinerFolderLoader(fullfile(path,allnames(i).name),channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization);
 end
 
-function LineNo=SphinctalyzerMP(filename,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame)
+function LineNo=SphinctalyzerMP(filename,path,LineNo,channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization)
 frmrate=2; %this is the framerate in frames/second
-normalization=1;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
 InterpolationFrames = 1; %1 for uninterpolated, larger integers for smoother output
@@ -77,6 +78,7 @@ else
     yAxisTitle = 'Normalized Gray Value';
     xAxisTitle = 'Position relative to wound center';
     TimePerFrame = 10; %This is the time between frames during imaging (second/frame)
+    normalization=1;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
 end
 TypeString='Smooth'; %'Mean' 'Median' or 'Smooth'
 

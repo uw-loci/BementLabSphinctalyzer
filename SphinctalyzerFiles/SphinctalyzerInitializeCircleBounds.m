@@ -21,7 +21,7 @@ for i = i
         title(['Trace the brightest path, then double click'])%, InputCells{i,1}])
         position=[];
         while isempty(position)
-            h=drawfreehand; %define inner mask
+            h=imfreehand; %define inner mask
             position=wait(h);
         end
     end

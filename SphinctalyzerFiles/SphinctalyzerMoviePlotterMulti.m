@@ -105,7 +105,7 @@ else
     ColorMat={[1 0 0],[0 .6 0],[0 0 1]}; %These are the color strings for each channel
     yAxisTitle = 'Normalized Gray Value';
     if micronsPerPixel == 1
-        xAxistitle = 'Distance (pixels) from wound center';
+        xAxisTitle = 'Distance (pixels) from wound center';
     else
         xAxisTitle = 'Position (Microns) relative to wound center';
     end

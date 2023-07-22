@@ -8,7 +8,8 @@ function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, ...
     stepParam, ...
     filePath, fileName, ...
     colormap, ...
-    roiShape)
+    roiShape, ...
+    batchDirectory)
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
@@ -39,6 +40,7 @@ if guiInput == 0
     % idiots
     Step=8; %Line segment length for livewire operation
     roiShape = '';
+    batchDirectory = '';
 else
     InputCells = cellInputParam;
     Range = startSlice:stopSlice;
@@ -72,7 +74,7 @@ if ~ismember(DetectionMethod, [0 1 2 3])
 end
 
 %% Load images and initialize output matrix
-[SphinctalyzerOutputs, SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, fileName, filePath, guiInput);
+[SphinctalyzerOutputs, SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, fileName, filePath, guiInput, batchDirectory);
 
 %% Select initial regions
 if ScanShape == 1

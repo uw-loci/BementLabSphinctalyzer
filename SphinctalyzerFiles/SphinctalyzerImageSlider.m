@@ -65,7 +65,7 @@ imgAx = axes('Parent',imgPanel,'YTick',[],'XTick',[],'Units','normalized',...
     'Position',[imageAreaX imageAreaY imageAreaWidth imageAreaHeight],'Tag','BF-MAT figureAX');
 labelTitle = uicontrol('Parent',imgPanel,'Style','text','String',...
     BFcontrol.imageName,'Enable','on','HorizontalAlignment','left',...
-    'FontSize',fz2,'Units','normalized','Position',[titleX titleY titleWidth titleHeight]);
+    'FontSize',13,'Units','normalized','Position',[titleX titleY titleWidth titleHeight]);
 
 dataPanel = uipanel('Parent',guiCtrl,'Units','normalized','Position',[0 0 1 0.25]);
 table = zeros(length(channelNames), 6);
@@ -119,43 +119,20 @@ elseif nSlider > 0
         sliderMax = maxSlider(indexSlider(i));
         sliderMin = 1;
         sliderLabelY = sliderY;                  % Y coordinate of the slider label starting point;
-        if strcmp (sliderCreated, 'Series')
-            sliderSeries = uicontrol('Parent',imgPanel,'Style','slide','Units',...
-                'normalized','position',[sliderX sliderY sliderWidth sliderHeight],'min',1,'max',sliderMax,...
-                'val',iSeries,'SliderStep', [1 1]/sliderMax,'Enable','on','Callback',{@slider_chng_img});
-            sliderLabelSeries = uicontrol('Parent',imgPanel,'Style','text','String',...
-                sliderCreated(1),'Enable','off',...
-                'FontSize',fz1,'Units','normalized','Position',[sliderLabelX sliderLabelY/2  sliderLabelSize]);
-            sliderObjects{1} = sliderSeries;
-        end
         if strcmp (sliderCreated, 'Channel')
             sliderChannel = uicontrol('Parent',imgPanel,'Style','slide','Units',...
                 'normalized','position',[sliderX sliderY sliderWidth sliderHeight],'min',sliderMin,'max',sliderMax,...
-                'val',iChannel,'SliderStep', [1 1]/(sliderMax-sliderMin),'Enable','on','Callback',{@slider_chng_img});
-            sliderLabelFocalplane = uicontrol('Parent',imgPanel,'Style','text','String',...
-                sliderCreated(1),'Enable','on',...
-                'FontSize',fz1,'Units','normalized','Position',[sliderLabelX sliderLabelY sliderLabelSize]);
+                'val',iChannel,'SliderStep', [1 1]/(sliderMax-sliderMin),'Enable','on');
+            addlistener(sliderChannel,'ContinuousValueChange',@(hObject, event) updateImageChannel(hObject, event))
             sliderObjects{2} = sliderChannel;
         end
         if strcmp (sliderCreated, 'Timepoint')
             timeSliderMin = BFcontrol.start;
             sliderTimepoint = uicontrol('Parent',imgPanel,'Style','slide','Units',...
                 'normalized','position',[sliderX sliderY sliderWidth sliderHeight],'min',timeSliderMin,'max',sliderMax,...
-                'val',timeSliderMin,'SliderStep', [1 1]/(sliderMax-timeSliderMin),'Enable','on','Callback',{@slider_chng_img});
-            sliderLabelFocalplane = uicontrol('Parent',imgPanel,'Style','text','String',...
-                sliderCreated(1),'Enable','on',...
-                'FontSize',fz1,'Units','normalized','Position',[sliderLabelX sliderLabelY sliderLabelSize]);
+                'val',timeSliderMin,'SliderStep', [1 1]/(sliderMax-timeSliderMin),'Enable','on');
+            addlistener(sliderTimepoint,'ContinuousValueChange',@(hObject, event) updateImageTimepoint(hObject, event));
             sliderObjects{3} = sliderTimepoint; 
-        end
-
-        if strcmp (sliderCreated, 'Focalplane')
-            sliderFocalplane = uicontrol('Parent',imgPanel,'Style','slide','Units',...
-                'normalized','position',[sliderX sliderY sliderWidth sliderHeight],'min',sliderMin,'max',sliderMax,...
-                'val',iFocalplane,'SliderStep', [1 1]/(sliderMax-sliderMin),'Enable','on','Callback',{@slider_chng_img});
-            sliderLabelFocalplane = uicontrol('Parent',imgPanel,'Style','text','String',...
-                sliderCreated(1),'Enable','on',...
-                'FontSize',fz1,'Units','normalized','Position',[sliderLabelX sliderLabelY sliderLabelSize]);
-            sliderObjects{4} = sliderFocalplane; 
         end
     end
     return
@@ -163,21 +140,54 @@ elseif nSlider > 0
 end
 
 
-%% plot the image
-% callback function for stack slider
-    function slider_chng_img(hObject,eventData,handles)
+% %% plot the image
+% % callback function for stack slider
+%     function slider_chng_img(hObject,eventData,handles)
+%         titleText = ''; seriesText = '';channelText = '';timepointText = '';focalplaneText = '';
+%         if exist('sliderSeries','var'); 
+%             iSeries = round(sliderSeries.Value);
+%             titleText = sprintf('%s S:%d/%d ',titleText,iSeries,BFcontrol.seriesCount);
+%             sliderObjects{1} = sliderSeries;
+%         end
+%         if exist('sliderChannel','var'); 
+%             iChannel = round(sliderChannel.Value);
+%             titleText = sprintf('%s C:%d/%d ',titleText,iChannel,BFcontrol.nChannels);
+%             sliderObjects{2} = sliderChannel;
+%             
+%         end
+%         if exist('sliderTimepoint','var'); 
+%             iTimepoint = round(sliderTimepoint.Value); 
+%             titleText = sprintf('%s T:%d/%d ',titleText,iTimepoint,BFcontrol.nTimepoints);
+%             sliderObjects{3} = sliderTimepoint;
+% 
+%             for m = 1:BFcontrol.nChannels
+%                 for n = 1:5
+%                     sheet = xlsSheets{n};
+%                     sphincData.Data(m, n) = sheet(m + 1, iTimepoint);
+%                 end
+%             end
+%         end
+%         if exist('sliderFocalplane','var'); 
+%             iFocalplane = round(sliderFocalplane.Value); 
+%             titleText = sprintf('%s F:%d/%d ',titleText,iFocalplane,BFcontrol.nFocalplanes);
+%             sliderObjects{4} = sliderFocalplane;
+%         end
+%         bfRederinfo = bfGetReader(fullPath2image);
+%         bfRederinfo.setSeries(iSeries - 1);
+% 
+%         iPlane =  bfRederinfo.getIndex(iFocalplane- 1, iChannel-1, iTimepoint-1) + 1;
+%         I = bfGetPlane(bfRederinfo, iPlane);
+% 
+%         imagesc(I,'Parent',imgAx);
+%         set(labelTitle,'String',titleText);
+%         set(imgAx,'YTick',[],'XTick',[]);
+%         colormap(imgAx,BFcontrol.colormap);   
+%         axis image equal
+%         drawnow 
+%     end
+
+    function updateImageTimepoint(hObject,event)
         titleText = ''; seriesText = '';channelText = '';timepointText = '';focalplaneText = '';
-        if exist('sliderSeries','var'); 
-            iSeries = round(sliderSeries.Value);
-            titleText = sprintf('%s S:%d/%d ',titleText,iSeries,BFcontrol.seriesCount);
-            sliderObjects{1} = sliderSeries;
-        end
-        if exist('sliderChannel','var'); 
-            iChannel = round(sliderChannel.Value);
-            titleText = sprintf('%s C:%d/%d ',titleText,iChannel,BFcontrol.nChannels);
-            sliderObjects{2} = sliderChannel;
-            
-        end
         if exist('sliderTimepoint','var'); 
             iTimepoint = round(sliderTimepoint.Value); 
             titleText = sprintf('%s T:%d/%d ',titleText,iTimepoint,BFcontrol.nTimepoints);
@@ -189,12 +199,9 @@ end
                     sphincData.Data(m, n) = sheet(m + 1, iTimepoint);
                 end
             end
+            set(hObject, 'val', iTimepoint)
         end
-        if exist('sliderFocalplane','var'); 
-            iFocalplane = round(sliderFocalplane.Value); 
-            titleText = sprintf('%s F:%d/%d ',titleText,iFocalplane,BFcontrol.nFocalplanes);
-            sliderObjects{4} = sliderFocalplane;
-        end
+
         bfRederinfo = bfGetReader(fullPath2image);
         bfRederinfo.setSeries(iSeries - 1);
 
@@ -207,5 +214,28 @@ end
         colormap(imgAx,BFcontrol.colormap);   
         axis image equal
         drawnow 
+    end
+
+    function updateImageChannel(hObject,event)
+        titleText = ''; seriesText = '';channelText = '';timepointText = '';focalplaneText = '';
+        if exist('sliderChannel','var'); 
+            iChannel = round(sliderChannel.Value);
+            titleText = sprintf('%s C:%d/%d ',titleText,iChannel,BFcontrol.nChannels);
+            sliderObjects{2} = sliderChannel;
+            set(hObject, 'val', iChannel)
+        end
+
+        bfRederinfo = bfGetReader(fullPath2image);
+        bfRederinfo.setSeries(iSeries - 1);
+
+        iPlane =  bfRederinfo.getIndex(iFocalplane- 1, iChannel-1, iTimepoint-1) + 1;
+        I = bfGetPlane(bfRederinfo, iPlane);
+
+        imagesc(I,'Parent',imgAx);
+        set(labelTitle,'String',titleText);
+        set(imgAx,'YTick',[],'XTick',[]);
+        colormap(imgAx,BFcontrol.colormap);   
+        axis image equal
+        drawnow
     end
 end

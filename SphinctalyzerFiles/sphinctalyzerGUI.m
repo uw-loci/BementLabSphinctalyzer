@@ -224,8 +224,8 @@ function sphinctalyzerGUI
              if isequal(fileName,0)
                  disp('User selected Cancel')
                  return;
-             elseif length(fileName) == 1
-                disp('Please select more than one image')
+             elseif ~iscell(fileName)
+                 error('Please select at least two files to do batch process')
              else
                  setappdata(guiCtrl,'fileNames',fileName)
                  setappdata(guiCtrl,'currentImage',1)
@@ -882,14 +882,16 @@ function sphinctalyzerGUI
         definput = {axesNames{1}, num2str(xMinStepMax(1)), num2str(xMinStepMax(2)), num2str(xMinStepMax(3))};
         dlgtitle = 'Edit X Axis';
         answer = inputdlg(prompts,dlgtitle,dims, definput);
-        if ~isempty(answer{1})
-            axesNames{1} = answer{1};
-            setappdata(guiCtrl,'axesNames',axesNames)
-        end
-        for i=2:4
-            if ~isempty(answer{i})
-                if ~isnan(str2double(answer{i}))
-                    xMinStepMax(i-1) = str2double(answer{i});
+        if ~isempty(answer)
+            if ~isempty(answer{1})
+                axesNames{1} = answer{1};
+                setappdata(guiCtrl,'axesNames',axesNames)
+            end
+            for i=2:4
+                if ~isempty(answer{i})
+                    if ~isnan(str2double(answer{i}))
+                        xMinStepMax(i-1) = str2double(answer{i});
+                    end
                 end
             end
         end

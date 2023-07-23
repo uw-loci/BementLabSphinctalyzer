@@ -225,8 +225,12 @@ function sphinctalyzerGUI
                  disp('User selected Cancel')
                  return;
              elseif ~iscell(fileName)
-                 error('Please select at least two files to do batch process')
+                 disp('Please select at least two files to do batch process')
+                 return;
              else
+                 set(batchProcessing,'Enable','off')
+                 set(hObject,'Enable','off')
+                 set(loadMulti,'Enable','off')
                  setappdata(guiCtrl,'fileNames',fileName)
                  setappdata(guiCtrl,'currentImage',1)
 
@@ -243,10 +247,10 @@ function sphinctalyzerGUI
                  % create init next image button
                  sphinctalyzeInitializeButton = uicontrol('Parent', guiCtrl, ...
                     'Style', 'pushbutton', ...
-                    'String', 'Initialize Next Image', ...
+                    'String', 'Trace Reference Frame and Move to Next Image', ...
                     'FontSize', 12, ...
                     'Units', 'normalized', ...
-                    'Position', [0.29 0.38 0.405 0.035], ...
+                    'Position', [0.2 0.38 0.6 0.035], ...
                     'Enable','on',...
                     'Callback',{@sphinctalyzeBatchInitialize});
  
@@ -262,6 +266,8 @@ function sphinctalyzerGUI
                  disp('User selected Cancel')
                  return;
              end
+             set(batchProcessing,'Enable','off')
+             set(hObject,'Enable','off')
              disp(['User selected ', fullfile(pathName,fileName)])
          end
          
@@ -458,6 +464,7 @@ function sphinctalyzerGUI
     end
     %% Sphinctalyze Initialize for Batch Processing
     function sphinctalyzeBatchInitialize(hObject,eventdata)
+        set(hObject,'Enable','off')
         if control.nChannels == 1
             cellArray = {cellInputs.RowName{1}, cellInputs.Data{1, :}};
             channelNames = cellInputs.RowName{1};
@@ -510,14 +517,7 @@ function sphinctalyzerGUI
         % Sphinctalyzer button
         if currentImage == length(fileNames)
             delete(hObject);
-            sphinctalyzeButton = uicontrol('Parent', guiCtrl, ...
-                'Style', 'pushbutton', ...
-                'String', 'Sphinctalyze', ...
-                'FontSize', 12, ...
-                'Units', 'normalized', ...
-                'Position', [0.29 0.38 0.405 0.035], ...
-                'Enable','on',...
-                'Callback',{@sphinctalyze});
+            sphinctalyze()
         else
             currentImage = currentImage + 1;
             setappdata(guiCtrl,'currentImage',currentImage)
@@ -546,6 +546,7 @@ function sphinctalyzerGUI
                  cellInputs.Data{i, 2} = 1;
              end
          end
+         set(hObject,'Enable','on')
         end
     end
 

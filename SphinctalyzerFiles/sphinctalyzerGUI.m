@@ -430,7 +430,6 @@ function sphinctalyzerGUI
         prev_input = get(enterMicronsPerPixel, 'UserData');
         xMinStepMax = getappdata(guiCtrl,'xMinStepMax');
         xMinStepMax = round(xMinStepMax / prev_input);
-        setappdata(guiCtrl,'xMinStepMax',xMinStepMax)
         usr_input = get(enterMicronsPerPixel, 'String');
         usr_input = str2double(usr_input);
         axesNames = getappdata(guiCtrl,'axesNames');
@@ -439,7 +438,6 @@ function sphinctalyzerGUI
                 axesNames{1} = 'Distance (pixels) from wound center';
             otherwise
                 axesNames{1} = 'Position (Microns) relative to wound center';
-                xMinStepMax = getappdata(guiCtrl,'xMinStepMax');
                 xMinStepMax = usr_input * xMinStepMax;
                 setappdata(guiCtrl,'xMinStepMax',xMinStepMax)
         end
@@ -599,18 +597,7 @@ function sphinctalyzerGUI
                 getappdata(guiCtrl,'xMinStepMax'), ...
                 getappdata(guiCtrl,'yMinStepMax'))
             
-            % create drop down of processed images
-            % when an image is selected, update the GUI AND appdata to object attributes
-            % display the image slider, the movie and the movie plot options
-    
-            handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
-            handle.Parent.Units = 'normalized';
-            handle.Parent.Position = [0.25 0 0.6 0.5];
-            % Enable maintain fit to window for movie
-            toolMenu = findall(0,'tag','uimgr.uimenugroup_Tools'); % get the tools menu object from implay
-            set(toolMenu(1).Children(1),'Checked', 'on'); % check the "Maintain Fit to window" in the tools menu (just happens to be the first child)
-            fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
-            fcnHandle(); % Run the callback function for "Maintain Fit to window"
+            moviePlayer(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'), control.start, control.nTimepoints)
     
             SphinctalyzerImageSlider(control, channelNames, ParentFolderPath, getappdata(guiCtrl, 'timePerFrame'))
 
@@ -999,16 +986,9 @@ function sphinctalyzerGUI
             get(enterMicronsPerPixel,'UserData'), ...
             getappdata(guiCtrl,'xMinStepMax'), ...
             getappdata(guiCtrl,'yMinStepMax'))
-
-        handle = implay(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'));
-        handle.Parent.Units = 'normalized';
-        handle.Parent.Position = [0.25 0 0.6 0.5];
-        % Enable maintain fit to window for movie
-        toolMenu = findall(0,'tag','uimgr.uimenugroup_Tools'); % get the tools menu object from implay
-        set(toolMenu(1).Children(1),'Checked', 'on'); % check the "Maintain Fit to window" in the tools menu (just happens to be the first child)
-        fcnHandle = toolMenu(1).Children(1).MenuSelectedFcn; % get the function handle to the callback for the "Maintain Fit to window"
-        fcnHandle(); % Run the callback function for "Maintain Fit to window"
         
+        moviePlayer(strcat(ParentFolderPath,'/sphincRedo/scan movietalyzerResults.avi'), control.start, control.nTimepoints)
+
         if get(batchProcessing,'Value') == 1
             SphinctalyzerImageSlider(control, getappdata(guiCtrl,'channelNames'), ParentFolderPath, getappdata(guiCtrl, 'timePerFrame'))
         end

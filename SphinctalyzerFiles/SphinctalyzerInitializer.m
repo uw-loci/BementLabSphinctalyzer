@@ -61,7 +61,7 @@ if min(ismember(RefCheckMatrix,[0 1])) == 0 || sum(RefCheckMatrix) > 1
 end
 %Make sure that display frames are within range
 DisplayFrameMatrix=cell2mat(InputCells(:,2));
-if min(ismember(DisplayFrameMatrix,Range)) == 0
+if ~(max(ismember(DisplayFrameMatrix,Range)) == 1)
     error('All Display Frames must be contained within Range')
 end
 % Check that LoadMulti is valid

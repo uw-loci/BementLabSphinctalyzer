@@ -233,7 +233,10 @@ function sphinctalyzerGUI
                  set(loadMulti,'Enable','off')
                  setappdata(guiCtrl,'fileNames',fileName)
                  setappdata(guiCtrl,'currentImage',1)
-
+                 
+                 % create fileInfo
+                 fileInfo = uitable('Parent',guiCtrl,'ColumnName',{'File Name                                              ', 'Num Frames'},'RowName', {'Current File'},...
+                    'Units','normalized','Position',[0 0.3 1 0.05],'Enable','on');
                  % create batch directory
                  currDate = strrep(datestr(datetime), ' ', '_');
                  pathString = strcat('../Sphincdata/batch_',currDate);
@@ -252,7 +255,7 @@ function sphinctalyzerGUI
                     'Units', 'normalized', ...
                     'Position', [0.2 0.38 0.6 0.035], ...
                     'Enable','on',...
-                    'Callback',{@sphinctalyzeBatchInitialize});
+                    'Callback',{@sphinctalyzeBatchInitialize, fileInfo});
  
                  delete(sphinctalyzeButton)
 
@@ -298,6 +301,10 @@ function sphinctalyzerGUI
                  cellInputs.Data{i, 2} = 1;
              end
          end
+
+         fileInfo.Data{1} = fileName;
+         fileInfo.Data{2} = nTimepoints;
+
          set(cellInputs, 'ColumnEditable',true(1,2))
          set(sru1, 'Enable', 'on')
          set(sru2, 'Enable', 'on')
@@ -463,7 +470,7 @@ function sphinctalyzerGUI
         end
     end
     %% Sphinctalyze Initialize for Batch Processing
-    function sphinctalyzeBatchInitialize(hObject,eventdata)
+    function sphinctalyzeBatchInitialize(hObject,eventdata,handles)
         set(hObject,'Enable','off')
         if control.nChannels == 1
             cellArray = {cellInputs.RowName{1}, cellInputs.Data{1, :}};
@@ -512,11 +519,9 @@ function sphinctalyzerGUI
             control.imageName, ...
             channelNames);
         setappdata(guiCtrl,'imageObjects',objarray)
-
-        % If Batch is fully loaded, delete the button and replace with old
-        % Sphinctalyzer button
         if currentImage == length(fileNames)
             delete(hObject);
+            delete(handles);
             sphinctalyze()
         else
             currentImage = currentImage + 1;
@@ -537,6 +542,8 @@ function sphinctalyzerGUI
          control.nChannels = nChannels;
          control.Focalplanes = nFocalplanes;
          control.iSeries = seriesCount;
+         handles.Data{1} = fileName;
+         handles.Data{2} = nTimepoints;
          for i = 1:nChannels
              cellInputs.RowName{i, 1} = "channel" + i;
              cellInputs.Data{i, 1} = 1;

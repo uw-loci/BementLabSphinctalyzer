@@ -1,18 +1,32 @@
-function SphinctalyzerInitialized(filename,path)
+function SphinctalyzerInitialized(filename,path,speed,multi,shape,detection,step)
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
-load([path,'/',filename]);
-Range = find([SphinctalyzerOutputs(:).InRange]==1);  % Select the range of images to scan in form first frame:last frame
-inspeed = 3;  % Select maximum inward speed of ring
-outspeed = 3;  % Select maximum outward speed of ring
-LoadMulti = 1; % 0 for loading each channel individually, 1 for loading a multi-channel tiff
-ScanShape = 1; % 1 for closed loop (circle) scan
-DetectionMethod = 3; % Zero for basic brightest-point dilation,% 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
-% idiots
-SmoothNo=0;
-
-Step=8; %Line segment length for livewire operation
+if nargin == 2
+    load([path,'/',filename]);
+    Range = find([SphinctalyzerOutputs(:).InRange]==1);  % Select the range of images to scan in form first frame:last frame
+    inspeed = 3;  % Select maximum inward speed of ring
+    outspeed = 3;  % Select maximum outward speed of ring
+    LoadMulti = 1; % 0 for loading each channel individually, 1 for loading a multi-channel tiff
+    ScanShape = 1; % 1 for closed loop (circle) scan
+    DetectionMethod = 3; % Zero for basic brightest-point dilation,% 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
+    % idiots
+    SmoothNo=0;
+    
+    Step=8; %Line segment length for livewire operation
+else
+    load([path,'/',filename]);
+    Range = find([SphinctalyzerOutputs(:).InRange]==1);  % Select the range of images to scan in form first frame:last frame
+    inspeed = speed;  % Select maximum inward speed of ring
+    outspeed = speed;  % Select maximum outward speed of ring
+    LoadMulti = multi; % 0 for loading each channel individually, 1 for loading a multi-channel tiff
+    ScanShape = shape; % 1 for closed loop (circle) scan
+    DetectionMethod = detection; % Zero for basic brightest-point dilation,% 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
+    % idiots
+    SmoothNo=0;
+    
+    Step=step; %Line segment length for livewire operation
+end
 
 
 

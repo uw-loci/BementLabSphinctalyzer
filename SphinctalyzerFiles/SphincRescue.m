@@ -1,6 +1,11 @@
-function SphincRescue(ParentFolderPath)
+function SphincRescue(ParentFolderPath,speed,loadMulti,shape,detection,step)
 if nargin == 0
     guiInput = 0;
+    speed = 0;
+    loadMulti = 0;
+    shape = 0;
+    detection = 0;
+    step = 0;
 else
     guiInput = 1;
 end
@@ -14,17 +19,17 @@ else
     path{1} = ParentFolderPath;
 end
 for i=1:length(path)
-    OutlinerFolderLoader(path{i});
+    OutlinerFolderLoader(path{i},speed,loadMulti,shape,detection,step);
 end
 
-function OutlinerFolderLoader(path)
+function OutlinerFolderLoader(path,speed,loadMulti,shape,detection,step)
 
 %Run Program on any applicable files in path
 validnames=dir(fullfile(path, '*.mat'));
 for i=1:size(validnames,1)
     CurrentName=validnames(i).name;
     if ~isempty(findstr(CurrentName,'sphinc'))
-    SphinctalyzerInitialized(validnames(i).name,path);
+    SphinctalyzerInitialized(validnames(i).name,path,speed,loadMulti,shape,detection,step);
     end
 end
 %check for subdirectories
@@ -33,5 +38,5 @@ allnames(~[allnames.isdir]) = [];  %remove non-directories
 tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
-    OutlinerFolderLoader(fullfile(path,allnames(i).name));
+    OutlinerFolderLoader(fullfile(path,allnames(i).name),speed,loadMulti,shape,detection,step);
 end

@@ -586,7 +586,12 @@ function sphinctalyzerGUI
             
             [ParentFolderPath] = fileparts(file);
             [ParentFolderPath] = fileparts(ParentFolderPath);
-            SphincRescue(ParentFolderPath)
+            SphincRescue(ParentFolderPath, ...
+                get(enterSpeed,'UserData'), ...
+                get(loadMulti, 'Value'), ...
+                get(enterShape,'UserData'), ...
+                get(enterDetection, 'UserData'), ...
+                get(enterStep,'UserData'))
             
             % loop through each data folder and input object attributes
     
@@ -712,11 +717,6 @@ function sphinctalyzerGUI
 
         else
             objarray = getappdata(guiCtrl,'imageObjects');
-            % Process multiple images
-            [ParentFolderPath] = fileparts(objarray(1).imagePath);
-            [ParentFolderPath] = fileparts(ParentFolderPath);
-            [ParentFolderPath] = fileparts(ParentFolderPath);
-            SphincRescue(ParentFolderPath)
             
             setappdata(guiCtrl,'channelColors',{[1 0 0],[0 .6 0],[0 0 1]})
             setappdata(guiCtrl,'darkBackgroundFlag',0)
@@ -727,6 +727,13 @@ function sphinctalyzerGUI
             for i=1:length(objarray)
                 [ParentFolderPath] = fileparts(objarray(i).imagePath);
                 [ParentFolderPath] = fileparts(ParentFolderPath);
+
+                SphincRescue(ParentFolderPath, ...
+                    objarray(i).speed, ...
+                    objarray(i).loadMulti, ...
+                    objarray(i).shape, ...
+                    objarray(i).detection, ...
+                    objarray(i).step)
 
                 SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
                 getappdata(guiCtrl,'channelColors'), ...

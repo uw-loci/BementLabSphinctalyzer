@@ -1,4 +1,4 @@
-function [SphinctalyzerOutputs,SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, ChName, ChPath, guiInput)
+function [SphinctalyzerOutputs,SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, ChName, ChPath, guiInput, batchDirectory)
 
 %% This function uses the sphinctalyzer input cell array to load images from tiff files and initialize the sphinctalyzer output array
 %11/17/2014 Matthew Larson
@@ -81,9 +81,16 @@ if guiInput == 0
     [SaveName, SavePath]=uiputfile({'*.mat'},'Where would you like to save the results?',[ChPath, 'sphinctalyzerResults.mat']);
     SaveFileName=[SavePath,SaveName];
 else
-    currDate = strrep(datestr(datetime), ' ', '_');
-    pathString = strcat('../Sphincdata/data_',currDate,'/sphinc/');
-    mkdir (pathString)
-    SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
+    if isempty(batchDirectory)
+        currDate = strrep(datestr(datetime), ' ', '_');
+        pathString = strcat('../Sphincdata/data_',currDate,'/sphinc/');
+        mkdir (pathString)
+        SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
+    else
+        currDate = strrep(datestr(datetime), ' ', '_');
+        pathString = strcat(batchDirectory,'/data_',ChName,'/sphinc/');
+        mkdir (pathString)
+        SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
+    end
 end
 end

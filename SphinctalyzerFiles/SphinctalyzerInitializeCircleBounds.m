@@ -1,4 +1,4 @@
-function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colorMap)
+function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colorMap,guiInput,roiShape)
 % Open new figure
 figure
 
@@ -13,11 +13,17 @@ for i = i
     imagesc(SphinctalyzerOutputs(InputCells{i,2}).(matlab.lang.makeValidName([InputCells{i,1},'Data']))); %display image
     colormap (colorMap)
     axis image
-    title(['Trace the brightest path, then double click'])%, InputCells{i,1}])
-    position=[];
-    while isempty(position)
-    h=imfreehand; %define inner mask
-    position=wait(h);
+    if guiInput == 1
+        funcs = {@drawcircle,@drawellipse,@drawfreehand,@drawassisted,@drawpolygon,@drawrectangle};
+        title('Trace the brightest path')
+        h=funcs{roiShape}();
+    else
+        title(['Trace the brightest path, then double click'])%, InputCells{i,1}])
+        position=[];
+        while isempty(position)
+            h=imfreehand; %define inner mask
+            position=wait(h);
+        end
     end
     UserDrawnBounds(i).BWMaskOut=createMask(h);
 end

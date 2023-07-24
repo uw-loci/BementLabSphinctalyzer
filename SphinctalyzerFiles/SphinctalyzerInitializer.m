@@ -1,4 +1,15 @@
-function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, startSlice, stopSlice, speed, multiCheck, shapeParam, detectionParam, smoothParam, stepParam, filePath, fileName,colormap)
+function [SaveFileName]=SphinctalyzerInitializer(cellInputParam, ...
+    startSlice, stopSlice, ...
+    speed, ...
+    multiCheck, ...
+    shapeParam, ...
+    detectionParam, ...
+    smoothParam, ...
+    stepParam, ...
+    filePath, fileName, ...
+    colormap, ...
+    roiShape, ...
+    batchDirectory)
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
@@ -28,6 +39,8 @@ if guiInput == 0
     % 2 for two Livewire iterations, 3 for three Livewire iterations, 1 is for
     % idiots
     Step=8; %Line segment length for livewire operation
+    roiShape = '';
+    batchDirectory = '';
 else
     InputCells = cellInputParam;
     Range = startSlice:stopSlice;
@@ -48,7 +61,7 @@ if min(ismember(RefCheckMatrix,[0 1])) == 0 || sum(RefCheckMatrix) > 1
 end
 %Make sure that display frames are within range
 DisplayFrameMatrix=cell2mat(InputCells(:,2));
-if min(ismember(DisplayFrameMatrix,Range)) == 0
+if ~(max(ismember(DisplayFrameMatrix,Range)) == 1)
     error('All Display Frames must be contained within Range')
 end
 % Check that LoadMulti is valid
@@ -61,11 +74,11 @@ if ~ismember(DetectionMethod, [0 1 2 3])
 end
 
 %% Load images and initialize output matrix
-[SphinctalyzerOutputs, SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, fileName, filePath, guiInput);
+[SphinctalyzerOutputs, SaveFileName]=SphinctalyzerImageLoader(InputCells, Range, LoadMulti, fileName, filePath, guiInput, batchDirectory);
 
 %% Select initial regions
 if ScanShape == 1
-    [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colormap);
+    [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colormap,guiInput,roiShape);
 else
     error('ScanShape must be 1, because I only do circles for now.....')
 end

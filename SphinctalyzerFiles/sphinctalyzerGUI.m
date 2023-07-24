@@ -9,7 +9,7 @@ function sphinctalyzerGUI
         'start',0,'end',0,'colormap','gray','iSeries',1,'iChannel',1,'iTimepoint',1,'iFocalplane',1);
 
     %Figure for GUI
-    guiCtrl = figure('Color',defaultBackground','Units','normalized','Position',[0.007 0.05 0.260 0.85],'Visible','on',...
+    guiCtrl = figure('Color',defaultBackground','Units','normalized','Position',[0.007 0.05 0.26 0.85],'Visible','on',...
         'MenuBar','none','name','sphinctalyzer','NumberTitle','off','UserData',0);
     
     %Set Default Time Per Frame

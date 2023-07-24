@@ -1,8 +1,5 @@
 function SphinctalyzerImageSlider(BFcontrol, channelNames, ParentFolderPath, timePerFrame)
 %visualize the image read by Bio-Formats(BF) with or without slider(s)
-%input argument BFcontrol
-set(0,'units','pixels');
-windowSize = get(0,'ScreenSize');
 
 %delete the exist BF-MAT figure 
 BFfigure = findobj(0,'Tag','BF-MAT figure');
@@ -55,19 +52,20 @@ imageAreaY = (nSlider+1)*sliderHeight;
 titleX = imageAreaX+0.040;
 titleY = imageAreaHeight+(nSlider+1)*sliderHeight; 
 
-guiCtrl = figure('Position', [520*(windowSize(3)/1600) 200*(windowSize(3)/900) 800*(windowSize(3)/1600) 800*(windowSize(3)/900)], 'NumberTitle','off','Tag','BF-MAT figure',...
+guiCtrl = figure('Units','normalized','Position', [0.267 0.43 0.4475 0.42], ...
+    'NumberTitle','off','Tag','BF-MAT figure',...
     'Name',sprintf('Bio-Formats MATLAB figure for %s:', BFcontrol.imageName));   % should be set with respect to the BF GUI position
-imgPanel = uipanel('Parent', guiCtrl,'Units','normalized','Position',[0 0.25  1 0.75]);
+imgPanel = uipanel('Parent', guiCtrl,'Units','normalized','Position',[0 0.15  1 0.8]);
 fz1 = 10; % slider label size
 fz2 = 11; % image title size
 
 imgAx = axes('Parent',imgPanel,'YTick',[],'XTick',[],'Units','normalized',...
-    'Position',[imageAreaX imageAreaY imageAreaWidth imageAreaHeight],'Tag','BF-MAT figureAX');
-labelTitle = uicontrol('Parent',imgPanel,'Style','text','String',...
+    'Position',[0 0.1 1 0.9],'Tag','BF-MAT figureAX');
+labelTitle = uicontrol('Parent',guiCtrl,'Style','text','String',...
     BFcontrol.imageName,'Enable','on','HorizontalAlignment','left',...
-    'FontSize',13,'Units','normalized','Position',[titleX titleY titleWidth titleHeight]);
+    'FontSize',10,'Units','normalized','Position',[0 0.95 1 0.05]);
 
-dataPanel = uipanel('Parent',guiCtrl,'Units','normalized','Position',[0 0 1 0.25]);
+dataPanel = uipanel('Parent',guiCtrl,'Units','normalized','Position',[0 0 1 0.15]);
 table = zeros(length(channelNames), 6);
 for i = 1:BFcontrol.nChannels
     for j = 1:6
@@ -121,7 +119,7 @@ elseif nSlider > 0
         sliderLabelY = sliderY;                  % Y coordinate of the slider label starting point;
         if strcmp (sliderCreated, 'Channel')
             sliderChannel = uicontrol('Parent',imgPanel,'Style','slide','Units',...
-                'normalized','position',[sliderX sliderY sliderWidth sliderHeight],'min',sliderMin,'max',sliderMax,...
+                'normalized','position',[0 0.05 1 0.05],'min',sliderMin,'max',sliderMax,...
                 'val',iChannel,'SliderStep', [1 1]/(sliderMax-sliderMin),'Enable','on');
             addlistener(sliderChannel,'ContinuousValueChange',@(hObject, event) updateImageChannel(hObject, event))
             sliderObjects{2} = sliderChannel;
@@ -129,7 +127,7 @@ elseif nSlider > 0
         if strcmp (sliderCreated, 'Timepoint')
             timeSliderMin = BFcontrol.start;
             sliderTimepoint = uicontrol('Parent',imgPanel,'Style','slide','Units',...
-                'normalized','position',[sliderX sliderY sliderWidth sliderHeight],'min',timeSliderMin,'max',sliderMax,...
+                'normalized','position',[0 0 1 0.05],'min',timeSliderMin,'max',sliderMax,...
                 'val',timeSliderMin,'SliderStep', [1 1]/(sliderMax-timeSliderMin),'Enable','on');
             addlistener(sliderTimepoint,'ContinuousValueChange',@(hObject, event) updateImageTimepoint(hObject, event));
             sliderObjects{3} = sliderTimepoint; 

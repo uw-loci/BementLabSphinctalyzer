@@ -11,8 +11,9 @@ classdef Image
         detection
         smooth
         step
-        imagePath
+        filePath
         nTimepoints
+        nChannels
         colormap
         timePerFrame
         axesNames
@@ -20,9 +21,12 @@ classdef Image
         yMinStepMax
         normalization
         micronsPerPixel
-        imageActualPath
+        imagePath
         imageName
         channelNames
+        channelColors
+        darkBackground
+        legendLocation
     end
 
     methods
@@ -35,7 +39,7 @@ classdef Image
                                 detection,...
                                 smooth,...
                                 step,...
-                                imagePath,...
+                                filePath,...
                                 nTimepoints,...
                                 colormap,...
                                 timePerFrame,...
@@ -44,9 +48,12 @@ classdef Image
                                 yMinStepMax, ...
                                 normalization, ...
                                 micronsPerPixel, ...
-                                imageActualPath, ...
+                                imagePath, ...
                                 imageName, ...
-                                channelNames)
+                                channelNames, ...
+                                channelColors, ...
+                                darkBackground, ...
+                                legendLocation)
                     obj.cellArray = cellArray;
                     obj.timepointStart = timepointStart;
                     obj.timepointEnd = timepointEnd;
@@ -56,7 +63,7 @@ classdef Image
                     obj.detection = detection;
                     obj.smooth = smooth;
                     obj.step = step;
-                    obj.imagePath = imagePath;
+                    obj.filePath = filePath;
                     obj.nTimepoints = nTimepoints;
                     obj.colormap = colormap;
                     obj.timePerFrame = timePerFrame;
@@ -65,9 +72,12 @@ classdef Image
                     obj.yMinStepMax = yMinStepMax;
                     obj.normalization = normalization;
                     obj.micronsPerPixel = micronsPerPixel;
-                    obj.imageActualPath = imageActualPath;
+                    obj.imagePath = imagePath;
                     obj.imageName = imageName;
                     obj.channelNames = channelNames;
+                    obj.channelColors = channelColors;
+                    obj.darkBackground = darkBackground;
+                    obj.legendLocation = legendLocation;
         end
     end
 end

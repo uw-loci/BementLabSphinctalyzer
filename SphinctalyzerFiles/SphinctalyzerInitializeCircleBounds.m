@@ -15,8 +15,9 @@ for i = i
     axis image
     if guiInput == 1
         funcs = {@drawcircle,@drawellipse,@drawfreehand,@drawassisted,@drawpolygon,@drawrectangle};
-        title('Trace the brightest path')
+        title('Trace the brightest path, then double click inside the ROI')
         h=funcs{roiShape}();
+        position = customWait(h);
     else
         title(['Trace the brightest path, then double click'])%, InputCells{i,1}])
         position=[];
@@ -31,5 +32,26 @@ end
 %close figure
 close gcf
 
+    function pos = customWait(hROI)
+
+        % Listen for mouse clicks on the ROI
+        l = addlistener(hROI,'ROIClicked',@clickCallback);
+        
+        % Block program execution
+        uiwait;
+        
+        % Remove listener
+        delete(l);
+        
+        % Return the current position
+        pos = hROI.Position;
+        
+    end
+
+    function clickCallback(~,evt)
+        if strcmp(evt.SelectionType,'double')
+            uiresume;
+        end
+    end
 end
 

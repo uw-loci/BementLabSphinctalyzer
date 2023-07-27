@@ -292,13 +292,20 @@ function sphinctalyzerInitializerGUI(objarray)
         'FontSize', 12, ...
         'Units','normalized', ...
         'Position',[0.525 0.2 0.45 0.28]);
-    imageQueueTable = uitable('Parent',imageQueuePanel, ...
-        'ColumnName',{pad('File Name', 63, 'both')}, ...
-        'RowName', {'1'},...
+    imageQueueTable = uicontrol('Parent',imageQueuePanel, ...
+        'Style','listbox', ...
+        'String',{'1'}, ...
         'Units','normalized', ...
         'Position',[0.1 0.1 0.792 0.8], ...
-        'Enable','on', ...
-        'CellSelectionCallback',{@image_queue_selection});
+        'Callback',{@image_queue_selection});
+    
+%     uitable('Parent',imageQueuePanel, ...
+%         'ColumnName',{pad('File Name', 63, 'both')}, ...
+%         'RowName', {'1'},...
+%         'Units','normalized', ...
+%         'Position',[0.1 0.1 0.792 0.8], ...
+%         'Enable','on', ...
+%         'CellSelectionCallback',{@image_queue_selection});
 
     % Sphinctalyze button
     sphinctalyzeButton = uicontrol('Parent',guiCtrl, ...
@@ -323,10 +330,11 @@ function sphinctalyzerInitializerGUI(objarray)
     currentObj = 1;
     update_parameters(currentObj)
     % Populate Image Queue
+    imageNames = cell(length(objarray));
     for l = 1:length(objarray)
-        imageQueueTable.RowName{l, 1} = num2str(l);
-        imageQueueTable.Data{l, 1} = objarray(l).imageName;
+        imageNames{l} = objarray(l).imageName;
     end
+    set(imageQueueTable,'String',imageNames)
 
     function update_parameters(objIndex)
         obj = objarray(objIndex);
@@ -408,11 +416,8 @@ function sphinctalyzerInitializerGUI(objarray)
 
     function image_queue_selection(hObject, event)
         % If another image selected, update_parameter(objIndex)
-        row = event.Indices(1);
-        if row ~= currentObj
-            currentObj = row;
-            update_parameters(currentObj)
-        end
+        currentObj = hObject.Value;
+        update_parameters(hObject.Value)
     end
 
     function sphinctalyze(hObject, eventdata)
@@ -603,6 +608,7 @@ function sphinctalyzerInitializerGUI(objarray)
         usr_input = str2double(usr_input);
         set(enterNormalization, 'UserData', usr_input)
         axesNames = obj.axesNames;
+        obj.normalization = usr_input;
         switch usr_input
             case 1
                 axesNames{2} = 'Normalized Gray Value';
@@ -630,6 +636,7 @@ function sphinctalyzerInitializerGUI(objarray)
         usr_input = str2double(usr_input);
         set(enterMicronsPerPixel, 'UserData', usr_input)
         axesNames = obj.axesNames;
+        obj.micronsPerPixel = usr_input;
         switch usr_input
             case 1
                 axesNames{1} = 'Distance (pixels) from wound center';
@@ -643,7 +650,7 @@ function sphinctalyzerInitializerGUI(objarray)
     end
 
     function get_textbox_timePerFrame(entertimePerFrame, eventdata)
-        usr_input = get(enterStep, 'String');
+        usr_input = get(entertimePerFrame, 'String');
         usr_input = str2double(usr_input);
         set(enterStep, 'UserData', usr_input)
         objarray(currentObj).timePerFrame = usr_input;

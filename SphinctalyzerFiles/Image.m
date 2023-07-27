@@ -27,6 +27,8 @@ classdef Image
         channelColors
         darkBackground
         legendLocation
+        roiShape
+        batchDirectory
     end
 
     methods
@@ -53,7 +55,9 @@ classdef Image
                                 channelNames, ...
                                 channelColors, ...
                                 darkBackground, ...
-                                legendLocation)
+                                legendLocation, ...
+                                roiShape, ...
+                                batchDirectory)
                     obj.cellArray = cellArray;
                     obj.timepointStart = timepointStart;
                     obj.timepointEnd = timepointEnd;
@@ -78,6 +82,8 @@ classdef Image
                     obj.channelColors = channelColors;
                     obj.darkBackground = darkBackground;
                     obj.legendLocation = legendLocation;
+                    obj.roiShape = roiShape;
+                    obj.batchDirectory = batchDirectory;
         end
     end
 end

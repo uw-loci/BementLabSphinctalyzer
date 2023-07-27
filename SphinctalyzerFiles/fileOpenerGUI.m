@@ -89,7 +89,7 @@ function fileOpenerGUI
         objarray(1:length(imageNames)) = Image(0,1,0,3,1,1,3,0,8,0,0, ...
             'gray',6,{'Distance (pixels) from wound center','Normalized Gray Value'}, ...
             [-150 50 0],[-0.1 0.3 1.1],1,1,imagePath,0,0, ...
-            {[1 0 0],[0 .6 0],[0 0 1]},0,'NorthWest');
+            {[1 0 0],[0 .6 0],[0 0 1]},0,'NorthWest',1,batchDirectory);
         % for obj in objarray
         for i = 1:length(objarray)
             % add image file name to the obj
@@ -100,6 +100,9 @@ function fileOpenerGUI
             nTimepoints = r.getSizeT(); 
             % Add nChannels, nTimepoints, and timepointEnd to the obj
             objarray(i).nChannels = nChannels;
+            if nChannels == 1
+                objarray(i).loadMulti = 0;
+            end
             objarray(i).nTimepoints = nTimepoints;
             objarray(i).timepointEnd = nTimepoints;
             cellArray = cell(nChannels, 3);
@@ -107,11 +110,11 @@ function fileOpenerGUI
             for j = 1:nChannels
                 for k = 1:3
                     if k == 1
-                        cellArray{j,k} = "channel" + j;
+                        cellArray{j,k} = strcat('channel', num2str(j));
                     elseif k == 2
                         cellArray{j,k} = 1;
                     else
-                        if i == 1
+                        if j == 1
                             cellArray{j,k} = 1;
                         else
                             cellArray{j,k} = 0;

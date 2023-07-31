@@ -294,7 +294,6 @@ function sphinctalyzerInitializerGUI(objarray)
         'Position',[0.525 0.2 0.45 0.28]);
     imageQueueTable = uicontrol('Parent',imageQueuePanel, ...
         'Style','listbox', ...
-        'String',{'1'}, ...
         'Units','normalized', ...
         'Position',[0.1 0.1 0.792 0.8], ...
         'Callback',{@image_queue_selection});
@@ -345,6 +344,10 @@ function sphinctalyzerInitializerGUI(objarray)
                 cellInputs.Data{i, j} = obj.cellArray{i, j + 1};
             end
         end
+        referenceColumn = [obj.cellArray{:,3}];
+        referenceChannel = find(referenceColumn, 1);
+        referenceFrame = cellInputs.Data{referenceChannel, 1};
+
         set(cellInputs, 'ColumnEditable',true(1,2))
 
         % fill slice ranges panel
@@ -399,23 +402,27 @@ function sphinctalyzerInitializerGUI(objarray)
             channels{i, 1} = "channel" + i;
         end
         set(channelSelection,'String',channels)
-        set(channelSelection,'Value', 1)
+        set(channelSelection,'Value', referenceChannel)
         bfRederinfo = bfGetReader(fullfile(obj.imagePath, obj.imageName));
-        iPlane =  bfRederinfo.getIndex(0, 0, 0) + 1;
+        iPlane =  bfRederinfo.getIndex(0, referenceChannel - 1, referenceFrame - 1) + 1;
         I = bfGetPlane( bfRederinfo, iPlane); 
         imagesc(I,'Parent',imgAx);
         set(imgAx,'YTick',[],'XTick',[]);
         colormap(imgAx,obj.colormap);
         axis image equal
         drawnow
-        set(sliderTimepoint,'Value',1)
+        set(sliderTimepoint,'Value',referenceFrame)
         set(sliderTimepoint,'max',obj.nTimepoints)
         set(sliderTimepoint,'SliderStep',[1 1] / (obj.nTimepoints - 1))
-        set(labelTitle,'String',sprintf('Image Frame: %d/%d', 1, objarray(currentObj).nTimepoints))
+        set(labelTitle,'String',sprintf('Image Frame: %d/%d', referenceFrame, objarray(currentObj).nTimepoints))
     end
 
     function image_queue_selection(hObject, event)
         % If another image selected, update_parameter(objIndex)
+        if hObject.Value > length(objarray)
+            set(hObject,'Value',length(objarray))
+            return
+        end
         currentObj = hObject.Value;
         update_parameters(hObject.Value)
     end
@@ -467,7 +474,16 @@ function sphinctalyzerInitializerGUI(objarray)
                 obj.legendLocation, ...
                 obj.micronsPerPixel, ...
                 obj.xMinStepMax, ...
-                obj.yMinStepMax)
+                obj.yMinStepMax, ...
+                1)
+            
+            % set movie path for the movie
+            ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
+            validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+            for j=1:size(validnames,1)
+                obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
+            end
+            objarray(i) = obj;
         end
         % run output data gui
         delete(guiCtrl)
@@ -504,9 +520,48 @@ function sphinctalyzerInitializerGUI(objarray)
     % Callback functions
     function cell_inputs_callback(hObject, event)
         % update obj cell array using the cell inputs  table
+        if isnan(event.NewData)
+            hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
+            return
+        end
         row = event.Indices(1);
         column = event.Indices(2);
+        if column == 1
+            if event.NewData < 1 || event.NewData > objarray(currentObj).nTimepoints
+                hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
+                errordlg('Please enter a display frame value in the range of timepoints.')
+            end
+        elseif column == 2
+            if event.NewData ~= 1 && event.NewData ~= 0
+                hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
+                errordlg('Please enter a logical 1 or 0 for the isReference column.')
+            end
+        end
         objarray(currentObj).cellArray{row, column + 1} = event.NewData;
+        % update stack previewer
+        if column == 1
+            if hObject.Data{row , 2} == 1
+                file = fullfile(objarray(currentObj).imagePath, objarray(currentObj).imageName);
+                set(channelSelection, 'Value', row)
+                % set timepoint of slider
+                iTimepoint = event.NewData;
+                set(sliderTimepoint,'Value',iTimepoint)
+                
+                % update title text
+                set(labelTitle,'String',sprintf('Image Frame: %d/%d', iTimepoint, objarray(currentObj).nTimepoints))
+        
+                % display it on the image axes
+                bfRederinfo = bfGetReader(file);
+                bfRederinfo.setSeries(0);
+                iPlane =  bfRederinfo.getIndex(0, row - 1, iTimepoint-1) + 1;
+                I = bfGetPlane(bfRederinfo, iPlane);
+                imagesc(I,'Parent',imgAx);
+                set(imgAx,'YTick',[],'XTick',[]);
+                colormap(imgAx,objarray(currentObj).colormap);   
+                axis image equal
+                drawnow 
+            end
+        end
     end
     
     function prompt_names(hObject, event)
@@ -547,6 +602,7 @@ function sphinctalyzerInitializerGUI(objarray)
             set([sru3 sru4 sru5],'Enable','on')
         else
             set([sru3 sru4 sru5],'Enable','off')
+            set([sru3 sru5],'String','')
             obj.timepointStart = 1;
             obj.timepointEnd = obj.nTimepoints;
         end
@@ -555,49 +611,119 @@ function sphinctalyzerInitializerGUI(objarray)
 
     function get_textbox_sru3(sru3, event)
         usr_input = get(sru3,'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number within the slice range.')
+            set(sru3,'String',num2str(get(sru3,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 1 || usr_input > (objarray(currentObj).nTimepoints - 1)
+            errordlg('Please enter a number within the slice range.')
+            set(sru3,'String',num2str(get(sru3,'UserData')))
+            return
+        end
         set(sru3,'UserData',usr_input)
         objarray(currentObj).timepointStart = usr_input;
     end
     
     function get_textbox_sru5(sru5, event)
         usr_input = get(sru5,'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number within the slice range.')
+            set(sru5,'String',num2str(get(sru5,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 1 || usr_input > (objarray(currentObj).nTimepoints)
+            errordlg('Please enter a number within the slice range.')
+            set(sru5,'String',num2str(get(sru5,'UserData')))
+            return
+        end
         set(sru5,'UserData',usr_input)
         objarray(currentObj).timepointEnd = usr_input;
     end
     
     function get_textbox_speed(enterSpeed, eventdata)
         usr_input = get(enterSpeed, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterSpeed,'String',num2str(get(enterSpeed,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 0
+            errordlg('Please enter a positive number.')
+            set(enterSpeed,'String',num2str(get(enterSpeed,'UserData')))
+            return
+        end
         set(enterSpeed, 'UserData', usr_input)
         objarray(currentObj).speed = usr_input;
     end
     
     function get_textbox_shape(enterShape, eventdata)
         usr_input = get(enterShape, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterShape,'String',num2str(get(enterShape,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 0
+            errordlg('Please enter a positive number.')
+            set(enterShape,'String',num2str(get(enterShape,'UserData')))
+            return
+        end
         set(enterShape, 'UserData', usr_input)
         objarray(currentObj).shape = usr_input;
     end
     
     function get_textbox_detection(enterDetection, eventdata)
         usr_input = get(enterDetection, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterDetection,'String',num2str(get(enterDetection,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input ~= 0 && usr_input ~= 3
+            errordlg('Please enter either 0 or 3.')
+            set(enterDetection,'String',num2str(get(enterDetection,'UserData')))
+            return
+        end
         set(enterDetection, 'UserData', usr_input)
         objarray(currentObj).detection = usr_input;
     end
     
     function get_textbox_smooth(enterSmooth, eventdata)
         usr_input = get(enterSmooth, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterSmooth,'String',num2str(get(enterSmooth,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input ~= 0
+            errordlg('Please enter 0.')
+            set(enterSmooth,'String',num2str(get(enterSmooth,'UserData')))
+            return
+        end
         set(enterSmooth, 'UserData', usr_input)
         objarray(currentObj).smooth = usr_input;
     end
     
     function get_textbox_step(enterStep, eventdata)
         usr_input = get(enterStep, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterStep,'String',num2str(get(enterStep,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 0
+            errordlg('Please enter a positive number.')
+            set(enterStep,'String',num2str(get(enterStep,'UserData')))
+            return
+        end
         set(enterStep, 'UserData', usr_input)
         objarray(currentObj).step = usr_input;
     end
@@ -605,7 +731,17 @@ function sphinctalyzerInitializerGUI(objarray)
     function get_textbox_normalization(enterNormalization, eventdata)
         obj = objarray(currentObj);
         usr_input = get(enterNormalization, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterNormalization,'String',num2str(get(enterNormalization,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if ~ismember(usr_input, [1 2 3 4]) 
+            errordlg('Please enter 1-4.')
+            set(enterNormalization,'String',num2str(get(enterNormalization,'UserData')))
+            return
+        end
         set(enterNormalization, 'UserData', usr_input)
         axesNames = obj.axesNames;
         obj.normalization = usr_input;
@@ -633,7 +769,17 @@ function sphinctalyzerInitializerGUI(objarray)
         xMinStepMax = obj.xMinStepMax;
         xMinStepMax = round(xMinStepMax / prev_input);
         usr_input = get(enterMicronsPerPixel, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(enterMicronsPerPixel,'String',num2str(get(enterMicronsPerPixel,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 0
+            errordlg('Please enter a positive number.')
+            set(enterMicronsPerPixel,'String',num2str(get(enterMicronsPerPixel,'UserData')))
+            return
+        end
         set(enterMicronsPerPixel, 'UserData', usr_input)
         axesNames = obj.axesNames;
         obj.micronsPerPixel = usr_input;
@@ -651,7 +797,17 @@ function sphinctalyzerInitializerGUI(objarray)
 
     function get_textbox_timePerFrame(entertimePerFrame, eventdata)
         usr_input = get(entertimePerFrame, 'String');
+        if isnan(str2double(usr_input))
+            errordlg('Please enter a number.')
+            set(entertimePerFrame,'String',num2str(get(entertimePerFrame,'UserData')))
+            return
+        end
         usr_input = str2double(usr_input);
+        if usr_input < 0
+            errordlg('Please enter a positive number.')
+            set(entertimePerFrame,'String',num2str(get(entertimePerFrame,'UserData')))
+            return
+        end
         set(enterStep, 'UserData', usr_input)
         objarray(currentObj).timePerFrame = usr_input;
     end
@@ -675,6 +831,19 @@ function sphinctalyzerInitializerGUI(objarray)
                 obj.colormap = 'cool'; 
         end
         objarray(currentObj) = obj;
+        iTimepoint = round(sliderTimepoint.Value); 
+        currentChannel = get(channelSelection, 'Value') - 1;
+        file = fullfile(obj.imagePath, obj.imageName);
+        bfRederinfo = bfGetReader(file);
+        bfRederinfo.setSeries(0);
+        iPlane =  bfRederinfo.getIndex(0, currentChannel, iTimepoint - 1) + 1;
+        I = bfGetPlane(bfRederinfo, iPlane);
+        imagesc(I,'Parent',imgAx);
+        set(imgAx,'YTick',[],'XTick',[]);
+        colormap(imgAx,obj.colormap);   
+        axis image equal
+        drawnow
+        set(labelTitle,'String',sprintf('Image Frame: %d/%d', iTimepoint, obj.nTimepoints))
     end
 
     function change_roi_shape(hObject, eventdata)
@@ -684,17 +853,17 @@ function sphinctalyzerInitializerGUI(objarray)
     function channel_changed(hObject, eventdata)
         currentChannel = hObject.Value - 1;
         obj = objarray(currentObj);
+        iTimepoint = round(sliderTimepoint.Value); 
         file = fullfile(obj.imagePath, obj.imageName);
         bfRederinfo = bfGetReader(file);
         bfRederinfo.setSeries(0);
-        iPlane =  bfRederinfo.getIndex(0, currentChannel, 0) + 1;
+        iPlane =  bfRederinfo.getIndex(0, currentChannel, iTimepoint - 1) + 1;
         I = bfGetPlane(bfRederinfo, iPlane);
         imagesc(I,'Parent',imgAx);
         set(imgAx,'YTick',[],'XTick',[]);
         colormap(imgAx,obj.colormap);   
         axis image equal
         drawnow
-        set(sliderTimepoint,'Value',1)
-        set(labelTitle,'String',sprintf('Image Frame: %d/%d', 1, obj.nTimepoints))
+        set(labelTitle,'String',sprintf('Image Frame: %d/%d', iTimepoint, obj.nTimepoints))
     end
 end

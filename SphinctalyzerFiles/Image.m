@@ -29,6 +29,7 @@ classdef Image
         legendLocation
         roiShape
         batchDirectory
+        moviePaths
     end
 
     methods
@@ -57,7 +58,8 @@ classdef Image
                                 darkBackground, ...
                                 legendLocation, ...
                                 roiShape, ...
-                                batchDirectory)
+                                batchDirectory, ...
+                                moviePaths)
                     obj.cellArray = cellArray;
                     obj.timepointStart = timepointStart;
                     obj.timepointEnd = timepointEnd;
@@ -84,6 +86,7 @@ classdef Image
                     obj.legendLocation = legendLocation;
                     obj.roiShape = roiShape;
                     obj.batchDirectory = batchDirectory;
+                    obj.moviePaths = moviePaths;
         end
     end
 end

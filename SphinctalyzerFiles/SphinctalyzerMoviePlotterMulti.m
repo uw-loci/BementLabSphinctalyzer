@@ -311,7 +311,7 @@ for i= 1:size(Zr,1)
         set(gca,'XTickLabel',xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
         set(gca,'FontSize',24)
         set(gca,'FontName','Arial','FontWeight','bold')
-        xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
+        xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
         xlim(gca,[-150 0]);
         ylim(gca,ylims);
@@ -319,7 +319,7 @@ for i= 1:size(Zr,1)
         set(gca,'YTickLabel',yticks)
         set(gca,'FontSize',24)
         set(gca,'FontName','Arial','FontWeight','bold')
-        xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
+        xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
         if micronsPerPixel ~= 1
             set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
         end

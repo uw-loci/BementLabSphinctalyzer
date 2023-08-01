@@ -43,8 +43,17 @@ function sphinctalyzerInitializerGUI(objarray)
         'Enable','on', ...
         'FontSize',7,...
         'Units','normalized', ...
-        'Position',[0.687 0.0975 0.263 0.805], ...
+        'Position',[0.687 0.5075 0.263 0.395], ...
         'callback',{@prompt_names});
+
+    changeVelocityRange = uicontrol('Parent',cellInputsPanel, ...
+        'Style','pushbutton', ...
+        'String','Change Velocity Range', ...
+        'Enable','on', ...
+        'FontSize',7,...
+        'Units','normalized', ...
+        'Position',[0.687 0.0975 0.263 0.395], ...
+        'callback',{@velocity_range});
 
     % slice options panel
     slicesPanel = uipanel('Parent',guiCtrl, ...
@@ -345,8 +354,13 @@ function sphinctalyzerInitializerGUI(objarray)
             end
         end
         referenceColumn = [obj.cellArray{:,3}];
-        referenceChannel = find(referenceColumn, 1);
-        referenceFrame = cellInputs.Data{referenceChannel, 1};
+        if max(referenceColumn) == 0
+            referenceChannel = 1;
+            referenceFrame = cellInputs.Data{1,1};
+        else
+            referenceChannel = find(referenceColumn, 1);
+            referenceFrame = cellInputs.Data{referenceChannel, 1};
+        end
 
         set(cellInputs, 'ColumnEditable',true(1,2))
 
@@ -588,6 +602,7 @@ function sphinctalyzerInitializerGUI(objarray)
                 if ~isempty(answer{2})
                     for i = 1:nChannels
                         obj.cellArray{i, 1} = answer{i};
+                        obj.channelNames{i} = answer{i};
                         cellInputs.RowName{i, 1} = answer{i};
                     end
                 end
@@ -624,6 +639,10 @@ function sphinctalyzerInitializerGUI(objarray)
         end
         set(sru3,'UserData',usr_input)
         objarray(currentObj).timepointStart = usr_input;
+        if usr_input > objarray(currentObj).velocityStartStop(1)
+            objarray(currentObj).velocityStartStop(1) = usr_input;
+            objarray(currentObj).velocityStartStop(2) = objarray(currentObj).timepointEnd;
+        end
     end
     
     function get_textbox_sru5(sru5, event)
@@ -641,6 +660,10 @@ function sphinctalyzerInitializerGUI(objarray)
         end
         set(sru5,'UserData',usr_input)
         objarray(currentObj).timepointEnd = usr_input;
+        if usr_input < objarray(currentObj).velocityStartStop(2)
+            objarray(currentObj).velocityStartStop(2) = usr_input;
+            objarray(currentObj).velocityStartStop(1) = objarray(currentObj).timepointStart;
+        end
     end
     
     function get_textbox_speed(enterSpeed, eventdata)
@@ -865,5 +888,41 @@ function sphinctalyzerInitializerGUI(objarray)
         axis image equal
         drawnow
         set(labelTitle,'String',sprintf('Image Frame: %d/%d', iTimepoint, obj.nTimepoints))
+    end
+
+    function velocity_range(hObject, eventdata)
+        obj = objarray(currentObj);
+        prompts = {'Enter a starting frame:','Enter a final frame:'};
+        dims = [1 35];
+        velocityStartStop = obj.velocityStartStop;
+        definput = {num2str(velocityStartStop(1)) num2str(velocityStartStop(2))};
+        dlgtitle = 'Edit Velocity Range';
+        answer = inputdlg(prompts,dlgtitle,dims, definput);
+        if ~isempty(answer)
+            if ~isempty(answer{1})
+                if ~isnan(str2double(answer{1}))
+                    velocityStartStop(1) = str2double(answer{1});
+                else
+                    errordlg('Please enter a number.')
+                end
+            end
+            if ~isempty(answer{2})
+                if ~isnan(str2double(answer{2}))
+                    velocityStartStop(2) = str2double(answer{2});
+                else
+                    errordlg('Please enter a number.')
+                end
+            end
+            if obj.timepointStart > velocityStartStop(1) || velocityStartStop(1) >= obj.timepointEnd
+                errordlg('Please enter a range within the slice range.')
+            elseif velocityStartStop(2) > obj.timepointEnd
+                errordlg('Please enter a range within the slice range.')
+            elseif (velocityStartStop(1) >= velocityStartStop(2))
+                errordlg('Please enter a valid range.')
+            else
+                obj.velocityStartStop = velocityStartStop;
+                objarray(currentObj) = obj;
+            end
+        end
     end
 end

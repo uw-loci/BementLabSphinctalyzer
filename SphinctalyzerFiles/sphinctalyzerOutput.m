@@ -8,7 +8,7 @@ function sphinctalyzerOutput(objarray)
     % - button for each display interface (line scan movie, etc)
 
     % Set global params
-    global mov xlsSheets zeroIndices SphinctalyzerOutputs
+    global mov xlsSheets oneIndices SphinctalyzerOutputs
     currentObj = 1;
     pauseS = false;
     iChannel = 1;
@@ -233,23 +233,37 @@ function sphinctalyzerOutput(objarray)
         xlsSheets{4} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'AUCs');
         xlsSheets{5} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Percent Above Background');
 
-        
-
-        referenceArray = [obj.cellArray{:,3}];
-        zeroIndices = [];
-        for y = 1:length(referenceArray)
-            if referenceArray(y) == 0
-                zeroIndices(end + 1) = y;
-            end
+        % calculate wound closing velocity
+        peakLocations = xlsSheets{1};
+        for b = 1:obj.nChannels
+            woundClosingVelocity = ((peakLocations(b + 1, obj.velocityStartStop(2)) - peakLocations(b + 1, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
 
+        referenceArray = [obj.cellArray{:,3}];
         % load in SphinctalyzerOutputs data structure
         pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
         SphincOutputs = load(pathToResults);
-        SphinctalyzerOutputs = cell(length(zeroIndices), obj.timepointEnd - obj.timepointStart + 1);
-        for x = 1:length(zeroIndices)
-            for p = obj.timepointStart:obj.timepointEnd
-                SphinctalyzerOutputs{x, p} = SphincOutputs.SphinctalyzerOutputs(p).(matlab.lang.makeValidName([obj.channelNames{zeroIndices(x)},'Outline']));
+        if max(referenceArray) == 0
+            oneIndices = 1:obj.nChannels;
+            SphinctalyzerOutputs = cell(obj.nChannels, obj.timepointEnd - obj.timepointStart + 1);
+            for x = 1:obj.nChannels
+                for p = obj.timepointStart:obj.timepointEnd
+                    SphinctalyzerOutputs{x, p} = SphincOutputs.SphinctalyzerOutputs(p).(matlab.lang.makeValidName([obj.channelNames{x},'Outline']));
+                end
+            end
+        else
+            oneIndices = [];
+            for y = 1:length(referenceArray)
+                if referenceArray(y) == 1
+                    oneIndices(end + 1) = y;
+                end
+                SphinctalyzerOutputs = cell(length(oneIndices), obj.timepointEnd - obj.timepointStart + 1);
+                for x = 1:length(oneIndices)
+                    for p = obj.timepointStart:obj.timepointEnd
+                        SphinctalyzerOutputs{x, p} = SphincOutputs.SphinctalyzerOutputs(p).(matlab.lang.makeValidName([obj.channelNames{oneIndices(x)},'Outline']));
+                    end
+                end
             end
         end
 
@@ -309,6 +323,7 @@ function sphinctalyzerOutput(objarray)
         set(colorMapSelection,'Value', colorMapValue)
 
         % display image on the stack previewer
+        iTimepoint = 1;
         obj = objarray(currentObj);
         set(sliderTimepoint,'min',1)
         set(sliderTimepoint,'max',obj.timepointEnd - obj.timepointStart +1)
@@ -325,7 +340,11 @@ function sphinctalyzerOutput(objarray)
         
         % set viewer selection list box 
         set(viewerSelectionTable,'Value',1)
-        set(viewerSelectionTable,'String',{'Image Timepoints', 'Circle Scan', 'scan movietalyzerResults_1'})
+        viewers = {'Image Timepoints', 'Circle Scan'};
+        for i = 1:length(obj.moviePaths)
+            viewers{end+1} = strcat('scan movietalyzerResults_',num2str(i));
+        end
+        set(viewerSelectionTable,'String',viewers)
         % find .avi files in sphincRedo directory to the moviefiles
         % attribute
         ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
@@ -406,18 +425,18 @@ function sphinctalyzerOutput(objarray)
 
     function I = circle_reader(iTimepoint, iChannel)
         obj = objarray(currentObj);
-        firstChannelColor = obj.channelColors{zeroIndices(1)};
+        firstChannelColor = obj.channelColors{oneIndices(1)};
         colorMap = [0,0,0; firstChannelColor(1) firstChannelColor(2) firstChannelColor(3)];
         firstChannelCircle = label2rgb(SphinctalyzerOutputs{1, obj.timepointStart + iTimepoint - 1} + 1, colorMap);
-        if length(zeroIndices) == 1
+        if length(oneIndices) == 1
             I = firstChannelCircle;
         else
-            secondChannelColor = obj.channelColors{zeroIndices(2)};
+            secondChannelColor = obj.channelColors{oneIndices(2)};
             firstAndSecondChannelCircles = imoverlay(firstChannelCircle, imbinarize(SphinctalyzerOutputs{2, obj.timepointStart + iTimepoint - 1}), secondChannelColor);
-            if length(zeroIndices) == 2
+            if length(oneIndices) == 2
                 I = firstAndSecondChannelCircles;
             else
-                thirdChannelColor = obj.channelColors{zeroIndices(3)};
+                thirdChannelColor = obj.channelColors{oneIndices(3)};
                 allChannelCircles = imoverlay(firstAndSecondChannelCircles, SphinctalyzerOutputs{3, obj.timepointStart + iTimepoint - 1}, thirdChannelColor);
                 I = allChannelCircles;
             end
@@ -767,6 +786,12 @@ function sphinctalyzerOutput(objarray)
         obj.axesNames = axesNames;
         objarray(currentObj) = obj;
         set(enterMicronsPerPixel, 'UserData', usr_input)
+        % calculate wound closing velocity
+        peakLocations = xlsSheets{1};
+        for b = 1:obj.nChannels
+            woundClosingVelocity = ((peakLocations(b + 1, obj.velocityStartStop(2)) - peakLocations(b + 1, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+        end
     end
 
     function get_timePerFrame(hObject, event)
@@ -782,8 +807,14 @@ function sphinctalyzerOutput(objarray)
             set(entertimePerFrame,'String',num2str(get(entertimePerFrame,'UserData')))
             return
         end
-        usr_input = str2double(usr_input);
         objarray(currentObj).timePerFrame = usr_input;
+        obj = objarray(currentObj);
+        % calculate wound closing velocity
+        peakLocations = xlsSheets{1};
+        for b = 1:obj.nChannels
+            woundClosingVelocity = ((peakLocations(b + 1, obj.velocityStartStop(2)) - peakLocations(b + 1, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+        end
     end
     
     function get_legend_location(hObject, event)
@@ -880,7 +911,7 @@ function sphinctalyzerOutput(objarray)
         for m = 1:obj.nChannels
             for n = 1:5
                 sheet = xlsSheets{n};
-                imageSliderDataPanel.Data(n, m) = sheet(m + 1, obj.timepointStart + currentTimepoint - 1);
+                imageSliderDataPanel.Data{n, m} = sheet(m + 1, obj.timepointStart + currentTimepoint - 1);
             end
         end
     end

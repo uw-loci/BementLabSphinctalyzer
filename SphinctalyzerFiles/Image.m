@@ -30,6 +30,7 @@ classdef Image
         roiShape
         batchDirectory
         moviePaths
+        velocityStartStop
     end
 
     methods
@@ -59,7 +60,8 @@ classdef Image
                                 legendLocation, ...
                                 roiShape, ...
                                 batchDirectory, ...
-                                moviePaths)
+                                moviePaths, ...
+                                velocityStartStop)
                     obj.cellArray = cellArray;
                     obj.timepointStart = timepointStart;
                     obj.timepointEnd = timepointEnd;
@@ -87,6 +89,7 @@ classdef Image
                     obj.roiShape = roiShape;
                     obj.batchDirectory = batchDirectory;
                     obj.moviePaths = moviePaths;
+                    obj.velocityStartStop = velocityStartStop;
         end
     end
 end

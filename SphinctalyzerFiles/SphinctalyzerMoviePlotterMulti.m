@@ -1,7 +1,8 @@
 function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     channelColors,axesNames,darkBackgroundFlag,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
     xMinStepMax, ...
-    yMinStepMax)
+    yMinStepMax, ...
+    num)
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -13,6 +14,7 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         micronsPerPixel = 1; %if 1, will display x axis in pixels.  All other values convert to microns
         xMinStepMax = 0;
         yMinStepMax = 0;
+        num = 0;
     else 
         guiInput = 1;
     end
@@ -33,14 +35,16 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         OutlinerFolderLoader(path{i}, ...
             channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
             xMinStepMax, ...
-            yMinStepMax);
+            yMinStepMax, ...
+            num);
     end
 
 
 function LineNo=OutlinerFolderLoader(path, ...
     channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
     xMinStepMax, ...
-    yMinStepMax)
+    yMinStepMax, ...
+    num)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -52,7 +56,8 @@ validnames=dir(fullfile(path, '*.mat'));
             LineNo=SphinctalyzerMP(validnames(i).name,path,LineNo, ...
                 channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
                 xMinStepMax, ...
-                yMinStepMax);
+                yMinStepMax, ...
+                num);
         end
     end
 end
@@ -65,13 +70,15 @@ for i=1:size(allnames,1)
     OutlinerFolderLoader(fullfile(path,allnames(i).name), ...
         channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
         xMinStepMax, ...
-        yMinStepMax);
+        yMinStepMax, ...
+        num);
 end
 
 function LineNo=SphinctalyzerMP(filename,path,LineNo, ...
     channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...
     xMinStepMax, ...
-    yMinStepMax)
+    yMinStepMax, ...
+    num)
 frmrate=2; %this is the framerate in frames/second
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
@@ -280,6 +287,10 @@ end
 savepath=[path,'/'];
 savename=strrep(filename,'sphinc','scan movie');
 savename = savename(1:end-4);
+%% ADD NUMBER TO NAME
+if guiInput == 1
+    savename = strcat(savename, '_',num2str(num));
+end
 writerObj = VideoWriter(strcat([savename,'.avi']));
 set(writerObj,'FrameRate',frmrate*InterpolationFrames);
 open(writerObj);
@@ -300,7 +311,7 @@ for i= 1:size(Zr,1)
         set(gca,'XTickLabel',xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
         set(gca,'FontSize',24)
         set(gca,'FontName','Arial','FontWeight','bold')
-        xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
+        xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
         xlim(gca,[-150 0]);
         ylim(gca,ylims);
@@ -308,7 +319,7 @@ for i= 1:size(Zr,1)
         set(gca,'YTickLabel',yticks)
         set(gca,'FontSize',24)
         set(gca,'FontName','Arial','FontWeight','bold')
-        xlabel(sprintf('%s (\\mum)\nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
+        xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
         if micronsPerPixel ~= 1
             set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
         end
@@ -344,9 +355,6 @@ xlwrite([savepath, 'Results.xls'],Peaks,'Peak Intensity',['C' num2str(LineNo)]);
 xlwrite([savepath, 'Results.xls'],PeakLocs,'Peak Locations',['C' num2str(LineNo)]);
 xlwrite([savepath, 'Results.xls'],Halfwidths,'Halfwidths',['C' num2str(LineNo)]);
 xlwrite([savepath, 'Results.xls'],AUCs,'AUCs',['C' num2str(LineNo)]);
-
-
-normalization=2;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
 
 %% Normalization Calculation
 if normalization == 1;

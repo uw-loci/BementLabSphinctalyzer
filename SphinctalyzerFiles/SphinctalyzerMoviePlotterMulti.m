@@ -356,9 +356,6 @@ xlwrite([savepath, 'Results.xls'],PeakLocs,'Peak Locations',['C' num2str(LineNo)
 xlwrite([savepath, 'Results.xls'],Halfwidths,'Halfwidths',['C' num2str(LineNo)]);
 xlwrite([savepath, 'Results.xls'],AUCs,'AUCs',['C' num2str(LineNo)]);
 
-
-normalization=2;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
-
 %% Normalization Calculation
 if normalization == 1;
     ylims=[-.1,1.1];

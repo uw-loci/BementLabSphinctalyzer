@@ -8,13 +8,13 @@ function sphinctalyzerOutput(objarray)
     % - button for each display interface (line scan movie, etc)
 
     % Set global params
-    global mov xlsSheets
+    global mov xlsSheets zeroIndices SphinctalyzerOutputs
     currentObj = 1;
     pauseS = false;
     iChannel = 1;
     iTimepoint = 1;
     frameRate = 20;
-    readFunction = {@bf_reader, @movie_reader};
+    readFunction = {@bf_reader, @circle_reader, @movie_reader};
 
     % display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
@@ -220,7 +220,7 @@ function sphinctalyzerOutput(objarray)
         imageNames{l} = objarray(l).imageName;
     end
     set(imageQueueTable,'String',imageNames)
-
+    
     function update_parameters(objIndex)
         currentObj = objIndex;
         obj = objarray(currentObj);
@@ -232,6 +232,27 @@ function sphinctalyzerOutput(objarray)
         xlsSheets{3} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Halfwidths');
         xlsSheets{4} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'AUCs');
         xlsSheets{5} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Percent Above Background');
+
+        
+
+        referenceArray = [obj.cellArray{:,3}];
+        zeroIndices = [];
+        for y = 1:length(referenceArray)
+            if referenceArray(y) == 0
+                zeroIndices(end + 1) = y;
+            end
+        end
+
+        % load in SphinctalyzerOutputs data structure
+        pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
+        SphincOutputs = load(pathToResults);
+        SphinctalyzerOutputs = cell(length(zeroIndices), obj.timepointEnd - obj.timepointStart + 1);
+        for x = 1:length(zeroIndices)
+            for p = obj.timepointStart:obj.timepointEnd
+                SphinctalyzerOutputs{x, p} = SphincOutputs.SphinctalyzerOutputs(p).(matlab.lang.makeValidName([obj.channelNames{zeroIndices(x)},'Outline']));
+            end
+        end
+
         % update all the parameters
         set(darkBackground, 'Value', obj.darkBackground)
         set(enterNormalization, 'String', num2str(obj.normalization))
@@ -304,7 +325,7 @@ function sphinctalyzerOutput(objarray)
         
         % set viewer selection list box 
         set(viewerSelectionTable,'Value',1)
-        set(viewerSelectionTable,'String',{'Image Timepoints', 'scan movietalyzerResults_1'})
+        set(viewerSelectionTable,'String',{'Image Timepoints', 'Circle Scan', 'scan movietalyzerResults_1'})
         % find .avi files in sphincRedo directory to the moviefiles
         % attribute
         ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
@@ -322,12 +343,14 @@ function sphinctalyzerOutput(objarray)
 
     function viewer_selection(hObject, event)
         obj = objarray(currentObj);
-        if hObject.Value > length(obj.moviePaths) + 1
-            set(hObject,'Value',length(obj.moviePaths) + 1)
+        if hObject.Value > length(obj.moviePaths) + 2
+            set(hObject,'Value',length(obj.moviePaths) + 2)
             return
         end
-        if get(hObject, 'Value') >= 2
-            mov = VideoReader(obj.moviePaths{get(hObject,'Value') - 1});
+        if get(hObject, 'Value') >= 3
+            mov = VideoReader(obj.moviePaths{get(hObject,'Value') - 2});
+            selected_viewer = 3;
+        elseif get(hObject, 'Value') == 2
             selected_viewer = 2;
         else
             selected_viewer = 1;
@@ -347,7 +370,11 @@ function sphinctalyzerOutput(objarray)
 
     function update_image_timepoint(hObject, event)
         obj = objarray(currentObj);
-        if get(viewerSelectionTable,'Value') >= 2
+        viewerSelectionTableValue = get(viewerSelectionTable, 'Value');
+        if viewerSelectionTableValue >= 3
+            mov = VideoReader(obj.moviePaths{viewerSelectionTableValue - 2});
+            selected_viewer = 3;
+        elseif viewerSelectionTableValue == 2
             selected_viewer = 2;
         else
             selected_viewer = 1;
@@ -377,6 +404,27 @@ function sphinctalyzerOutput(objarray)
         I = read(mov, iTimepoint);
     end
 
+    function I = circle_reader(iTimepoint, iChannel)
+        obj = objarray(currentObj);
+        firstChannelColor = obj.channelColors{zeroIndices(1)};
+        colorMap = [0,0,0; firstChannelColor(1) firstChannelColor(2) firstChannelColor(3)];
+        firstChannelCircle = label2rgb(SphinctalyzerOutputs{1, obj.timepointStart + iTimepoint - 1} + 1, colorMap);
+        if length(zeroIndices) == 1
+            I = firstChannelCircle;
+        else
+            secondChannelColor = obj.channelColors{zeroIndices(2)};
+            firstAndSecondChannelCircles = imoverlay(firstChannelCircle, imbinarize(SphinctalyzerOutputs{2, obj.timepointStart + iTimepoint - 1}), secondChannelColor);
+            if length(zeroIndices) == 2
+                I = firstAndSecondChannelCircles;
+            else
+                thirdChannelColor = obj.channelColors{zeroIndices(3)};
+                allChannelCircles = imoverlay(firstAndSecondChannelCircles, SphinctalyzerOutputs{3, obj.timepointStart + iTimepoint - 1}, thirdChannelColor);
+                I = allChannelCircles;
+            end
+        end
+    end
+
+
     function play(hObject,eventdata)
         obj = objarray(currentObj);
         max = get(sliderTimepoint, 'max');
@@ -393,7 +441,10 @@ function sphinctalyzerOutput(objarray)
                 pause(1/frameRate)
                 currentFrame = currentFrame + 1;
                 set(sliderTimepoint,'Value',currentFrame)
-                if get(viewerSelectionTable,'Value') >= 2
+                if get(viewerSelectionTable, 'Value') >= 3
+                    mov = VideoReader(obj.moviePaths{get(viewerSelectionTable,'Value') - 2});
+                    selected_viewer = 3;
+                elseif get(viewerSelectionTable, 'Value') == 2
                     selected_viewer = 2;
                 else
                     selected_viewer = 1;
@@ -474,13 +525,13 @@ function sphinctalyzerOutput(objarray)
             current = get(viewerSelectionTable, 'String');
             current = [current; strcat('scan movietalyzerResults_', num2str(length(obj.moviePaths)))];
             set(viewerSelectionTable,'String',current)
-            set(viewerSelectionTable,'Value',length(obj.moviePaths) + 1)
+            set(viewerSelectionTable,'Value',length(obj.moviePaths) + 2)
             objarray(currentObj) = obj;
             
             % update the viewer
             iTimepoint = 1;        
             mov = VideoReader(obj.moviePaths{length(obj.moviePaths)});
-            selected_viewer = 2;
+            selected_viewer = 3;
             set(sliderTimepoint, 'Value', iTimepoint)
             I = readFunction{selected_viewer}(iTimepoint, iChannel);
             imagesc(I,'Parent',imgAx);
@@ -558,10 +609,10 @@ function sphinctalyzerOutput(objarray)
                     movieIndex)
 
                 % update the viewer
-                set(viewerSelectionTable,'Value',str2double(movieIndex) + 1)
+                set(viewerSelectionTable,'Value',str2double(movieIndex) + 2)
                 iTimepoint = 1;        
-                mov = VideoReader(obj.moviePaths{get(viewerSelectionTable,'Value') - 1});
-                selected_viewer = 2;
+                mov = VideoReader(obj.moviePaths{get(viewerSelectionTable,'Value') - 2});
+                selected_viewer = 3;
                 set(sliderTimepoint, 'Value', iTimepoint)
                 I = readFunction{selected_viewer}(iTimepoint, iChannel);
                 imagesc(I,'Parent',imgAx);

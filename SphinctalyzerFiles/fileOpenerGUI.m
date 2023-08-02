@@ -64,6 +64,8 @@ function fileOpenerGUI
                  % directory and pass the pathName, fileName, and
                  % batchDirectory into the load_image function
                  currDate = strrep(datestr(datetime), '-', '_');
+                 currDate = strrep(currDate,':','-');
+                 currDate = strrep(currDate,' ','_');
                  batchDirectory = strcat('../Sphincdata/batch_',currDate);
                  mkdir (batchDirectory)
                  load_image(imageName,imagePath,batchDirectory)

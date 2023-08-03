@@ -28,7 +28,7 @@ if guiInput == 0
         'GFP-wGBD',                     22,             0};
     % One variable per line, as many lines as you want
     % Change ONLY ONE IsReference to 1 to use that as the reference channel
-    Range = 9:40;  % Select the range of images to scan in form first frame:last frame
+    Range = 36:36;  % Select the range of images to scan in form first frame:last frame
     inspeed = 3;  % Select maximum inward speed of ring
     outspeed = 3;  % Select maximum outward speed of ring
     LoadMulti = 1; % 0 for loading each channel individually, 1 for loading a multi-channel tiff

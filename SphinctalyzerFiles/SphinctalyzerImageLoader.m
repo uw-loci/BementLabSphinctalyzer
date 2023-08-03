@@ -84,7 +84,7 @@ else
     if isempty(batchDirectory)
         currDate = strrep(datestr(datetime), ' ', '_');
         currDate = strrep(currDate,':','-');
-        pathString = strcat('../Sphincdata/data_',currDate,'/sphinc/');
+        pathString = strcat('../Sphincdata/data_',ChName,'_',currDate,'/sphinc/');
         mkdir(pathString)
         SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
     else

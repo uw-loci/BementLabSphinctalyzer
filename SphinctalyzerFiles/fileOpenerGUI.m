@@ -64,6 +64,8 @@ function fileOpenerGUI
                  % directory and pass the pathName, fileName, and
                  % batchDirectory into the load_image function
                  currDate = strrep(datestr(datetime), '-', '_');
+                 currDate = strrep(currDate,':','-');
+                 currDate = strrep(currDate,' ','_');
                  batchDirectory = strcat('../Sphincdata/batch_',currDate);
                  mkdir (batchDirectory)
                  load_image(imageName,imagePath,batchDirectory)
@@ -87,8 +89,8 @@ function fileOpenerGUI
     function load_image(imageNames, imagePath, batchDirectory)
         % create an object array of length fileNames, with default values
         objarray(1:length(imageNames)) = Image(0,1,0,3,1,1,3,0,8,0,0, ...
-            'gray',6,{'Distance (pixels) from wound center','Normalized Gray Value'}, ...
-            [-150 50 0],[-0.1 0.3 1.1],1,1,imagePath,0,0, ...
+            'gray',6,{'Distance (microns) from wound center','Normalized Gray Value'}, ...
+            [-150 50 0] * 0.192,[-0.1 0.3 1.1],1,0.192,imagePath,0,0, ...
             {[1 0 0],[0 .6 0],[0 0 1]},0,'NorthWest',1,batchDirectory, {}, [1 2]);
         % for obj in objarray
         for i = 1:length(objarray)

@@ -33,7 +33,7 @@ function sphinctalyzerInitializerGUI
         'FontSize',11, ...
         'Enable','on', ...
         'Units','normalized', ...
-        'Position',[0.02 0.91 0.22 0.08],...
+        'Position',[0.26 0.91 0.22 0.08],...
         'Callback', {@open_file_callback});
 
     % Load parameters button
@@ -43,7 +43,7 @@ function sphinctalyzerInitializerGUI
         'FontSize',11, ...
         'Enable','on', ...
         'Units','normalized', ...
-        'Position',[0.26 0.91 0.22 0.08],...
+        'Position',[0.02 0.91 0.22 0.08],...
         'Callback', {@load_param_callback});
 
     % cell inputs panel
@@ -374,6 +374,9 @@ function sphinctalyzerInitializerGUI
     
     % Update GUI parameters for the first image
     currentObj = 1;
+    loadParameters = 0;
+    parameterFileName = '';
+    parameterFilePath = '';
 
     function open_file_callback(hObject, eventData)
         [imageName, imagePath] = uigetfile({'*.tif;*.tiff;'},'MultiSelect','on');
@@ -391,13 +394,66 @@ function sphinctalyzerInitializerGUI
             load_image(imageName,imagePath,batchDirectory)
         end
     end
+
+    function load_param_callback(hObject, eventData)
+        [parameterFileName, parameterFilePath] = uigetfile({'*.mat;'},'MultiSelect','off');
+        if isequal(parameterFileName,0)
+            % User selected cancel
+            disp('User selected cancel.')
+            return
+        else
+            parameters = load(fullfile(parameterFilePath,parameterFileName));
+            names = fieldnames(parameters);
+            name = names(1);
+            if ~isequal(class(parameters.(name{1})),'Image')
+                errordlg('Please load a valid parameters file.');
+            else
+                loadParameters = 1;
+                msgbox("Parameters successfully loaded.");
+            end
+        end
+    end
     
     function load_image(imageNames, imagePath, batchDirectory)
         % create an object array of length fileNames, with default values
-        imgarray(1:length(imageNames)) = Image(0,1,0,3,1,1,3,0,8,0,0, ...
-            'gray',6,{'Distance (microns) from wound center','Normalized Gray Value'}, ...
-            [-150 50 0] * 0.192,[-0.1 0.3 1.1],1,0.192,imagePath,0,0, ...
-            {[1 0 0],[0 .6 0],[0 0 1]},0,'NorthWest',1,batchDirectory, {}, [1 2]);
+        if loadParameters == 0
+            imgarray(1:length(imageNames)) = Image(0,1,0,3,1,1,3,0,8,0,0, ...
+                'gray',6,{'Distance (microns) from wound center','Normalized Gray Value'}, ...
+                [-150 50 0] * 0.192,[-0.1 0.3 1.1],1,0.192,imagePath,0,0, ...
+                {[1 0 0],[0 .6 0],[0 0 1]},0,'NorthWest',1,batchDirectory, {}, [1 2]);
+        else
+            parameters = load(fullfile(parameterFilePath,parameterFileName));
+            names = fieldnames(parameters);
+            name = names(1);
+            imgarray(1:length(imageNames)) = Image(parameters.(name{1}).cellArray, ...
+                parameters.(name{1}).timepointStart, ...
+                parameters.(name{1}).timepointEnd, ...
+                parameters.(name{1}).speed, ...
+                parameters.(name{1}).loadMulti, ...
+                parameters.(name{1}).shape, ...
+                parameters.(name{1}).detection, ...
+                parameters.(name{1}).smooth, ...
+                parameters.(name{1}).step, ...
+                parameters.(name{1}).filePath, ...
+                parameters.(name{1}).nTimepoints, ...
+                parameters.(name{1}).colormap, ...
+                parameters.(name{1}).timePerFrame, ...
+                parameters.(name{1}).axesNames, ...
+                parameters.(name{1}).xMinStepMax, ...
+                parameters.(name{1}).yMinStepMax, ...
+                parameters.(name{1}).normalization, ...
+                parameters.(name{1}).micronsPerPixel, ...
+                imagePath, ...
+                parameters.(name{1}).imageName, ...
+                parameters.(name{1}).channelNames, ...
+                parameters.(name{1}).channelColors, ...
+                parameters.(name{1}).darkBackground, ...
+                parameters.(name{1}).legendLocation, ...
+                parameters.(name{1}).roiShape, ...
+                batchDirectory, ...
+                parameters.(name{1}).moviePaths, ...
+                parameters.(name{1}).velocityStartStop);
+        end
         objarray = imgarray;
         % for obj in objarray
         for i = 1:length(objarray)
@@ -409,32 +465,36 @@ function sphinctalyzerInitializerGUI
             nTimepoints = r.getSizeT(); 
             % Add nChannels, nTimepoints, and timepointEnd to the obj
             objarray(i).nChannels = nChannels;
+            objarray(i).nTimepoints = nTimepoints;
+            objarray(i).timepointEnd = nTimepoints;
+            objarray(i).timepointStart = 1;
             if nChannels == 1
                 objarray(i).loadMulti = 0;
             end
-            objarray(i).nTimepoints = nTimepoints;
-            objarray(i).timepointEnd = nTimepoints;
-            cellArray = cell(nChannels, 3);
-            % Create cell array
-            for j = 1:nChannels
-                for k = 1:3
-                    if k == 1
-                        cellArray{j,k} = strcat('channel', num2str(j));
-                    elseif k == 2
-                        cellArray{j,k} = 1;
-                    else
-                        if j == 1
+            [nrow, ncol] = size(objarray(i).cellArray);
+            if loadParameters == 0 || nrow ~= nChannels
+                cellArray = cell(nChannels, 3);
+                % Create cell array
+                for j = 1:nChannels
+                    for k = 1:3
+                        if k == 1
+                            cellArray{j,k} = strcat('channel', num2str(j));
+                        elseif k == 2
                             cellArray{j,k} = 1;
                         else
-                            cellArray{j,k} = 0;
+                            if j == 1
+                                cellArray{j,k} = 1;
+                            else
+                                cellArray{j,k} = 0;
+                            end
                         end
                     end
                 end
+                % pass cellarray into the object
+                objarray(i).cellArray = cellArray;
+                % from cell array, add channelNames into the object
+                objarray(i).channelNames = {cellArray{:, 1}};
             end
-            % pass cellarray into the object
-            objarray(i).cellArray = cellArray;
-            % from cell array, add channelNames into the object
-            objarray(i).channelNames = {cellArray{:, 1}};
         end
 
         % enable GUI parameters
@@ -622,6 +682,10 @@ function sphinctalyzerInitializerGUI
             for j=1:size(validnames,1)
                 obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
             end
+            parameters = obj;
+            % save parameters
+            [ParentFolderPath] = fileparts(ParentFolderPath);
+            save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
             objarray(i) = obj;
         end
         % run output data gui

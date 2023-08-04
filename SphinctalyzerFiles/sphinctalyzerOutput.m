@@ -338,6 +338,13 @@ function sphinctalyzerOutput(objarray)
         update_image_data_panel(iTimepoint)
         set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
         
+        channels = cell(obj.nChannels, 1);
+        for i = 1:length(channels)
+            channels{i, 1} = "channel" + i;
+        end
+        set(channelSelection,'String',channels)
+        set(channelSelection,'Value',1)
+
         % set viewer selection list box 
         set(viewerSelectionTable,'Value',1)
         viewers = {'Image Timepoints', 'Circle Scan'};

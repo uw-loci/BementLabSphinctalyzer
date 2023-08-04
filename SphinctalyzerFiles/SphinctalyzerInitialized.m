@@ -153,7 +153,7 @@ try
 catch err
     
     save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
-    delete(h);
+    % delete(h);
     rethrow(err)
 end
 toc

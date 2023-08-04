@@ -285,7 +285,9 @@ for i=1:size(ChannelStrings,1)
     IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
 end
 savepath=[path,'/'];
-savename=strrep(filename,'sphinc','scan movie');
+imageFilePath = fileparts(path);
+imageFileName = imageFilePath(15:end);
+savename=strrep(filename,'sphinc',strcat(imageFileName,'_scan_movie'));
 savename = savename(1:end-4);
 %% ADD NUMBER TO NAME
 if guiInput == 1
@@ -325,6 +327,8 @@ for i= 1:size(Zr,1)
         end
     end
     lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',24,'FontName','Arial');
+    set(gcf, 'Color', 'w')
+    set(gca, 'Color', 'w')
     ylabel(ystring)
     if guiInput == 1
         if darkBackgroundFlag == 1

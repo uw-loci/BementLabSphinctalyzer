@@ -388,7 +388,8 @@ function sphinctalyzerInitializerGUI
             load_image({imageName},imagePath,batchDirectory)
         else
             % User selected multiple files
-            currDate = strrep(datestr(datetime), '-', '_');
+            currDate = strrep(datestr(datetime), ' ', '_');
+            currDate = strrep(currDate,':','-');
             batchDirectory = strcat('../Sphincdata/batch_',currDate);
             mkdir (batchDirectory)
             load_image(imageName,imagePath,batchDirectory)
@@ -674,7 +675,8 @@ function sphinctalyzerInitializerGUI
                 obj.micronsPerPixel, ...
                 obj.xMinStepMax, ...
                 obj.yMinStepMax, ...
-                1)
+                1, ...
+                obj.imageName)
             
             % set movie path for the movie
             ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');

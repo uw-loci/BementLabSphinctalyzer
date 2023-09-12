@@ -55,7 +55,10 @@ function sphinctalyzerInitializerGUI
     
     cellInputs = uitable('Parent',cellInputsPanel, ...
         'ColumnName',{'Display Frame', 'Is Reference?'}, ...
-        'RowName', {'        ', '        ', '        '},...
+        'ColumnFormat',{'Numeric','Logical'},...
+        'RowName', 'Channel Name',...
+        'Data', {1,'False'},...
+        'ColumnEditable',true,...
         'Units','normalized', ...
         'Position',[0.02 0.0975 0.637 0.805], ...
         'Enable','on', ...
@@ -736,13 +739,21 @@ function sphinctalyzerInitializerGUI
                 hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
                 errordlg('Please enter a display frame value in the range of timepoints.')
             end
+            objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         elseif column == 2
-            if event.NewData ~= 1 && event.NewData ~= 0
-                hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
-                errordlg('Please enter a logical 1 or 0 for the isReference column.')
+            if event.PreviousData == "False"
+                cellInputs.Data{row,column} = 'True';
+                objarray(currentObj).cellArray{row, column + 1} = 1;
+            elseif event.PreviousData == "True"
+                cellInputs.Data{row,column} = 'False';
+                objarray(currentObj).cellArray{row, column + 1} = 0;
             end
+%             if event.NewData ~= 1 && event.NewData ~= 0
+%                 hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
+%                 errordlg('Please enter a logical 1 or 0 for the isReference column.')
+%             end
         end
-        objarray(currentObj).cellArray{row, column + 1} = event.NewData;
+%         objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         % update stack previewer
         if column == 1
             if hObject.Data{row , 2} == 1

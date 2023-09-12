@@ -19,10 +19,10 @@ function sphinctalyzerInitializerGUI
 
     % Display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
-    guiCtrl = figure('Resize','off', ...
+    guiCtrl = figure('Resize','on', ...
         'Color',defaultBackground', ...
         'Units','normalized', ...
-        'Position',[0.25 0.25 0.5 0.5], ...
+        'Position',[0.205 0.25 0.581 0.5], ...
         'Visible','on',...
         'MenuBar','none', ...
         'name','Sphinctalyzer V2', ...
@@ -540,6 +540,17 @@ function sphinctalyzerInitializerGUI
     
     function update_parameters(objIndex)
         obj = objarray(objIndex);
+        % clear cell inputs table
+        for i = 1:3
+            cellInputs.RowName{i, 1} = '';
+            for j = 1:2
+                if j == 1
+                    cellInputs.Data{i,j} = '';
+                else
+                    cellInputs.Data{i, j} = 'False';
+                end
+            end
+        end
         % fill cell inputs table
         for i = 1:obj.nChannels
             cellInputs.RowName{i, 1} = obj.cellArray{i, 1};
@@ -748,12 +759,22 @@ function sphinctalyzerInitializerGUI
         row = event.Indices(1);
         column = event.Indices(2);
         if column == 1
+            if row > objarray(currentObj).nChannels
+                cellInputs.Data{row,column} = event.PreviousData;
+                errordlg('Please only change the display frame value for labelled channels.')
+                return
+            end
             if event.NewData < 1 || event.NewData > objarray(currentObj).nTimepoints
                 hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
                 errordlg('Please enter a display frame value in the range of timepoints.')
             end
             objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         elseif column == 2
+            if row > objarray(currentObj).nChannels
+                cellInputs.Data{row,column} = event.PreviousData;
+                errordlg('Please only change the isReference checkbox for labelled channels.')
+                return
+            end
             if event.PreviousData == "False"
                 cellInputs.Data{row,column} = 'True';
                 objarray(currentObj).cellArray{row, column + 1} = 1;
@@ -761,10 +782,6 @@ function sphinctalyzerInitializerGUI
                 cellInputs.Data{row,column} = 'False';
                 objarray(currentObj).cellArray{row, column + 1} = 0;
             end
-%             if event.NewData ~= 1 && event.NewData ~= 0
-%                 hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
-%                 errordlg('Please enter a logical 1 or 0 for the isReference column.')
-%             end
         end
 %         objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         % update stack previewer

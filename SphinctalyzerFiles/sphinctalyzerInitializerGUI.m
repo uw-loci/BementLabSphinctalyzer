@@ -829,17 +829,20 @@ function sphinctalyzerInitializerGUI
             definput = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}, cellInputs.RowName{3, 1}};
         end
         dlgtitle = 'Edit Channel Names';
-        answer = inputdlg(prompts,dlgtitle,dims,definput);
+        answer = inputdlg(prompts,dlgtitle,dims,definput)
         if ~isempty(answer)
-            if ~isempty(answer{1})
-                if ~isempty(answer{2})
-                    for i = 1:nChannels
-                        obj.cellArray{i, 1} = answer{i};
-                        obj.channelNames{i} = answer{i};
-                        cellInputs.RowName{i, 1} = answer{i};
-                    end
+            % update the channel name
+            for iC = 1:nChannels
+                if ~isempty(answer{iC})
+                    obj.cellArray{iC, 1} = answer{iC};
+                    obj.channelNames{iC} = answer{iC};
+                    cellInputs.RowName{iC, 1} = answer{iC};
+                else
+                    fprintf('Name of Channel %d is not entered.Channel %d name NOT changed \n', iC, iC)
                 end
             end
+        else
+            disp('Channel name NOT changed ')
         end
         objarray(currentObj) = obj;
     end

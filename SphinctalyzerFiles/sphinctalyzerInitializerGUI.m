@@ -541,19 +541,17 @@ function sphinctalyzerInitializerGUI
     
     function update_parameters(objIndex)
         obj = objarray(objIndex);
-        % clear cell inputs table
-%         for i = 1:3
-%             cellInputs.RowName{i, 1} = '';
-%             for j = 1:2
-%                 if j == 1
-%                     cellInputs.Data{i,j} = '';
-%                 else
-%                     cellInputs.Data{i, j} = 'False';
-%                 end
-%             end
-%         end
-        cellInputs.Data = [];
-        
+        delete(cellInputs)
+        cellInputs = uitable('Parent',cellInputsPanel, ...
+            'ColumnName',{'Display Frame', 'Is Reference?'}, ...
+            'ColumnFormat',{'Numeric','Logical'},...
+            'RowName', {'Channel Name'},...
+            'Data', {1,'False'},...
+            'ColumnEditable',true,...
+            'Units','normalized', ...
+            'Position',[0.02 0.0975 0.640 0.805], ...
+            'Enable','off', ...
+            'CellEditCallback',{@cell_inputs_callback});
         % fill cell inputs table
         for i = 1:obj.nChannels
             cellInputs.RowName{i, 1} = obj.cellArray{i, 1};

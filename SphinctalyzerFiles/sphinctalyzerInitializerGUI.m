@@ -542,16 +542,18 @@ function sphinctalyzerInitializerGUI
     function update_parameters(objIndex)
         obj = objarray(objIndex);
         % clear cell inputs table
-        for i = 1:3
-            cellInputs.RowName{i, 1} = '';
-            for j = 1:2
-                if j == 1
-                    cellInputs.Data{i,j} = '';
-                else
-                    cellInputs.Data{i, j} = 'False';
-                end
-            end
-        end
+%         for i = 1:3
+%             cellInputs.RowName{i, 1} = '';
+%             for j = 1:2
+%                 if j == 1
+%                     cellInputs.Data{i,j} = '';
+%                 else
+%                     cellInputs.Data{i, j} = 'False';
+%                 end
+%             end
+%         end
+        cellInputs.Data = [];
+        
         % fill cell inputs table
         for i = 1:obj.nChannels
             cellInputs.RowName{i, 1} = obj.cellArray{i, 1};

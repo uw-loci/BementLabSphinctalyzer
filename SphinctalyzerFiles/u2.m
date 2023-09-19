@@ -10,4 +10,4 @@ CurrentIm(CurrentIm>=1)=.996;
 
 imshow(imoverlay(CurrentIm, imdilate(SphinctalyzerOutputs(i).greenOutline,strel('disk',1)),[ 0 1 0]))
 
-imshow(SphinctalyzerOutputs(1).greenData
+imshow(SphinctalyzerOutputs(1).greenData)

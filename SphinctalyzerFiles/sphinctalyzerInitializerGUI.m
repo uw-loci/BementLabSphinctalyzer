@@ -13,7 +13,9 @@ function sphinctalyzerInitializerGUI
 
     global objarray
     clear,clc, home, close all
-    addpath(genpath(fullfile('./../bfmatlab')));
+    if ~isdeloyed
+        addpath(genpath(fullfile('./../bfmatlab')));
+    end
     screenWH = get(0,'screensize');
     screenWidth = screenWH(3);
 

@@ -10,10 +10,12 @@ function sphinctalyzerInitializerGUI
     % dialogue box for exceptions?
     % - "Sphinctalyze All" and cancel buttons
     % update_parameters(1) load parameters for the first image
+    % mcc -v -m sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
+    % mcc -v -W 'main:Sphinctalyzer0.2.0, version = 0.2.0' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
 
     global objarray
     clear,clc, home, close all
-    if ~isdeloyed
+    if ~isdeployed
         addpath(genpath(fullfile('./../bfmatlab')));
     end
     screenWH = get(0,'screensize');
@@ -394,15 +396,19 @@ function sphinctalyzerInitializerGUI
             % User selected cancel
         elseif ~iscell(imageName)
             % User selected only one file
-            batchDirectory = '';
-            load_image({imageName},imagePath,batchDirectory)
+            % batchDirectory = '';
+            currDate = strrep(datestr(datetime), ' ', '_');
+            currDate = strrep(currDate,':','-');
+            outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            load_image({imageName},imagePath,outputDirectory)
         else
             % User selected multiple files
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
-            batchDirectory = strcat('../Sphincdata/batch_',currDate);
-            mkdir (batchDirectory)
-            load_image(imageName,imagePath,batchDirectory)
+            % batchDirectory = strcat('../Sphincdata/batch_',currDate);
+            outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            % mkdir (batchDirectory)
+            load_image(imageName,imagePath,outputDirectory)
         end
     end
 

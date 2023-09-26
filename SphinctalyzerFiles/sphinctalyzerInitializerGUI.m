@@ -10,20 +10,26 @@ function sphinctalyzerInitializerGUI
     % dialogue box for exceptions?
     % - "Sphinctalyze All" and cancel buttons
     % update_parameters(1) load parameters for the first image
+    % mcc -v -m sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
+    % mcc -v -W 'main:Sphinctalyzer0.2.0, version = 0.2.0' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
 
     global objarray
     clear,clc, home, close all
-    addpath(genpath(fullfile('./../bfmatlab')));
-    
+    if ~isdeployed
+        addpath(genpath(fullfile('./../bfmatlab')));
+    end
+    screenWH = get(0,'screensize');
+    screenWidth = screenWH(3);
+
     % Display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
-    guiCtrl = figure('Resize','off', ...
+    guiCtrl = figure('Resize','on', ...
         'Color',defaultBackground', ...
         'Units','normalized', ...
-        'Position',[0.25 0.25 0.5 0.5], ...
+        'Position',[0.005 0.10 0.5625 0.85], ...
         'Visible','on',...
         'MenuBar','none', ...
-        'name','Sphinctalyzer V2', ...
+        'name','Sphinctalyzer 0.2.0 : Analysis', ...
         'NumberTitle','off');
     
     % Open File(s) button
@@ -55,11 +61,17 @@ function sphinctalyzerInitializerGUI
     
     cellInputs = uitable('Parent',cellInputsPanel, ...
         'ColumnName',{'Display Frame', 'Is Reference?'}, ...
-        'RowName', {'        ', '        ', '        '},...
+        'ColumnFormat',{'Numeric','Logical'},...
+        'RowName', {'Channel Name'},...
+        'Data', {1,'False'},...
+        'ColumnEditable',true,...
         'Units','normalized', ...
-        'Position',[0.02 0.0975 0.637 0.805], ...
-        'Enable','on', ...
+        'Position',[0.02 0.0975 0.640 0.805], ...
+        'Enable','off', ...
         'CellEditCallback',{@cell_inputs_callback});
+
+    tableWidth = round(screenWidth*guiCtrl.Position(3)*cellInputsPanel.Position(3)*cellInputs.Position(3));
+    cellInputs.ColumnWidth = {round(tableWidth*0.20),round(tableWidth*0.40)};
 
     changeChannelNames = uicontrol('Parent',cellInputsPanel, ...
         'Style','pushbutton', ...
@@ -384,15 +396,19 @@ function sphinctalyzerInitializerGUI
             % User selected cancel
         elseif ~iscell(imageName)
             % User selected only one file
-            batchDirectory = '';
-            load_image({imageName},imagePath,batchDirectory)
+            % batchDirectory = '';
+            currDate = strrep(datestr(datetime), ' ', '_');
+            currDate = strrep(currDate,':','-');
+            outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            load_image({imageName},imagePath,outputDirectory)
         else
             % User selected multiple files
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
-            batchDirectory = strcat('../Sphincdata/batch_',currDate);
-            mkdir (batchDirectory)
-            load_image(imageName,imagePath,batchDirectory)
+            % batchDirectory = strcat('../Sphincdata/batch_',currDate);
+            outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            % mkdir (batchDirectory)
+            load_image(imageName,imagePath,outputDirectory)
         end
     end
 
@@ -522,6 +538,7 @@ function sphinctalyzerInitializerGUI
         set(cancelButton,'Enable','on')
 
         update_parameters(currentObj)
+        set(cellInputs,'Enable','on')
         % Populate Image Queue
         imageNames = cell(length(objarray));
         for l = 1:length(objarray)
@@ -532,11 +549,30 @@ function sphinctalyzerInitializerGUI
     
     function update_parameters(objIndex)
         obj = objarray(objIndex);
+        delete(cellInputs)
+        cellInputs = uitable('Parent',cellInputsPanel, ...
+            'ColumnName',{'Display Frame', 'Is Reference?'}, ...
+            'ColumnFormat',{'Numeric','Logical'},...
+            'RowName', {'Channel Name'},...
+            'Data', {1,'False'},...
+            'ColumnEditable',true,...
+            'Units','normalized', ...
+            'Position',[0.02 0.0975 0.640 0.805], ...
+            'Enable','on', ...
+            'CellEditCallback',{@cell_inputs_callback});
         % fill cell inputs table
         for i = 1:obj.nChannels
             cellInputs.RowName{i, 1} = obj.cellArray{i, 1};
             for j = 1:2
-                cellInputs.Data{i, j} = obj.cellArray{i, j + 1};
+                if j  == 1
+                    cellInputs.Data{i, j} = obj.cellArray{i, j + 1};
+                else
+                    if obj.cellArray{i, j + 1} == 1
+                        cellInputs.Data{i, j} = 'True';
+                    elseif obj.cellArray{i, j + 1} == 0
+                        cellInputs.Data{i, j} = 'False';
+                    end
+                end
             end
         end
         referenceColumn = [obj.cellArray{:,3}];
@@ -732,17 +768,31 @@ function sphinctalyzerInitializerGUI
         row = event.Indices(1);
         column = event.Indices(2);
         if column == 1
+            if row > objarray(currentObj).nChannels
+                cellInputs.Data{row,column} = event.PreviousData;
+                errordlg('Please only change the display frame value for labelled channels.')
+                return
+            end
             if event.NewData < 1 || event.NewData > objarray(currentObj).nTimepoints
                 hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
                 errordlg('Please enter a display frame value in the range of timepoints.')
             end
+            objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         elseif column == 2
-            if event.NewData ~= 1 && event.NewData ~= 0
-                hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
-                errordlg('Please enter a logical 1 or 0 for the isReference column.')
+            if row > objarray(currentObj).nChannels
+                cellInputs.Data{row,column} = event.PreviousData;
+                errordlg('Please only change the isReference checkbox for labelled channels.')
+                return
+            end
+            if event.PreviousData == "False"
+                cellInputs.Data{row,column} = 'True';
+                objarray(currentObj).cellArray{row, column + 1} = 1;
+            elseif event.PreviousData == "True"
+                cellInputs.Data{row,column} = 'False';
+                objarray(currentObj).cellArray{row, column + 1} = 0;
             end
         end
-        objarray(currentObj).cellArray{row, column + 1} = event.NewData;
+%         objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         % update stack previewer
         if column == 1
             if hObject.Data{row , 2} == 1
@@ -787,17 +837,20 @@ function sphinctalyzerInitializerGUI
             definput = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}, cellInputs.RowName{3, 1}};
         end
         dlgtitle = 'Edit Channel Names';
-        answer = inputdlg(prompts,dlgtitle,dims,definput);
+        answer = inputdlg(prompts,dlgtitle,dims,definput)
         if ~isempty(answer)
-            if ~isempty(answer{1})
-                if ~isempty(answer{2})
-                    for i = 1:nChannels
-                        obj.cellArray{i, 1} = answer{i};
-                        obj.channelNames{i} = answer{i};
-                        cellInputs.RowName{i, 1} = answer{i};
-                    end
+            % update the channel name
+            for iC = 1:nChannels
+                if ~isempty(answer{iC})
+                    obj.cellArray{iC, 1} = answer{iC};
+                    obj.channelNames{iC} = answer{iC};
+                    cellInputs.RowName{iC, 1} = answer{iC};
+                else
+                    fprintf('Name of Channel %d is not entered.Channel %d name NOT changed \n', iC, iC)
                 end
             end
+        else
+            disp('Channel name NOT changed ')
         end
         objarray(currentObj) = obj;
     end

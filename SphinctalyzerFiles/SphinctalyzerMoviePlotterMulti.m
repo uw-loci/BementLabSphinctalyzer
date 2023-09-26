@@ -362,10 +362,10 @@ end
 close(writerObj);
 movefile([savename,'.avi'],savepath);
 close gcf
-xlwrite([savepath, 'Results.xls'],Peaks,'Peak Intensity',['C' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],PeakLocs,'Peak Locations',['C' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],Halfwidths,'Halfwidths',['C' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],AUCs,'AUCs',['C' num2str(LineNo)]);
+writematrix(Peaks,[savepath, 'Results.xls'],'Sheet','Peak Intensity','Range',['C' num2str(LineNo)]);
+writematrix(PeakLocs,[savepath, 'Results.xls'],'Sheet','Peak Locations','Range',['C' num2str(LineNo)]);
+writematrix(Halfwidths,[savepath, 'Results.xls'],'Sheet','Halfwidths','Range',['C' num2str(LineNo)]);
+writematrix(AUCs,[savepath, 'Results.xls'],'Sheet','AUCs','Range',['C' num2str(LineNo)]);
 
 %% Normalization Calculation
 if normalization == 1;
@@ -504,17 +504,18 @@ for i=1:size(ChannelStrings,1)
     IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
 end
 
-xlwrite([savepath, 'Results.xls'],Peaks,'Percent Above Background',['C' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],ChannelStrings,'Percent Above Background',['B' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],ChannelStrings,'AUCs',['B' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],ChannelStrings,'Halfwidths',['B' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],ChannelStrings,'Peak Intensity',['B' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],ChannelStrings,'Peak Locations',['B' num2str(LineNo)]);
+writematrix(Peaks,[savepath, 'Results.xls'],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
+writecell(ChannelStrings,[savepath, 'Results.xls'],'Sheet','Percent Above Background','Range',['B' num2str(LineNo)]);
+writecell(ChannelStrings,[savepath, 'Results.xls'],'Sheet','AUCs','Range',['B' num2str(LineNo)]);
+writecell(ChannelStrings,[savepath, 'Results.xls'],'Sheet','Halfwidths','Range',['B' num2str(LineNo)]);
+writecell(ChannelStrings,[savepath, 'Results.xls'],'Sheet','Peak Intensity','Range',['B' num2str(LineNo)]);
+writecell(ChannelStrings,[savepath, 'Results.xls'],'Sheet','Peak Locations','Range',['B' num2str(LineNo)]);
+
 savenamecrop=savename(1:findstr(savename,'scan movie')-2);
-xlwrite([savepath, 'Results.xls'],{savenamecrop},'Percent Above Background',['A' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],{savenamecrop},'AUCs',['A' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],{savenamecrop},'Halfwidths',['A' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],{savenamecrop},'Peak Intensity',['A' num2str(LineNo)]);
-xlwrite([savepath, 'Results.xls'],{savenamecrop},'Peak Locations',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, 'Results.xls'],'Sheet','Percent Above Background','Range',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, 'Results.xls'],'Sheet','AUCs','Range',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, 'Results.xls'],'Sheet','Halfwidths','Range',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, 'Results.xls'],'Sheet','Peak Intensity','Range',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, 'Results.xls'],'Sheet','Peak Locations','Range',['A' num2str(LineNo)]);
 
 LineNo=LineNo+size(ChannelStrings,1);

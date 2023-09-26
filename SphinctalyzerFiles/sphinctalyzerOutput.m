@@ -24,8 +24,7 @@ function sphinctalyzerOutput(objarray)
         'Position',[0.25 0.25 0.5 0.5], ...
         'Visible','on',...
         'MenuBar','none', ...
-        'name',['S' ...
-        'phinctalyzer V2'], ...
+        'name', 'Sphinctalyzer 0.2.0 : Results', ...
         'NumberTitle','off');
     
     % line scan movie options
@@ -226,17 +225,18 @@ function sphinctalyzerOutput(objarray)
         obj = objarray(currentObj);
         [ParentFolderPath] = fileparts(obj.filePath);
         [ParentFolderPath] = fileparts(ParentFolderPath);
+        rangeStart = 'C2';
         xlsSheets = cell(1,5);
-        xlsSheets{1} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Peak Intensity');
-        xlsSheets{2} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Peak Locations');
-        xlsSheets{3} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Halfwidths');
-        xlsSheets{4} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'AUCs');
-        xlsSheets{5} = xlsread(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Percent Above Background');
+        xlsSheets{1} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'),'Sheet', 'Peak Intensity','Range',rangeStart);
+        xlsSheets{2} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Peak Locations','Range',rangeStart);
+        xlsSheets{3} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Halfwidths','Range',rangeStart);
+        xlsSheets{4} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','AUCs','Range',rangeStart);
+        xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Percent Above Background','Range',rangeStart);
 
         % calculate wound closing velocity
         peakLocations = xlsSheets{1};
         for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b + 1, obj.velocityStartStop(2)) - peakLocations(b + 1, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
 
@@ -798,7 +798,7 @@ function sphinctalyzerOutput(objarray)
         % calculate wound closing velocity
         peakLocations = xlsSheets{1};
         for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b + 1, obj.velocityStartStop(2)) - peakLocations(b + 1, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
     end
@@ -821,7 +821,7 @@ function sphinctalyzerOutput(objarray)
         % calculate wound closing velocity
         peakLocations = xlsSheets{1};
         for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b + 1, obj.velocityStartStop(2)) - peakLocations(b + 1, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
     end
@@ -920,7 +920,7 @@ function sphinctalyzerOutput(objarray)
         for m = 1:obj.nChannels
             for n = 1:5
                 sheet = xlsSheets{n};
-                imageSliderDataPanel.Data{n, m} = sheet(m + 1, obj.timepointStart + currentTimepoint - 1);
+                imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
             end
         end
     end

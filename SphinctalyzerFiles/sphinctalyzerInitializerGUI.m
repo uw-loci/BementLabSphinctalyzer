@@ -483,8 +483,10 @@ function sphinctalyzerInitializerGUI
             % Add nChannels, nTimepoints, and timepointEnd to the obj
             objarray(i).nChannels = nChannels;
             objarray(i).nTimepoints = nTimepoints;
-            objarray(i).timepointEnd = nTimepoints;
-            objarray(i).timepointStart = 1;
+            if loadParameters == 1
+                objarray(i).timepointEnd = nTimepoints;
+                objarray(i).timepointStart = 1;
+            end
             if nChannels == 1
                 objarray(i).loadMulti = 0;
             end

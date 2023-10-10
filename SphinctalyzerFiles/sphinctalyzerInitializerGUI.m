@@ -724,6 +724,22 @@ function sphinctalyzerInitializerGUI
             % save parameters
             [ParentFolderPath] = fileparts(ParentFolderPath);
             save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
+            %save editable parameters into a csv file
+            csvfileName = 'parameters.csv';
+            propertiesList = properties(parameters);
+            propertiesLength = length(propertiesList);
+            csvfileValue =  cell(propertiesLength,2);
+            for iP = 1:propertiesLength
+                propertiesName = propertiesList{iP};
+                csvfileValue{iP,1} = propertiesName;
+                if isempty(find(strcmp (propertiesName,{'cellArray','axesNames','channelNames','channelColors','moviePaths'}),1))
+                    csvfileValue{iP,2} = parameters.(propertiesName);
+                else
+                    csvfileValue{iP,2} = '';
+                end
+            end
+            writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+            %%
             objarray(i) = obj;
         end
         % run output data gui

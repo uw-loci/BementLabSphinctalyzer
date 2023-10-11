@@ -3,3 +3,4 @@ Sphincdata/*
 # Ignore the GUI asv file
 SphinctalyzerFiles/*.asv
 *.mexw64
+test_datasets/Sphincdata/

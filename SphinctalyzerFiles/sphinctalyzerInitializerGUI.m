@@ -728,16 +728,36 @@ function sphinctalyzerInitializerGUI
             csvfileName = 'parameters.csv';
             propertiesList = properties(parameters);
             propertiesLength = length(propertiesList);
-            csvfileValue =  cell(propertiesLength,2);
+            [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
+            csvfileValue =  cell(propertiesLength,1+m*n);
             for iP = 1:propertiesLength
                 propertiesName = propertiesList{iP};
                 csvfileValue{iP,1} = propertiesName;
-                if isempty(find(strcmp (propertiesName,{'cellArray','axesNames','channelNames','channelColors','moviePaths'}),1))
-                    csvfileValue{iP,2} = parameters.(propertiesName);
-                else
-                    csvfileValue{iP,2} = '';
+                if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
+                    if strcmp(propertiesName, 'channelColors') == 1
+                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
+                        csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
+                        csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
+                    elseif strcmp(propertiesName, 'xMinStepMax') == 1
+                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                    elseif strcmp(propertiesName, 'yMinStepMax') == 1
+                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                    elseif strcmp(propertiesName, 'velocityStartStop') == 1
+                        csvfileValue{iP,2} = parameters.(propertiesName)(1);
+                        csvfileValue{iP,3} = parameters.(propertiesName)(2);
+                    else
+                        csvfileValue{iP,2} = parameters.(propertiesName);
+                    end
+                else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
+                    [m,n] = size(parameters.(propertiesName));
+                    for iM = 1:m
+                        for iN = 1:n
+                            csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
+                        end
+                    end
                 end
             end
+            %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
             %%
             objarray(i) = obj;

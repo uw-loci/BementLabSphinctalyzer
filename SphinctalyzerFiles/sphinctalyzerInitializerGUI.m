@@ -413,18 +413,62 @@ function sphinctalyzerInitializerGUI
     end
 
     function load_param_callback(hObject, eventData)
-        [parameterFileName, parameterFilePath] = uigetfile({'*.mat;'},'MultiSelect','off');
-        if isequal(parameterFileName,0)
+        [parameterCSVFileName, parameterFilePath] = uigetfile({'*.csv;'},'MultiSelect','off');
+
+        if isequal(parameterCSVFileName,0)
             % User selected cancel
             disp('User selected cancel.')
             return
         else
+            parameterFileName = strrep(parameterCSVFileName,'.csv','.mat');
+            csvfileName = parameterCSVFileName;
             parameters = load(fullfile(parameterFilePath,parameterFileName));
             names = fieldnames(parameters);
             name = names(1);
             if ~isequal(class(parameters.(name{1})),'Image')
                 errordlg('Please load a valid parameters file.');
             else
+                matfileName = parameterFileName;
+                parametersOld = parameters;%load(matfileName);
+                parametersLoad = readcell(fullfile(parameterFilePath,csvfileName));
+                parameters = parametersOld.parameters;
+%                 parametersUpdate = parameters;
+                propertiesList = properties(parameters);
+                propertiesLength = length(propertiesList);
+                [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
+                propertyValue =  cell(propertiesLength,1+m*n);
+                for iP = 1:propertiesLength
+                    propertiesName = propertiesList{iP};
+                    propertyValue{iP,1} = propertiesName;
+                    if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
+                        if strcmp(propertiesName, 'channelColors') == 1
+                            parameters.(propertiesName){1} = str2num(parametersLoad{iP,2});
+                            parameters.(propertiesName){2} = str2num(parametersLoad{iP,3});
+                            parameters.(propertiesName){3} = str2num(parametersLoad{iP,4});
+                        elseif strcmp(propertiesName, 'xMinStepMax') == 1
+                            parameters.(propertiesName) = str2num(parametersLoad{iP,2});
+                        elseif strcmp(propertiesName, 'yMinStepMax') == 1
+                            parameters.(propertiesName) = str2num(parametersLoad{iP,2});
+                        elseif strcmp(propertiesName, 'velocityStartStop') == 1
+                            parameters.(propertiesName) = [parametersLoad{iP,2} parametersLoad{iP,3}];
+                        else
+                            parameters.(propertiesName) = parametersLoad{iP,2};
+                        end
+                    else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
+                        [m,n] = size(parameters.(propertiesName));
+                        parametersCell = cell(m,n);
+                        for iM = 1:m
+                            for iN = 1:n
+                                parameters.(propertiesName){iM,iN} = parametersLoad{iP,1+(iM-1)*n+iN};
+                            end
+                        end
+
+                    end
+                end
+                % save .mat parameters
+%                 [ParentFolderPath] = fileparts(ParentFolderPath);
+                save(fullfile(parameterFilePath,parameterFileName),'parameters','-mat');
+                fprintf('Parameter file is loaded and updated at %s \n', parameterFilePath)
                 loadParameters = 1;
                 msgbox("Parameters successfully loaded.");
             end

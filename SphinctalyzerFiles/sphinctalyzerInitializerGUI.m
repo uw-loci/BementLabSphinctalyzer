@@ -396,7 +396,6 @@ function sphinctalyzerInitializerGUI
             % User selected cancel
         elseif ~iscell(imageName)
             % User selected only one file
-            % batchDirectory = '';
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
@@ -405,9 +404,7 @@ function sphinctalyzerInitializerGUI
             % User selected multiple files
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
-            % batchDirectory = strcat('../Sphincdata/batch_',currDate);
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
-            % mkdir (batchDirectory)
             load_image(imageName,imagePath,outputDirectory)
         end
     end

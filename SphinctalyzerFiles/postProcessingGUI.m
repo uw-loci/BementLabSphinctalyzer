@@ -3,6 +3,7 @@ function postProcessingGUI
     % if a batch directory, then load both (somehow?)
     % if a single directory, should be pretty simple..
     % USE PARAMETERS.MAT
+    clear,clc, home, close all
     if ~isdeployed
         addpath(genpath(fullfile('./../bfmatlab')));
     end

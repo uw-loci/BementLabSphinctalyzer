@@ -232,7 +232,12 @@ function sphinctalyzerOutput(objarray)
         xlsSheets{3} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Halfwidths','Range',rangeStart);
         xlsSheets{4} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','AUCs','Range',rangeStart);
         xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Percent Above Background','Range',rangeStart);
-
+        
+        for m = 1:3
+            for n = 1:6
+                imageSliderDataPanel.Data{n, m} = ' ';
+            end
+        end
         % calculate wound closing velocity
         peakLocations = xlsSheets{1};
         for b = 1:obj.nChannels

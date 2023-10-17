@@ -39,7 +39,7 @@ function sphinctalyzerInitializerGUI
         'FontSize',11, ...
         'Enable','on', ...
         'Units','normalized', ...
-        'Position',[0.26 0.91 0.22 0.08],...
+        'Position',[0.173 0.91 0.15 0.08],...
         'Callback', {@open_file_callback});
 
     % Load parameters button
@@ -49,8 +49,19 @@ function sphinctalyzerInitializerGUI
         'FontSize',11, ...
         'Enable','on', ...
         'Units','normalized', ...
-        'Position',[0.02 0.91 0.22 0.08],...
+        'Position',[0.02 0.91 0.15 0.08],...
         'Callback', {@load_param_callback});
+
+    % Post processing button
+    postProcess = uicontrol('Parent',guiCtrl, ...
+        'Style','pushbutton', ...
+        'String','Post Process',...
+        'FontSize',11, ...
+        'Enable','on', ...
+        'Units','normalized', ...
+        'Position',[0.326 0.91 0.15 0.08],...
+        'Callback', {@post_process_callback});
+
 
     % cell inputs panel
     cellInputsPanel = uipanel('Parent',guiCtrl, ...
@@ -406,6 +417,36 @@ function sphinctalyzerInitializerGUI
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
             load_image(imageName,imagePath,outputDirectory)
+        end
+    end
+    
+    function post_process_callback(hObject, eventData)
+        processAnother = 1;
+        processedPaths = {};
+        while processAnother == 1
+            selpath = uigetdir('.');
+            if isfile(fullfile(selpath,'parameters.mat'))
+                processedPaths{end + 1} = selpath;
+                choice=questdlg('Process Another Folder?','Prompt','Yes','No','No');
+                 if(isempty(choice))
+                     choice = 'No';
+                 else
+                     switch choice
+                         case 'Yes'
+                            continue
+                         case 'No'
+                             processAnother = 0;
+                     end
+                 end
+            else
+                errordlg('Please select a valid data folder')
+            end
+            if ~isempty(processedPaths)
+                delete(guiCtrl)
+                postProcessingGUI(processedPaths)
+            else
+                return;
+            end
         end
     end
 

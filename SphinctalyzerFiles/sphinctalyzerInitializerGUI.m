@@ -428,25 +428,24 @@ function sphinctalyzerInitializerGUI
             if isfile(fullfile(selpath,'parameters.mat'))
                 processedPaths{end + 1} = selpath;
                 choice=questdlg('Process Another Folder?','Prompt','Yes','No','No');
-                 if(isempty(choice))
-                     choice = 'No';
-                 else
-                     switch choice
-                         case 'Yes'
-                            continue
-                         case 'No'
-                             processAnother = 0;
-                     end
+                 switch choice
+                     case 'Yes'
+                        continue
+                     case 'No'
+                         processAnother = 0;
+                     otherwise
+                         processAnother = 0;
                  end
             else
                 errordlg('Please select a valid data folder')
-            end
-            if ~isempty(processedPaths)
-                delete(guiCtrl)
-                postProcessingGUI(processedPaths)
-            else
                 return;
             end
+        end
+        if ~isempty(processedPaths)
+            delete(guiCtrl)
+            postProcessingGUI(processedPaths)
+        else
+            return;
         end
     end
 

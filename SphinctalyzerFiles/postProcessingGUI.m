@@ -5,15 +5,11 @@ function postProcessingGUI(selpaths)
                 [-150 50 0] * 0.192,[-0.1 0.3 1.1],1,0.192,"",0,0, ...
                 {[1 0 0],[0 .6 0],[0 0 1]},0,'NorthWest',1,'', {}, [1 2]);
     for i = 1:numSelPaths
-        addpath(selpaths{i});
         try
-            load('parameters.mat');
+            load(fullfile(selpaths{i},'parameters.mat'));
         catch
-            rmpath(selpath)
             error('PLEASE SELECT A VALID DATA FOLDER.');
         end
-        rmpath(selpaths{i})
-
         imgarray(i) = Image(parameters.cellArray, ...
             parameters.timepointStart, ...
             parameters.timepointEnd, ...

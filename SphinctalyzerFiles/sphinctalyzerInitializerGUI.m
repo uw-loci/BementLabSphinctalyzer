@@ -12,6 +12,7 @@ function sphinctalyzerInitializerGUI
     % update_parameters(1) load parameters for the first image
     % mcc -v -m sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.0, version = 0.2.0' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
+    % mcc -v -W 'main:Sphinctalyzer0.2.1, version = 0.2.1' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.1 MAC(intel 64-bit) standalone built on 11/03/2023..."'
 
     global objarray
     clear,clc, home, close all
@@ -63,7 +64,6 @@ function sphinctalyzerInitializerGUI
         'Position',[0.326 0.91 0.15 0.08],...
         'Tooltip','Select the output folder of an image to start a post-processing',...
         'Callback', {@post_process_callback});
-su
 
     % cell inputs panel
     cellInputsPanel = uipanel('Parent',guiCtrl, ...

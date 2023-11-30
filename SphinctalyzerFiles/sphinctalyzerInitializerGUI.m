@@ -32,6 +32,16 @@ function sphinctalyzerInitializerGUI
         'name','Sphinctalyzer 0.2.0 : Analysis', ...
         'NumberTitle','off');
     
+    % Keep Analysis Window open
+    keepAnalysisOpen = uicontrol('Parent', guiCtrl, ...
+        'Style','checkbox', ...
+        'String','Keep This Window Open', ...
+        'FontSize', 11, ...
+        'Enable', 'off', ...
+        'Value', 1, ...
+        'Units', 'normalized', ...
+        'Position', [0.67 0 0.2 0.05]);
+
     % Open File(s) button
     openFile = uicontrol('Parent',guiCtrl, ...
         'Style','pushbutton', ...
@@ -410,16 +420,26 @@ function sphinctalyzerInitializerGUI
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            currentObj = 1;
+            loadParameters = 0;
+            parameterFileName = '';
+            parameterFilePath = '';
+
             load_image({imageName},imagePath,outputDirectory)
         else
             % User selected multiple files
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            currentObj = 1;
+            loadParameters = 0;
+            parameterFileName = '';
+            parameterFilePath = '';
             load_image(imageName,imagePath,outputDirectory)
         end
     end
     
+
     function post_process_callback(hObject, eventData)
         processAnother = 1;
         processedPaths = {};
@@ -442,7 +462,9 @@ function sphinctalyzerInitializerGUI
             end
         end
         if ~isempty(processedPaths)
-            delete(guiCtrl)
+            if ~get(keepAnalysisOpen, 'Value')
+                delete(guiCtrl);
+            end
             postProcessingGUI(processedPaths)
         else
             return;
@@ -571,7 +593,7 @@ function sphinctalyzerInitializerGUI
             if nChannels == 1
                 objarray(i).loadMulti = 0;
             end
-            [nrow, ncol] = size(objarray(i).cellArray);
+            [nrow, ~] = size(objarray(i).cellArray);
             if loadParameters == 0 || nrow ~= nChannels
                 cellArray = cell(nChannels, 3);
                 % Create cell array
@@ -598,8 +620,6 @@ function sphinctalyzerInitializerGUI
         end
 
         % enable GUI parameters
-        set(openFile,'Enable','off')
-        set(loadParam,'Enable','off')
         set(changeChannelNames,'Enable','on')
         set(changeVelocityRange,'Enable','on')
         set(sru1,'Enable','on')
@@ -619,6 +639,7 @@ function sphinctalyzerInitializerGUI
         set(imageQueueTable,'Enable','on')
         set(sphinctalyzeButton,'Enable','on')
         set(cancelButton,'Enable','on')
+        set(keepAnalysisOpen, 'Enable','on')
 
         update_parameters(currentObj)
         set(cellInputs,'Enable','on')
@@ -628,6 +649,7 @@ function sphinctalyzerInitializerGUI
             imageNames{l} = objarray(l).imageName;
         end
         set(imageQueueTable,'String',imageNames)
+        set(imageQueueTable, 'Value', 1)
     end
     
     function update_parameters(objIndex)
@@ -846,7 +868,9 @@ function sphinctalyzerInitializerGUI
             objarray(i) = obj;
         end
         % run output data gui
-        delete(guiCtrl)
+        if ~get(keepAnalysisOpen, 'Value')
+                delete(guiCtrl);
+        end
         sphinctalyzerOutput(objarray)
     end
     
@@ -914,7 +938,7 @@ function sphinctalyzerInitializerGUI
 %         objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         % update stack previewer
         if column == 1
-            if hObject.Data{row , 2} == 1
+            if hObject.Data{row , 2}
                 file = fullfile(objarray(currentObj).imagePath, objarray(currentObj).imageName);
                 set(channelSelection, 'Value', row)
                 % set timepoint of slider
@@ -956,7 +980,7 @@ function sphinctalyzerInitializerGUI
             definput = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}, cellInputs.RowName{3, 1}};
         end
         dlgtitle = 'Edit Channel Names';
-        answer = inputdlg(prompts,dlgtitle,dims,definput)
+        answer = inputdlg(prompts,dlgtitle,dims,definput);
         if ~isempty(answer)
             % update the channel name
             for iC = 1:nChannels

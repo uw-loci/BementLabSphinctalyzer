@@ -410,14 +410,20 @@ function sphinctalyzerInitializerGUI
     currentObj = 1;
     loadParameters = 0;
     parameterFileName = '';
-    parameterFilePath = '';
+    parameterFilePath = pwd;
+    imageName = '';
+    imagePath = pwd;
+    outputPath = pwd;
 
     function open_file_callback(hObject, eventData)
-        [imageName, imagePath] = uigetfile({'*.tif;*.tiff;'},'MultiSelect','on');
-        if isequal(imageName,0)
-            % User selected cancel
-        elseif ~iscell(imageName)
+        [imageName_get, imagePath_get] = uigetfile({'*.tif;*.tiff;'},'Select one or more images',imagePath,'MultiSelect','on');
+        if isequal(imageName_get,0)
+            disp('User canceled the image selection. No new image is loaded.')
+            return
+        elseif ~iscell(imageName_get)
             % User selected only one file
+            imageName = imageName_get;
+            imagePath = imagePath_get;
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
@@ -425,10 +431,12 @@ function sphinctalyzerInitializerGUI
             loadParameters = 0;
             parameterFileName = '';
             parameterFilePath = '';
-
+            outputPath = fullfile(imagePath,'Sphincdata');
             load_image({imageName},imagePath,outputDirectory)
         else
             % User selected multiple files
+            imageName = imageName_get;
+            imagePath = imagePath_get;
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
@@ -436,6 +444,7 @@ function sphinctalyzerInitializerGUI
             loadParameters = 0;
             parameterFileName = '';
             parameterFilePath = '';
+            outputPath = fullfile(imagePath,'Sphincdata');
             load_image(imageName,imagePath,outputDirectory)
         end
     end
@@ -445,7 +454,8 @@ function sphinctalyzerInitializerGUI
         processAnother = 1;
         processedPaths = {};
         while processAnother == 1
-            selpath = uigetdir('.');
+            selpath = uigetdir(outputPath,'Pick an output folder with valid data');
+            outputPath = selpath;
             if isfile(fullfile(selpath,'parameters.mat'))
                 processedPaths{end + 1} = selpath;
                 choice=questdlg('Process Another Folder?','Prompt','Yes','No','No');
@@ -461,6 +471,7 @@ function sphinctalyzerInitializerGUI
                 errordlg('Please select a valid data folder')
                 return;
             end
+
         end
         if ~isempty(processedPaths)
             if ~get(keepAnalysisOpen, 'Value')
@@ -473,13 +484,14 @@ function sphinctalyzerInitializerGUI
     end
 
     function load_param_callback(hObject, eventData)
-        [parameterCSVFileName, parameterFilePath] = uigetfile({'*.csv;'},'MultiSelect','off');
+        [parameterCSVFileName_get, parameterFilePath_get] = uigetfile({'*.csv;'},'Select a parameter .csv file',parameterFilePath,'MultiSelect','off');
 
         if isequal(parameterCSVFileName,0)
-            % User selected cancel
-            disp('User selected cancel.')
+            disp('User canceled the image selection. No image is loaded.')
             return
         else
+            parameterCSVFileName = parameterCSVFileName_get;
+            parameterFilePath = parameterFilePath_get;
             parameterFileName = strrep(parameterCSVFileName,'.csv','.mat');
             csvfileName = parameterCSVFileName;
             parameters = load(fullfile(parameterFilePath,parameterFileName));

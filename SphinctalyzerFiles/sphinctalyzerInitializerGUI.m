@@ -414,6 +414,7 @@ function sphinctalyzerInitializerGUI
     imageName = '';
     imagePath = pwd;
     outputPath = pwd;
+    allObjects = findall(guiCtrl);
 
     function open_file_callback(hObject, eventData)
         [imageName_get, imagePath_get] = uigetfile({'*.tif;*.tiff;'},'Select one or more images',imagePath,'MultiSelect','on');
@@ -783,6 +784,16 @@ function sphinctalyzerInitializerGUI
 
     function sphinctalyze(hObject, eventdata)
         % Run sphinctalyerinitalizer on all images
+        % Disable the following uicontrols during the processing and
+        % enable them after a successful analysis or when exceptions occur.
+        handlesArray = [changeChannelNames,changeChannelNames,changeVelocityRange,...
+            sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
+            enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
+            colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
+            loadParam,openFile,postProcess,keepAnalysisOpen,cellInputs];
+                % enable GUI parameters
+        set(handlesArray,'Enable','off')
+        
         try
             for i = 1:length(objarray)
                 obj = objarray(i);
@@ -802,6 +813,7 @@ function sphinctalyzerInitializerGUI
                 objarray(i) = obj;
             end
         catch ME
+            set(handlesArray,'Enable','on')
             errordlg(sprintf(strcat('Error in image %d: ', ME.message), i))
             rethrow(ME)
         end
@@ -885,6 +897,7 @@ function sphinctalyzerInitializerGUI
                 delete(guiCtrl);
         end
         sphinctalyzerOutput(objarray)
+        set(handleArray,'Enable','on')
     end
     
     function cancel(hObject,event)

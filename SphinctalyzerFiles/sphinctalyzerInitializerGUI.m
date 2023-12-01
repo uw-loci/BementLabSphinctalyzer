@@ -487,7 +487,7 @@ function sphinctalyzerInitializerGUI
     function load_param_callback(hObject, eventData)
         [parameterCSVFileName_get, parameterFilePath_get] = uigetfile({'*.csv;'},'Select a parameter .csv file',parameterFilePath,'MultiSelect','off');
 
-        if isequal(parameterCSVFileName,0)
+        if isequal(parameterCSVFileName_get,0)
             disp('User canceled the image selection. No image is loaded.')
             return
         else

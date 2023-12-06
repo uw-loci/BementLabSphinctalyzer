@@ -456,7 +456,13 @@ function sphinctalyzerInitializerGUI
         processedPaths = {};
         while processAnother == 1
             selpath = uigetdir(outputPath,'Pick an output folder with valid data');
-            outputPath = selpath;
+            if selpath == 0
+                disp('NO output folder is selected')
+                return
+            else
+                outputPath = selpath;
+            end
+            
             if isfile(fullfile(selpath,'parameters.mat'))
                 processedPaths{end + 1} = selpath;
                 choice=questdlg('Process Another Folder?','Prompt','Yes','No','No');

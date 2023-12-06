@@ -897,7 +897,7 @@ function sphinctalyzerInitializerGUI
                 delete(guiCtrl);
         end
         sphinctalyzerOutput(objarray)
-        set(handleArray,'Enable','on')
+        set(handlesArray,'Enable','on')
     end
     
     function cancel(hObject,event)

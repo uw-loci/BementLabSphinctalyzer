@@ -817,80 +817,88 @@ function sphinctalyzerInitializerGUI
             errordlg(sprintf(strcat('Error in image %d: ', ME.message), i))
             rethrow(ME)
         end
+        skippedobjIndex = [];
         for i = 1:length(objarray)
-            obj = objarray(i);
-             % Run sphincrescue and movieplotter on all images
-            
-            [ParentFolderPath] = fileparts(obj.filePath);
-            [ParentFolderPath] = fileparts(ParentFolderPath);
+            try
+                obj = objarray(i);
+                % Run sphincrescue and movieplotter on all images
+                [ParentFolderPath] = fileparts(obj.filePath);
+                [ParentFolderPath] = fileparts(ParentFolderPath);
 
-            SphincRescue(ParentFolderPath, ...
-                obj.speed, ...
-                obj.loadMulti, ...
-                obj.shape, ...
-                obj.detection, ...
-                obj.step)
+                SphincRescue(ParentFolderPath, ...
+                    obj.speed, ...
+                    obj.loadMulti, ...
+                    obj.shape, ...
+                    obj.detection, ...
+                    obj.step)
 
-            SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
-                obj.channelColors, ...
-                obj.axesNames, ...
-                obj.darkBackground, ...
-                obj.timePerFrame, ...
-                obj.normalization, ...
-                obj.legendLocation, ...
-                obj.micronsPerPixel, ...
-                obj.xMinStepMax, ...
-                obj.yMinStepMax, ...
-                1, ...
-                obj.imageName)
-            
-            % set movie path for the movie
-            ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
-            validnames=dir(fullfile(ParentFolderPath, '*.avi'));
-            for j=1:size(validnames,1)
-                obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
-            end
-            parameters = obj;
-            % save parameters
-            [ParentFolderPath] = fileparts(ParentFolderPath);
-            save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
-            %save editable parameters into a csv file
-            csvfileName = 'parameters.csv';
-            propertiesList = properties(parameters);
-            propertiesLength = length(propertiesList);
-            [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
-            csvfileValue =  cell(propertiesLength,1+m*n);
-            for iP = 1:propertiesLength
-                propertiesName = propertiesList{iP};
-                csvfileValue{iP,1} = propertiesName;
-                if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
-                    if strcmp(propertiesName, 'channelColors') == 1
-                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
-                        csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
-                        csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
-                    elseif strcmp(propertiesName, 'xMinStepMax') == 1
-                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
-                    elseif strcmp(propertiesName, 'yMinStepMax') == 1
-                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
-                    elseif strcmp(propertiesName, 'velocityStartStop') == 1
-                        csvfileValue{iP,2} = parameters.(propertiesName)(1);
-                        csvfileValue{iP,3} = parameters.(propertiesName)(2);
-                    else
-                        csvfileValue{iP,2} = parameters.(propertiesName);
-                    end
-                else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
-                    [m,n] = size(parameters.(propertiesName));
-                    for iM = 1:m
-                        for iN = 1:n
-                            csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
+                SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
+                    obj.channelColors, ...
+                    obj.axesNames, ...
+                    obj.darkBackground, ...
+                    obj.timePerFrame, ...
+                    obj.normalization, ...
+                    obj.legendLocation, ...
+                    obj.micronsPerPixel, ...
+                    obj.xMinStepMax, ...
+                    obj.yMinStepMax, ...
+                    1, ...
+                    obj.imageName)
+
+                % set movie path for the movie
+                ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
+                validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+                for j=1:size(validnames,1)
+                    obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
+                end
+                parameters = obj;
+                % save parameters
+                [ParentFolderPath] = fileparts(ParentFolderPath);
+                save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
+                %save editable parameters into a csv file
+                csvfileName = 'parameters.csv';
+                propertiesList = properties(parameters);
+                propertiesLength = length(propertiesList);
+                [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
+                csvfileValue =  cell(propertiesLength,1+m*n);
+                for iP = 1:propertiesLength
+                    propertiesName = propertiesList{iP};
+                    csvfileValue{iP,1} = propertiesName;
+                    if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
+                        if strcmp(propertiesName, 'channelColors') == 1
+                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
+                            csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
+                            csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
+                        elseif strcmp(propertiesName, 'xMinStepMax') == 1
+                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                        elseif strcmp(propertiesName, 'yMinStepMax') == 1
+                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                        elseif strcmp(propertiesName, 'velocityStartStop') == 1
+                            csvfileValue{iP,2} = parameters.(propertiesName)(1);
+                            csvfileValue{iP,3} = parameters.(propertiesName)(2);
+                        else
+                            csvfileValue{iP,2} = parameters.(propertiesName);
+                        end
+                    else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
+                        [m,n] = size(parameters.(propertiesName));
+                        for iM = 1:m
+                            for iN = 1:n
+                                csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
+                            end
                         end
                     end
                 end
+                %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+                writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+                objarray(i) = obj;
+            catch exp1
+                fprintf(' Analysis of Object %d  did not go through, error message: %s \n',i,exp1.message)
+                fprintf ('Object %d is skipped \n',i)
+                skippedobjIndex = [skippedobjIndex i];
             end
-            %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
-            writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
-            %%
-            objarray(i) = obj;
+        end
+        if ~isempty(skippedobjIndex)
+            objarray(skippedobjIndex) = [];
         end
         % run output data gui
         if ~get(keepAnalysisOpen, 'Value')

@@ -84,13 +84,20 @@ else
     if isempty(batchDirectory)
         currDate = strrep(datestr(datetime), ' ', '_');
         currDate = strrep(currDate,':','-');
-        pathString = strcat('../Sphincdata/data_',ChName,'_',currDate,'/sphinc/');
-        mkdir(pathString)
+        pathString = strcat(ChPath,'/Sphincdata/Output_',currDate,'/data_',ChName,'/sphinc/');
+        % pathString = strcat('../Sphincdata/data_',ChName,'_',currDate,'/sphinc/');
+        if ~exist(pathString,'dir')
+            mkdir (pathString)
+            fprintf('Output directory is created at %s \n',pathString)
+        end
         SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
     else
-        currDate = strrep(datestr(datetime), ' ', '_');
+        % currDate = strrep(datestr(datetime), ' ', '_');
         pathString = strcat(batchDirectory,'/data_',ChName,'/sphinc/');
-        mkdir (pathString)
+        if ~exist(pathString,'dir')
+            mkdir (pathString)
+            fprintf('Output directory is created at %s \n',pathString)
+        end
         SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
     end
 end

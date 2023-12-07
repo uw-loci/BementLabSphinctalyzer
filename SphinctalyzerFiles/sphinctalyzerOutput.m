@@ -925,7 +925,12 @@ function sphinctalyzerOutput(objarray)
         for m = 1:obj.nChannels
             for n = 1:5
                 sheet = xlsSheets{n};
-                imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
+                try
+                    imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
+                catch exp1
+                    fprintf(' %s \n %s is empty \n',exp1.message,imageSliderDataPanel.RowName{n})
+                    imageSliderDataPanel.Data{n, m} = [];
+                end
             end
         end
     end

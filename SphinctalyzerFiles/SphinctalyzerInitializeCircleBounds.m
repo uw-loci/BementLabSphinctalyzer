@@ -1,12 +1,14 @@
 function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colorMap,guiInput,roiShape)
+
 % Open new figure
-figure
+figure('Name','Annotating the Brightest Path', NumberTitle='off');
 
 if strcmp(SphinctalyzerOutputs(1).RefChannel,'Self') %Loop if each channel is scanned separately
     i = 1:size(InputCells,1);
 else %only use ref frame
     i = find(cell2mat(InputCells(:,3))==1);
 end
+
 
 %loop through images
 for i = i

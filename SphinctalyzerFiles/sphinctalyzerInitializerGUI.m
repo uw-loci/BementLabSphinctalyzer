@@ -14,8 +14,23 @@ function sphinctalyzerInitializerGUI
     % mcc -v -W 'main:Sphinctalyzer0.2.0, version = 0.2.0' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.1, version = 0.2.1' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.1 MAC(intel 64-bit) standalone built on 11/03/2023..."'
 
-    global objarray
-    clear,clc, home, close all
+
+    clear,clc, home
+    openningWindows= findobj(0,'Type', 'Figure');
+    if ~isempty(openningWindows)
+        delete(openningWindows)
+    end
+    objarray = [];
+     % initialize GUI parameters for the first image
+    currentObj = 1;
+    loadParameters = 0;
+    parameterFileName = '';
+    parameterFilePath = pwd;
+    imageName = '';
+    imagePath = pwd;
+    outputPath = pwd;
+
+
     if ~isdeployed
         addpath(genpath(fullfile('./../bfmatlab')));
     end
@@ -30,9 +45,20 @@ function sphinctalyzerInitializerGUI
         'Position',[0.005 0.10 0.5625 0.85], ...
         'Visible','on',...
         'MenuBar','none', ...
-        'name','Sphinctalyzer 0.2.1 : Analysis', ...
+        'name','Sphinctalyzer 0.2.2 : Analysis', ...
+        'Tag', 'mainGUI',...
         'NumberTitle','off');
     
+    % Keep Analysis Window open
+    keepAnalysisOpen = uicontrol('Parent', guiCtrl, ...
+        'Style','checkbox', ...
+        'String','Keep This Window Open', ...
+        'FontSize', 11, ...
+        'Enable', 'off', ...
+        'Value', 1, ...
+        'Units', 'normalized', ...
+        'Position', [0.67 0 0.2 0.05]);
+
     % Open File(s) button
     openFile = uicontrol('Parent',guiCtrl, ...
         'Style','pushbutton', ...
@@ -396,37 +422,63 @@ function sphinctalyzerInitializerGUI
         'Position',[0.56 0.05 0.18 0.1], ...
         'callback',{@cancel}, ...
         'Enable','off');
+    % Disable the following uicontrols during the processing and
+    % enable them after a successful analysis or when exceptions occur.
+    handlesArray = [changeChannelNames,changeChannelNames,changeVelocityRange,...
+        sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
+        enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
+        colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
+        loadParam,openFile,postProcess,keepAnalysisOpen,cellInputs];  
     
-    % Update GUI parameters for the first image
-    currentObj = 1;
-    loadParameters = 0;
-    parameterFileName = '';
-    parameterFilePath = '';
+  %GUI layout ends here ------------------------------------------------
 
     function open_file_callback(hObject, eventData)
-        [imageName, imagePath] = uigetfile({'*.tif;*.tiff;'},'MultiSelect','on');
-        if isequal(imageName,0)
-            % User selected cancel
-        elseif ~iscell(imageName)
+        [imageName_get, imagePath_get] = uigetfile({'*.tif;*.tiff;'},'Select one or more images',imagePath,'MultiSelect','on');
+        if isequal(imageName_get,0)
+            disp('User canceled the image selection. No new image is loaded.')
+            return
+        elseif ~iscell(imageName_get)
             % User selected only one file
+            imageName = imageName_get;
+            imagePath = imagePath_get;
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            currentObj = 1;
+            loadParameters = 0;
+            parameterFileName = '';
+            parameterFilePath = '';
+            outputPath = fullfile(imagePath,'Sphincdata');
             load_image({imageName},imagePath,outputDirectory)
         else
             % User selected multiple files
+            imageName = imageName_get;
+            imagePath = imagePath_get;
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            currentObj = 1;
+            loadParameters = 0;
+            parameterFileName = '';
+            parameterFilePath = '';
+            outputPath = fullfile(imagePath,'Sphincdata');
             load_image(imageName,imagePath,outputDirectory)
         end
     end
     
+
     function post_process_callback(hObject, eventData)
         processAnother = 1;
         processedPaths = {};
         while processAnother == 1
-            selpath = uigetdir('.');
+            selpath = uigetdir(outputPath,'Pick an output folder with valid data');
+            if selpath == 0
+                disp('NO output folder is selected')
+                return
+            else
+                outputPath = selpath;
+            end
+            
             if isfile(fullfile(selpath,'parameters.mat'))
                 processedPaths{end + 1} = selpath;
                 choice=questdlg('Process Another Folder?','Prompt','Yes','No','No');
@@ -442,9 +494,12 @@ function sphinctalyzerInitializerGUI
                 errordlg('Please select a valid data folder')
                 return;
             end
+
         end
         if ~isempty(processedPaths)
-            delete(guiCtrl)
+            if ~get(keepAnalysisOpen, 'Value')
+                delete(guiCtrl);
+            end
             postProcessingGUI(processedPaths)
         else
             return;
@@ -452,13 +507,14 @@ function sphinctalyzerInitializerGUI
     end
 
     function load_param_callback(hObject, eventData)
-        [parameterCSVFileName, parameterFilePath] = uigetfile({'*.csv;'},'MultiSelect','off');
+        [parameterCSVFileName_get, parameterFilePath_get] = uigetfile({'*.csv;'},'Select a parameter .csv file',parameterFilePath,'MultiSelect','off');
 
-        if isequal(parameterCSVFileName,0)
-            % User selected cancel
-            disp('User selected cancel.')
+        if isequal(parameterCSVFileName_get,0)
+            disp('User canceled the image selection. No image is loaded.')
             return
         else
+            parameterCSVFileName = parameterCSVFileName_get;
+            parameterFilePath = parameterFilePath_get;
             parameterFileName = strrep(parameterCSVFileName,'.csv','.mat');
             csvfileName = parameterCSVFileName;
             parameters = load(fullfile(parameterFilePath,parameterFileName));
@@ -573,7 +629,7 @@ function sphinctalyzerInitializerGUI
             if nChannels == 1
                 objarray(i).loadMulti = 0;
             end
-            [nrow, ncol] = size(objarray(i).cellArray);
+            [nrow, ~] = size(objarray(i).cellArray);
             if loadParameters == 0 || nrow ~= nChannels
                 cellArray = cell(nChannels, 3);
                 % Create cell array
@@ -600,8 +656,6 @@ function sphinctalyzerInitializerGUI
         end
 
         % enable GUI parameters
-        set(openFile,'Enable','off')
-        set(loadParam,'Enable','off')
         set(changeChannelNames,'Enable','on')
         set(changeVelocityRange,'Enable','on')
         set(sru1,'Enable','on')
@@ -621,6 +675,7 @@ function sphinctalyzerInitializerGUI
         set(imageQueueTable,'Enable','on')
         set(sphinctalyzeButton,'Enable','on')
         set(cancelButton,'Enable','on')
+        set(keepAnalysisOpen, 'Enable','on')
 
         update_parameters(currentObj)
         set(cellInputs,'Enable','on')
@@ -630,21 +685,12 @@ function sphinctalyzerInitializerGUI
             imageNames{l} = objarray(l).imageName;
         end
         set(imageQueueTable,'String',imageNames)
+        set(imageQueueTable, 'Value', 1)
     end
     
     function update_parameters(objIndex)
         obj = objarray(objIndex);
-        delete(cellInputs)
-        cellInputs = uitable('Parent',cellInputsPanel, ...
-            'ColumnName',{'Display Frame', 'Is Reference?'}, ...
-            'ColumnFormat',{'Numeric','Logical'},...
-            'RowName', {'Channel Name'},...
-            'Data', {1,'False'},...
-            'ColumnEditable',true,...
-            'Units','normalized', ...
-            'Position',[0.02 0.0975 0.640 0.805], ...
-            'Enable','on', ...
-            'CellEditCallback',{@cell_inputs_callback});
+        cellInputs.Data = {};
         % fill cell inputs table
         for i = 1:obj.nChannels
             cellInputs.RowName{i, 1} = obj.cellArray{i, 1};
@@ -750,6 +796,9 @@ function sphinctalyzerInitializerGUI
 
     function sphinctalyze(hObject, eventdata)
         % Run sphinctalyerinitalizer on all images
+        % disable the GUI parameters during the process
+        set(handlesArray,'Enable','off')
+        % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
         try
             for i = 1:length(objarray)
                 obj = objarray(i);
@@ -769,92 +818,143 @@ function sphinctalyzerInitializerGUI
                 objarray(i) = obj;
             end
         catch ME
+            set(handlesArray,'Enable','on')
             errordlg(sprintf(strcat('Error in image %d: ', ME.message), i))
             rethrow(ME)
         end
+        skippedobjIndex = [];
         for i = 1:length(objarray)
-            obj = objarray(i);
-             % Run sphincrescue and movieplotter on all images
-            
-            [ParentFolderPath] = fileparts(obj.filePath);
-            [ParentFolderPath] = fileparts(ParentFolderPath);
+            fprintf('Ongoing processing %d/%d: %s \n',i,length(objarray),objarray(i).imageName)
+            try
+                obj = objarray(i);
+                % Run sphincrescue and movieplotter on all images
+                [ParentFolderPath] = fileparts(obj.filePath);
+                [ParentFolderPath] = fileparts(ParentFolderPath);
 
-            SphincRescue(ParentFolderPath, ...
-                obj.speed, ...
-                obj.loadMulti, ...
-                obj.shape, ...
-                obj.detection, ...
-                obj.step)
+                SphincRescue(ParentFolderPath, ...
+                    obj.speed, ...
+                    obj.loadMulti, ...
+                    obj.shape, ...
+                    obj.detection, ...
+                    obj.step)
 
-            SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
-                obj.channelColors, ...
-                obj.axesNames, ...
-                obj.darkBackground, ...
-                obj.timePerFrame, ...
-                obj.normalization, ...
-                obj.legendLocation, ...
-                obj.micronsPerPixel, ...
-                obj.xMinStepMax, ...
-                obj.yMinStepMax, ...
-                1, ...
-                obj.imageName)
-            
-            % set movie path for the movie
-            ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
-            validnames=dir(fullfile(ParentFolderPath, '*.avi'));
-            for j=1:size(validnames,1)
-                obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
-            end
-            parameters = obj;
-            % save parameters
-            [ParentFolderPath] = fileparts(ParentFolderPath);
-            save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
-            %save editable parameters into a csv file
-            csvfileName = 'parameters.csv';
-            propertiesList = properties(parameters);
-            propertiesLength = length(propertiesList);
-            [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
-            csvfileValue =  cell(propertiesLength,1+m*n);
-            for iP = 1:propertiesLength
-                propertiesName = propertiesList{iP};
-                csvfileValue{iP,1} = propertiesName;
-                if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
-                    if strcmp(propertiesName, 'channelColors') == 1
-                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
-                        csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
-                        csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
-                    elseif strcmp(propertiesName, 'xMinStepMax') == 1
-                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
-                    elseif strcmp(propertiesName, 'yMinStepMax') == 1
-                        csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
-                    elseif strcmp(propertiesName, 'velocityStartStop') == 1
-                        csvfileValue{iP,2} = parameters.(propertiesName)(1);
-                        csvfileValue{iP,3} = parameters.(propertiesName)(2);
-                    else
-                        csvfileValue{iP,2} = parameters.(propertiesName);
-                    end
-                else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
-                    [m,n] = size(parameters.(propertiesName));
-                    for iM = 1:m
-                        for iN = 1:n
-                            csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
+                SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
+                    obj.channelColors, ...
+                    obj.axesNames, ...
+                    obj.darkBackground, ...
+                    obj.timePerFrame, ...
+                    obj.normalization, ...
+                    obj.legendLocation, ...
+                    obj.micronsPerPixel, ...
+                    obj.xMinStepMax, ...
+                    obj.yMinStepMax, ...
+                    1, ...
+                    obj.imageName)
+
+                % set movie path for the movie
+                ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
+                validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+                for j=1:size(validnames,1)
+                    obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
+                end
+                parameters = obj;
+                % save parameters
+                [ParentFolderPath] = fileparts(ParentFolderPath);
+                save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
+                %save editable parameters into a csv file
+                csvfileName = 'parameters.csv';
+                propertiesList = properties(parameters);
+                propertiesLength = length(propertiesList);
+                [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
+                csvfileValue =  cell(propertiesLength,1+m*n);
+                for iP = 1:propertiesLength
+                    propertiesName = propertiesList{iP};
+                    csvfileValue{iP,1} = propertiesName;
+                    if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
+                        if strcmp(propertiesName, 'channelColors') == 1
+                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
+                            csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
+                            csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
+                        elseif strcmp(propertiesName, 'xMinStepMax') == 1
+                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                        elseif strcmp(propertiesName, 'yMinStepMax') == 1
+                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                        elseif strcmp(propertiesName, 'velocityStartStop') == 1
+                            csvfileValue{iP,2} = parameters.(propertiesName)(1);
+                            csvfileValue{iP,3} = parameters.(propertiesName)(2);
+                        else
+                            csvfileValue{iP,2} = parameters.(propertiesName);
+                        end
+                    else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
+                        [m,n] = size(parameters.(propertiesName));
+                        for iM = 1:m
+                            for iN = 1:n
+                                csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
+                            end
                         end
                     end
                 end
+                %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+                writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+                objarray(i) = obj;
+            catch exp1
+                fprintf(' Analysis of Object %d  did not go through, error message: %s \n',i,exp1.message)
+                fprintf ('Image %d %s is skipped \n',i,objarray(i).imageName)
+                skippedobjIndex = [skippedobjIndex i];
             end
-            %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
-            writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
-            %%
-            objarray(i) = obj;
         end
-        % run output data gui
-        delete(guiCtrl)
-        sphinctalyzerOutput(objarray)
+        if ~isempty(skippedobjIndex)
+            objarray(skippedobjIndex) = [];
+            if ~isempty(objarray)
+                %update the image list
+                imageNames = cell(length(objarray));
+                for l = 1:length(objarray)
+                    imageNames{l} = objarray(l).imageName;
+                end
+                set(imageQueueTable,'String',imageNames)
+                set(imageQueueTable, 'Value', 1)
+                currentObj = 1;
+            else
+                set(imageQueueTable,'String','')
+                disp('NO image is processed. Load image(s) to proceed')
+                set(handlesArray,'Enable','on')
+                return
+            end
+            
+        end
+
+    % run output data gui
+        if ~isempty(objarray) 
+            sphinctalyzerOutput(objarray)
+        else
+            disp('NO valid image is available. Load image(s) to proceed')
+            set(handlesArray,'Enable','on')
+            return
+        end
+        
+        if ~get(keepAnalysisOpen, 'Value')
+            delete(guiCtrl);
+        else
+            % make new directory for each new analysis in SphinctalyzerImageLoader
+            currDate = strrep(datestr(datetime), ' ', '_');
+            currDate = strrep(currDate,':','-');
+            % pathString = strcat(imagePath,'/Sphincdata/Output_',currDate)
+            pathString = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+            for i = 1:length(objarray)
+                objarray(i).batchDirectory = pathString;
+                objarray(i).moviePaths = {};
+            end
+            % update_parameters(objarray)
+            set(handlesArray,'Enable','on')
+        end
     end
     
+% Cancel a process to restart the analysis
     function cancel(hObject,event)
-        delete(guiCtrl)
-        sphinctalyzerInitializerGUI()
+         set(handlesArray,'Enable','on')
+         % sphinctalyzerInitializerGUI
+        delete(findall(0,'Type','Figure','-not','Tag','mainGUI'))
+        disp('Restart the process')
     end
     
     function update_image_timepoint(hObject,event)
@@ -916,7 +1016,7 @@ function sphinctalyzerInitializerGUI
 %         objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         % update stack previewer
         if column == 1
-            if hObject.Data{row , 2} == 1
+            if hObject.Data{row , 2}
                 file = fullfile(objarray(currentObj).imagePath, objarray(currentObj).imageName);
                 set(channelSelection, 'Value', row)
                 % set timepoint of slider
@@ -958,7 +1058,7 @@ function sphinctalyzerInitializerGUI
             definput = {cellInputs.RowName{1, 1}, cellInputs.RowName{2, 1}, cellInputs.RowName{3, 1}};
         end
         dlgtitle = 'Edit Channel Names';
-        answer = inputdlg(prompts,dlgtitle,dims,definput)
+        answer = inputdlg(prompts,dlgtitle,dims,definput);
         if ~isempty(answer)
             % update the channel name
             for iC = 1:nChannels

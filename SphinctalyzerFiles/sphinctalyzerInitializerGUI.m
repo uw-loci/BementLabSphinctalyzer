@@ -937,6 +937,7 @@ function sphinctalyzerInitializerGUI
         else
             for i = 1:length(objarray)
                 objarray(i).batchDirectory = []; % make new directory for each new analysis in SphinctalyzerImageLoader
+                objarray(i).moviePaths = {};
             end
             % update_parameters(objarray)
             set(handlesArray,'Enable','on')

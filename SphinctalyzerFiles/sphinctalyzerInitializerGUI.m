@@ -906,12 +906,28 @@ function sphinctalyzerInitializerGUI
         if ~isempty(skippedobjIndex)
             objarray(skippedobjIndex) = [];
         end
-        % run output data gui
+
+    % run output data gui
+        if ~isempty(objarray) & ~isempty(skippedobjIndex)
+            %update the image list
+            imageNames = cell(length(objarray));
+            for l = 1:length(objarray)
+                imageNames{l} = objarray(l).imageName;
+            end
+            set(imageQueueTable,'String',imageNames)
+            set(imageQueueTable, 'Value', 1)
+            sphinctalyzerOutput(objarray)
+
+        else
+            set(imageQueueTable,'String','')
+            disp('NO image is processed.Load image(s) to proceed')
+        end
+        
         if ~get(keepAnalysisOpen, 'Value')
                 delete(guiCtrl);
+        else
+            set(handlesArray,'Enable','on')
         end
-        sphinctalyzerOutput(objarray)
-        set(handlesArray,'Enable','on')
     end
     
     function cancel(hObject,event)

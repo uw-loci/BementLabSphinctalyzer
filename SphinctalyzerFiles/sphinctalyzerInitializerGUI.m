@@ -933,10 +933,15 @@ function sphinctalyzerInitializerGUI
         end
         
         if ~get(keepAnalysisOpen, 'Value')
-                delete(guiCtrl);
+            delete(guiCtrl);
         else
+            % make new directory for each new analysis in SphinctalyzerImageLoader
+            currDate = strrep(datestr(datetime), ' ', '_');
+            currDate = strrep(currDate,':','-');
+            % pathString = strcat(imagePath,'/Sphincdata/Output_',currDate)
+            pathString = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
             for i = 1:length(objarray)
-                objarray(i).batchDirectory = []; % make new directory for each new analysis in SphinctalyzerImageLoader
+                objarray(i).batchDirectory = pathString;
                 objarray(i).moviePaths = {};
             end
             % update_parameters(objarray)

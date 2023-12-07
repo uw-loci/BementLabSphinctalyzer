@@ -899,7 +899,7 @@ function sphinctalyzerInitializerGUI
                 objarray(i) = obj;
             catch exp1
                 fprintf(' Analysis of Object %d  did not go through, error message: %s \n',i,exp1.message)
-                fprintf ('Object %d is skipped \n',i)
+                fprintf ('Image %d %s is skipped \n',i,objarray(i).imageName)
                 skippedobjIndex = [skippedobjIndex i];
             end
         end

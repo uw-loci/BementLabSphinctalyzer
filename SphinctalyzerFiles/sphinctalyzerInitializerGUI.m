@@ -823,6 +823,7 @@ function sphinctalyzerInitializerGUI
         end
         skippedobjIndex = [];
         for i = 1:length(objarray)
+            fprintf('Ongoing processing %d/%d: %s \n',i,length(objarray),objarray(i).imageName)
             try
                 obj = objarray(i);
                 % Run sphincrescue and movieplotter on all images

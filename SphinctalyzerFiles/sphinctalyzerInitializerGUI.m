@@ -13,8 +13,23 @@ function sphinctalyzerInitializerGUI
     % mcc -v -m sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.0, version = 0.2.0' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
 
-    global objarray
-    clear,clc, home, close all
+
+    clear,clc, home
+    openningWindows= findobj(0,'Type', 'Figure');
+    if ~isempty(openningWindows)
+        delete(openningWindows)
+    end
+    objarray = [];
+     % initialize GUI parameters for the first image
+    currentObj = 1;
+    loadParameters = 0;
+    parameterFileName = '';
+    parameterFilePath = pwd;
+    imageName = '';
+    imagePath = pwd;
+    outputPath = pwd;
+
+
     if ~isdeployed
         addpath(genpath(fullfile('./../bfmatlab')));
     end
@@ -30,6 +45,7 @@ function sphinctalyzerInitializerGUI
         'Visible','on',...
         'MenuBar','none', ...
         'name','Sphinctalyzer 0.2.1 : Analysis', ...
+        'Tag', 'mainGUI',...
         'NumberTitle','off');
     
     % Keep Analysis Window open
@@ -405,16 +421,15 @@ function sphinctalyzerInitializerGUI
         'Position',[0.56 0.05 0.18 0.1], ...
         'callback',{@cancel}, ...
         'Enable','off');
+    % Disable the following uicontrols during the processing and
+    % enable them after a successful analysis or when exceptions occur.
+    handlesArray = [changeChannelNames,changeChannelNames,changeVelocityRange,...
+        sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
+        enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
+        colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
+        loadParam,openFile,postProcess,keepAnalysisOpen,cellInputs];  
     
-    % Update GUI parameters for the first image
-    currentObj = 1;
-    loadParameters = 0;
-    parameterFileName = '';
-    parameterFilePath = pwd;
-    imageName = '';
-    imagePath = pwd;
-    outputPath = pwd;
-    allObjects = findall(guiCtrl);
+  %GUI layout ends here ------------------------------------------------
 
     function open_file_callback(hObject, eventData)
         [imageName_get, imagePath_get] = uigetfile({'*.tif;*.tiff;'},'Select one or more images',imagePath,'MultiSelect','on');
@@ -674,17 +689,7 @@ function sphinctalyzerInitializerGUI
     
     function update_parameters(objIndex)
         obj = objarray(objIndex);
-        delete(cellInputs)
-        cellInputs = uitable('Parent',cellInputsPanel, ...
-            'ColumnName',{'Display Frame', 'Is Reference?'}, ...
-            'ColumnFormat',{'Numeric','Logical'},...
-            'RowName', {'Channel Name'},...
-            'Data', {1,'False'},...
-            'ColumnEditable',true,...
-            'Units','normalized', ...
-            'Position',[0.02 0.0975 0.640 0.805], ...
-            'Enable','on', ...
-            'CellEditCallback',{@cell_inputs_callback});
+        cellInputs.Data = {};
         % fill cell inputs table
         for i = 1:obj.nChannels
             cellInputs.RowName{i, 1} = obj.cellArray{i, 1};
@@ -790,14 +795,7 @@ function sphinctalyzerInitializerGUI
 
     function sphinctalyze(hObject, eventdata)
         % Run sphinctalyerinitalizer on all images
-        % Disable the following uicontrols during the processing and
-        % enable them after a successful analysis or when exceptions occur.
-        handlesArray = [changeChannelNames,changeChannelNames,changeVelocityRange,...
-            sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
-            enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
-            colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
-            loadParam,openFile,postProcess,keepAnalysisOpen,cellInputs];
-                % enable GUI parameters
+        % disable the GUI parameters during the process
         set(handlesArray,'Enable','off')
         % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
         try
@@ -949,9 +947,12 @@ function sphinctalyzerInitializerGUI
         end
     end
     
+% Cancel a process to restart the analysis
     function cancel(hObject,event)
-        delete(guiCtrl)
-        sphinctalyzerInitializerGUI()
+         set(handlesArray,'Enable','on')
+         % sphinctalyzerInitializerGUI
+        delete(findall(0,'Type','Figure','-not','Tag','mainGUI'))
+        disp('Restart the process')
     end
     
     function update_image_timepoint(hObject,event)

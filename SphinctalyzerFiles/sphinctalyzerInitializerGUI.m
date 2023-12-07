@@ -913,7 +913,7 @@ function sphinctalyzerInitializerGUI
                 end
                 set(imageQueueTable,'String',imageNames)
                 set(imageQueueTable, 'Value', 1)
-
+                currentObj = 1;
             else
                 set(imageQueueTable,'String','')
                 disp('NO image is processed. Load image(s) to proceed')

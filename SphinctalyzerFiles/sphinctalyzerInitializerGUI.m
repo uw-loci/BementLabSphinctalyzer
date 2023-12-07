@@ -799,7 +799,7 @@ function sphinctalyzerInitializerGUI
             loadParam,openFile,postProcess,keepAnalysisOpen,cellInputs];
                 % enable GUI parameters
         set(handlesArray,'Enable','off')
-        
+        % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
         try
             for i = 1:length(objarray)
                 obj = objarray(i);
@@ -935,6 +935,10 @@ function sphinctalyzerInitializerGUI
         if ~get(keepAnalysisOpen, 'Value')
                 delete(guiCtrl);
         else
+            for i = 1:length(objarray)
+                objarray(i).batchDirectory = []; % make new directory for each new analysis in SphinctalyzerImageLoader
+            end
+            % update_parameters(objarray)
             set(handlesArray,'Enable','on')
         end
     end

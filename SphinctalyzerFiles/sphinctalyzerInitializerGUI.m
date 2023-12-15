@@ -445,9 +445,6 @@ function sphinctalyzerInitializerGUI
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
             currentObj = 1;
-            loadParameters = 0;
-            parameterFileName = '';
-            parameterFilePath = '';
             outputPath = fullfile(imagePath,'Sphincdata');
             load_image({imageName},imagePath,outputDirectory)
         else
@@ -458,9 +455,6 @@ function sphinctalyzerInitializerGUI
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
             currentObj = 1;
-            loadParameters = 0;
-            parameterFileName = '';
-            parameterFilePath = '';
             outputPath = fullfile(imagePath,'Sphincdata');
             load_image(imageName,imagePath,outputDirectory)
         end

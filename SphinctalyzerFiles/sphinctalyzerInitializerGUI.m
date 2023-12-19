@@ -428,7 +428,7 @@ function sphinctalyzerInitializerGUI
         'Style','pushbutton', ...
         'String','Reset', ...
         'Tooltip','Relaunch the APP',...
-        'Enable','off', ...
+        'Enable','on', ...
         'FontSize',12,...
         'Units','normalized', ...
         'Position',[0.425 0.05 0.15 0.075], ...
@@ -439,7 +439,7 @@ function sphinctalyzerInitializerGUI
         sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
         enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
         colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
-        loadParam,openFile,postProcess,keepAnalysisOpen,cellInputs];  
+        openFile,postProcess,keepAnalysisOpen,cellInputs];  
     
   %GUI layout ends here ------------------------------------------------
 
@@ -469,6 +469,8 @@ function sphinctalyzerInitializerGUI
             outputPath = fullfile(imagePath,'Sphincdata');
             load_image(imageName,imagePath,outputDirectory)
         end
+        set(loadParam,'Enable','off')
+        fprintf(' "Load Parameters" button is disabled". \n To specify a parameters file for the anlaysis, click on the "Load Parameters" butoon before loading images. \n' )
     end
     
 
@@ -568,8 +570,11 @@ function sphinctalyzerInitializerGUI
                 % save .mat parameters
 %                 [ParentFolderPath] = fileparts(ParentFolderPath);
                 save(fullfile(parameterFilePath,parameterFileName),'parameters','-mat');
-                fprintf('Parameter file is loaded and updated at %s \n', parameterFilePath)
+                fprintf('Parameter file %s is loaded from %s \n',parameterCSVFileName, parameterFilePath)
+                fprintf('This file will be applied to subsequently loaded images. \n')
                 loadParameters = 1;
+                set(loadParam,'Enable','off')
+                fprintf('"Load Parameters" button is disabled. \n To load a new parameters file, click on the "Reset" button to start over. \n' )
                 msgbox("Parameters successfully loaded.");
             end
         end
@@ -680,7 +685,7 @@ function sphinctalyzerInitializerGUI
         set(imageQueueTable,'Enable','on')
         set(sphinctalyzeButton,'Enable','on')
         set(cancelButton,'Enable','on')
-        set(resetButton,'Enable','on')
+        % set(resetButton,'Enable','on')
         set(keepAnalysisOpen, 'Enable','on')
         set(cellInputs,'Enable','on')
         update_parameters(currentObj)

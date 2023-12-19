@@ -14,8 +14,9 @@ function sphinctalyzerInitializerGUI
     % mcc -v -W 'main:Sphinctalyzer0.2.0, version = 0.2.0' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.0 MAC(intel 64-bit) standalone built on 09/19/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.1, version = 0.2.1' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.1 MAC(intel 64-bit) standalone built on 11/03/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.2, version = 0.2.2' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.2 MAC(intel 64-bit) standalone built on 12/07/2023..."'
+    % mcc -v -W 'main:Sphinctalyzer0.2.3, version = 0.2.3' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.3 MAC(intel 64-bit) standalone built on 12/18/2023..."'
 
-    clear,clc, home
+    clc, home
     openningWindows= findobj(0,'Type', 'Figure');
     if ~isempty(openningWindows)
         delete(openningWindows)
@@ -501,7 +502,7 @@ function sphinctalyzerInitializerGUI
 
         end
         if ~isempty(processedPaths)
-            if ~get(keepAnalysisOpen, 'Value')
+            if keepAnalysisOpen.Value == 0
                 delete(guiCtrl);
             end
             postProcessingGUI(processedPaths)
@@ -681,9 +682,8 @@ function sphinctalyzerInitializerGUI
         set(cancelButton,'Enable','on')
         set(resetButton,'Enable','on')
         set(keepAnalysisOpen, 'Enable','on')
-
-        update_parameters(currentObj)
         set(cellInputs,'Enable','on')
+        update_parameters(currentObj)
         % Populate Image Queue
         imageNames = cell(length(objarray));
         for l = 1:length(objarray)

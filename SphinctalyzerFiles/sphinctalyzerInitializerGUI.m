@@ -641,7 +641,7 @@ function sphinctalyzerInitializerGUI
                 objarray(i).loadMulti = 0;
             end
             [nrow, ~] = size(objarray(i).cellArray);
-            if loadParameters == 0 || nrow ~= nChannels
+            if loadParameters == 0
                 cellArray = cell(nChannels, 3);
                 % Create cell array
                 for j = 1:nChannels
@@ -662,6 +662,15 @@ function sphinctalyzerInitializerGUI
                 % pass cellarray into the object
                 objarray(i).cellArray = cellArray;
                 % from cell array, add channelNames into the object
+                objarray(i).channelNames = {cellArray{:, 1}};
+            elseif nrow ~= nChannels 
+                cellArray = cell(nChannels, 3);
+                for j = 1:nChannels
+                    for k = 1:3
+                        cellArray{j,k} = objarray(i).cellArray{j,k};
+                    end
+                end
+                objarray(i).cellArray = cellArray;
                 objarray(i).channelNames = {cellArray{:, 1}};
             end
         end

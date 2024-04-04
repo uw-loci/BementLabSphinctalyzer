@@ -476,33 +476,31 @@ function sphinctalyzerInitializerGUI
     
 
     function post_process_callback(hObject, eventData)
-        processAnother = 1;
         processedPaths = {};
-        while processAnother == 1
-            selpath = uigetdir(outputPath,'Pick an output folder with valid data');
-            if selpath == 0
-                disp('NO output folder is selected')
-                return
+        outputDir = uigetdir(outputPath,'Pick the output folder containing valid results folder(s) of one or more movies');
+        if outputDir == 0
+            disp('NO output folder is selected')
+            return
+        else
+            listAll = dir(fullfile(outputDir,'data*'));
+            if ~isempty(listAll)
+                listFolders = listAll([listAll(:).isdir]);
+                % listFolders =
+                % listFolders(~ismember({listFolders(:).name},{'.','..'}));
+                % remove '.' and '..'
             else
-                outputPath = selpath;
-            end
-            
-            if isfile(fullfile(selpath,'parameters.mat'))
-                processedPaths{end + 1} = selpath;
-                choice=questdlg('Process Another Folder?','Prompt','Yes','No','No');
-                 switch choice
-                     case 'Yes'
-                        continue
-                     case 'No'
-                         processAnother = 0;
-                     otherwise
-                         processAnother = 0;
-                 end
-            else
-                errordlg('Please select a valid data folder')
-                return;
+                error('No valid outputDir folder is found')
             end
 
+        end
+
+        for i = 1:length(listFolders)
+            selpath = fullfile(outputDir,listFolders(i).name);
+            if isfile(fullfile(selpath,'parameters.mat'))
+                processedPaths{end + 1} = selpath;
+            else
+                fprintf('NO parameters.mat file is found in %s \n', selpath)
+            end
         end
         if ~isempty(processedPaths)
             if keepAnalysisOpen.Value == 0
@@ -510,6 +508,7 @@ function sphinctalyzerInitializerGUI
             end
             postProcessingGUI(processedPaths)
         else
+            disp('NO valid output folder is selected')
             return;
         end
     end

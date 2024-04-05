@@ -368,6 +368,30 @@ end
 close(writerObj);
 movefile([savename,'.avi'],savepath);
 close gcf
+%save parameters to the excel file
+parameters_post = cell(11,4);
+parameters_post{1,1} = 'Channel Colors'; 
+nColors = length(channelColors);
+for i = 1:nColors
+    parameters_post{1,i+1} = mat2str(channelColors{i});
+end
+parameters_post{2,1} = 'Axes Names'; 
+nAxesNames = length(axesNames);
+for i = 1:nAxesNames
+    parameters_post{2,i+1} = axesNames{i};
+end
+parameters_post{3,1} = 'DarkBackgroundFlag'; parameters_post{3,2} = darkBackgroundFlag;
+parameters_post{4,1} = 'SecondsPerFrame'; parameters_post{4,2} = secondsPerFrame;
+parameters_post{5,1} = 'Normalization'; parameters_post{5,2} = normalization;
+parameters_post{6,1} = 'Legend Location'; parameters_post{6,2} = legendLocation;
+parameters_post{7,1} = 'MicronsPerPixel'; parameters_post{7,2} = micronsPerPixel;
+parameters_post{8,1} = 'xMinStepMax'; parameters_post{8,2} = mat2str(xMinStepMax);
+parameters_post{9,1} = 'yMinStepMax'; parameters_post{9,2} = mat2str(yMinStepMax);
+parameters_post{10,1} = 'File Index'; parameters_post{10,2} = num; 
+parameters_post{11,1} = 'Image Filename'; parameters_post{11,2} = imageFileName;
+parameters_post{12,1} = 'Results Folder'; parameters_post{12,2} = savepath;
+writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range','A1');
+%save results to the excel file
 writematrix(Peaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C' num2str(LineNo)]);
 writematrix(PeakLocs,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo)]);
 writematrix(Halfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo)]);

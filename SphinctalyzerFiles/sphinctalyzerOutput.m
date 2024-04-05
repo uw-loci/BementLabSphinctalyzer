@@ -227,11 +227,11 @@ function sphinctalyzerOutput(objarray)
         [ParentFolderPath] = fileparts(ParentFolderPath);
         rangeStart = 'C2';
         xlsSheets = cell(1,5);
-        xlsSheets{1} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'),'Sheet', 'Peak Intensity','Range',rangeStart);
-        xlsSheets{2} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Peak Locations','Range',rangeStart);
-        xlsSheets{3} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Halfwidths','Range',rangeStart);
-        xlsSheets{4} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','AUCs','Range',rangeStart);
-        xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results.xls'), 'Sheet','Percent Above Background','Range',rangeStart);
+        xlsSheets{1} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'),'Sheet', 'Peak Intensity','Range',rangeStart);
+        xlsSheets{2} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Peak Locations','Range',rangeStart);
+        xlsSheets{3} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Halfwidths','Range',rangeStart);
+        xlsSheets{4} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','AUCs','Range',rangeStart);
+        xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Percent Above Background','Range',rangeStart);
         
         for m = 1:3
             for n = 1:6

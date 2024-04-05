@@ -225,13 +225,16 @@ function sphinctalyzerOutput(objarray)
         obj = objarray(currentObj);
         [ParentFolderPath] = fileparts(obj.filePath);
         [ParentFolderPath] = fileparts(ParentFolderPath);
-        rangeStart = 'C2';
-        xlsSheets = cell(1,5);
-        xlsSheets{1} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'),'Sheet', 'Peak Intensity','Range',rangeStart);
-        xlsSheets{2} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Peak Locations','Range',rangeStart);
-        xlsSheets{3} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Halfwidths','Range',rangeStart);
-        xlsSheets{4} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','AUCs','Range',rangeStart);
-        xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Percent Above Background','Range',rangeStart);
+         % excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
+         excelSavename = 'Results_1.xlsx';
+         update_xlssheet(excelSavename);
+        % rangeStart = 'C2';
+        % xlsSheets = cell(1,5);
+        % xlsSheets{1} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'),'Sheet', 'Peak Intensity','Range',rangeStart);
+        % xlsSheets{2} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Peak Locations','Range',rangeStart);
+        % xlsSheets{3} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Halfwidths','Range',rangeStart);
+        % xlsSheets{4} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','AUCs','Range',rangeStart);
+        % xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Percent Above Background','Range',rangeStart);
         
         for m = 1:3
             for n = 1:6
@@ -393,6 +396,18 @@ function sphinctalyzerOutput(objarray)
         if selected_viewer == 1
             colormap(imgAx,obj.colormap)
         end
+        %update the output table data and parameters associated with each
+        %movie
+        if selected_viewer == 3
+            %update the data table
+            hValue = hObject.Value;
+            movieName = hObject.String{hValue};
+            underscore_pos = strfind(movieName,"_");
+            indexStart = underscore_pos+1;
+            movieIndex =str2num(movieName(indexStart:end));
+            excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
+            update_xlssheet(excelSavename);
+        end
         axis image equal
         drawnow
         update_image_data_panel(iTimepoint)
@@ -421,6 +436,7 @@ function sphinctalyzerOutput(objarray)
         drawnow
         update_image_data_panel(iTimepoint)
         set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
+        update_table
     end
     
     function I = bf_reader(iTimepoint, iChannel)
@@ -540,6 +556,7 @@ function sphinctalyzerOutput(objarray)
             obj = objarray(currentObj);
             [ParentFolderPath] = fileparts(obj.filePath);
             [ParentFolderPath] = fileparts(ParentFolderPath);
+            movieIndex = length(obj.moviePaths)+1;
             SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
                 obj.channelColors, ...
                 obj.axesNames, ...
@@ -550,7 +567,7 @@ function sphinctalyzerOutput(objarray)
                 obj.micronsPerPixel, ...
                 obj.xMinStepMax, ...
                 obj.yMinStepMax, ...
-                length(obj.moviePaths) + 1, ...
+                movieIndex, ...
                 obj.imageName)
             newMoviePath = strrep(obj.moviePaths{1},'Results_1',strcat('Results_',(num2str(length(obj.moviePaths) + 1))));
             obj.moviePaths = [obj.moviePaths; newMoviePath];
@@ -573,6 +590,8 @@ function sphinctalyzerOutput(objarray)
             end
             axis image equal
             drawnow
+            excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
+            update_xlssheet(excelSavename);
             update_image_data_panel(iTimepoint)
             set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
         end
@@ -655,6 +674,8 @@ function sphinctalyzerOutput(objarray)
                 end
                 axis image equal
                 drawnow
+                excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
+                update_xlssheet(excelSavename);
                 update_image_data_panel(iTimepoint)
                 set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
             end
@@ -933,5 +954,17 @@ function sphinctalyzerOutput(objarray)
                 end
             end
         end
+    end
+    function update_xlssheet(excelSavename)
+        obj = objarray(currentObj);
+        [ParentFolderPath] = fileparts(obj.filePath);
+        [ParentFolderPath] = fileparts(ParentFolderPath);
+        rangeStart = 'C2';
+        xlsSheets = cell(1,5);
+        xlsSheets{1} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename),'Sheet', 'Peak Intensity','Range',rangeStart);
+        xlsSheets{2} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Peak Locations','Range',rangeStart);
+        xlsSheets{3} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Halfwidths','Range',rangeStart);
+        xlsSheets{4} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart);
+        xlsSheets{5} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart);
     end
 end

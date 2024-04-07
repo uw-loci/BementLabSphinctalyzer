@@ -407,6 +407,8 @@ function sphinctalyzerOutput(objarray)
             movieIndex =str2num(movieName(indexStart:end));
             excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
             update_xlssheet(excelSavename);
+            %update the movie options
+            update_movieOptions(excelSavename);
         end
         axis image equal
         drawnow
@@ -967,4 +969,89 @@ function sphinctalyzerOutput(objarray)
         xlsSheets{4} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart);
         xlsSheets{5} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart);
     end
+    function update_movieOptions(excelSavename)
+
+        %load movie parameters from the results excel file
+        obj = objarray(currentObj);
+        [ParentFolderPath] = fileparts(obj.filePath);
+        [ParentFolderPath] = fileparts(ParentFolderPath);
+        movieOptions = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename),'Sheet','parameters');
+        % parameters_post{1,1} = 'Channel Colors'; 
+        % nColors = length(channelColors);
+        % for i = 1:nColors
+        %     parameters_post{1,i+1} = mat2str(channelColors{i});
+        % end
+        % parameters_post{2,1} = 'Axes Names';
+        % nAxesNames = length(axesNames);
+        % for i = 1:nAxesNames
+        %     parameters_post{2,i+1} = axesNames{i};
+        % end
+        % parameters_post{3,1} = 'DarkBackgroundFlag'; parameters_post{3,2} = darkBackgroundFlag;
+        % parameters_post{4,1} = 'SecondsPerFrame'; parameters_post{4,2} = secondsPerFrame;
+        % parameters_post{5,1} = 'Normalization'; parameters_post{5,2} = normalization;
+        % parameters_post{6,1} = 'Legend Location'; parameters_post{6,2} = legendLocation;
+        % parameters_post{7,1} = 'MicronsPerPixel'; parameters_post{7,2} = micronsPerPixel;
+        % parameters_post{8,1} = 'xMinStepMax'; parameters_post{8,2} = mat2str(xMinStepMax);
+        % parameters_post{9,1} = 'yMinStepMax'; parameters_post{9,2} = mat2str(yMinStepMax);
+        % parameters_post{10,1} = 'File Index'; parameters_post{10,2} = num;
+        % parameters_post{11,1} = 'Image Filename'; parameters_post{11,2} = imageFileName;
+        % parameters_post{12,1} = 'Results Folder'; parameters_post{12,2} = savepath;
+        % update all the parameters
+        obj.darkBackground = movieOptions{3,2};
+        obj.normalization = movieOptions{5,2};
+        obj.legendLocation = movieOptions{6,2};
+        obj.micronsPerPixel = movieOptions{7,2};
+        obj.timePerFrame = movieOptions{4,2};
+        for i = 1:obj.nChannels
+            obj.channelColors{i} = str2num(movieOptions{1,i+1});
+        end
+        obj.axesNames = movieOptions(2,2:3);
+        obj.xMinStepMax = str2num(movieOptions{8,2});
+        obj.yMinStepMax = str2num(movieOptions{9,2});
+        objarray(currentObj) = obj;
+        set(darkBackground, 'Value', obj.darkBackground);
+        set(enterNormalization, 'String', num2str(obj.normalization));
+        set(enterNormalization,'UserData',obj.normalization);
+        set(enterMicronsPerPixel,'String',num2str(obj.micronsPerPixel));
+        set(enterMicronsPerPixel,'UserData',obj.micronsPerPixel);
+        set(enterTimePerFrame,'String',num2str(obj.timePerFrame));
+        set(enterTimePerFrame,'UserData',obj.timePerFrame);
+        legendValue = find(strcmp(enterLegendLocation.String,obj.legendLocation)==1);
+        set(enterLegendLocation,'Value',legendValue);        
+        for i = 1:obj.nChannels
+            channelColor = obj.channelColors{i};
+            if isequal(channelColor, [1 0 0])
+                colorValue = 1;
+            elseif isequal(channelColor, [0 0.6 0])
+                colorValue = 2;
+            elseif isequal(channelColor, [0 0 1])
+                colorValue = 3;
+            elseif isequal(channelColor, [0 1 1])
+                colorValue = 4;
+            elseif isequal(channelColor, [1 0 1])
+                colorValue = 5;
+            elseif isequal(channelColor, [1 1 0])
+                colorValue = 6;
+            elseif isequal(channelColor, [0 0 0])
+                colorValue = 7;
+            elseif isequal(channelColor, [1 1 1])
+                colorValue = 8;
+            end
+            % enterChannelColor(i).Value = colorValue;
+            channelColorLabel(i) = uicontrol('Parent',moviePlotOptions, ...
+                'Style','text', ...
+                'String',strcat('channel',num2str(i)), ...
+                'FontSize',10, ...
+                'Units','normalized', ...
+                'Position',[0 .4-(i*0.1) .85 .075]);
+            enterChannelColor(i) = uicontrol('Parent',moviePlotOptions, ...
+                'Style','popupmenu', ...
+                'String',{'red';'green';'blue';'cyan';'magenta';'yellow';'black';'white'}, ...
+                'Units','normalized', ...
+                'Position',[0.6 .415-(i*0.1) .38 .075], ...
+                'Value',colorValue, ...
+                'Callback', {@cc_button, i});
+        end
+    end
+
 end

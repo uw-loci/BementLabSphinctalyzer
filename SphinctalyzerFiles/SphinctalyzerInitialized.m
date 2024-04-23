@@ -15,7 +15,7 @@ if nargin == 2
     
     Step=8; %Line segment length for livewire operation
 else
-    load([path,'/',filename]);
+    load(fullfile(path,filename));
     Range = find([SphinctalyzerOutputs(:).InRange]==1);  % Select the range of images to scan in form first frame:last frame
     inspeed = speed;  % Select maximum inward speed of ring
     outspeed = speed;  % Select maximum outward speed of ring

@@ -9,7 +9,7 @@ if LoadMulti == 0
         [ChName,ChPath] = uigetfile({'*.tif';'*.tiff'},['Select ',InputCells{1,1},' Tiff Stack']);
     end
     %Load first channel and assign relevant data to Sphinctalyzer structure
-    ChannelOutputs = tiffread2(strcat(ChPath,ChName));
+    ChannelOutputs = tiffread2(fullfile(ChPath,ChName));
     SphinctalyzerOutputs=struct((matlab.lang.makeValidName([InputCells{1,1}, 'Filename'])), {ChannelOutputs.filename}, (matlab.lang.makeValidName([InputCells{1,1}, 'Data'])), {ChannelOutputs.data});
     % Make sure that Range is appropriate
     if min(Range) < 1 || max(Range) > size(SphinctalyzerOutputs,2)
@@ -84,21 +84,22 @@ else
     if isempty(batchDirectory)
         currDate = strrep(datestr(datetime), ' ', '_');
         currDate = strrep(currDate,':','-');
-        pathString = strcat(ChPath,'/Sphincdata/Output_',currDate,'/data_',ChName,'/sphinc/');
+        % pathString = strcat(ChPath,'/Sphincdata/Output_',currDate,'/data_',ChName,'/sphinc/');
+        pathString = fullfile(ChPath,'Sphincdata',sprintf('Output_%s',currDate),sprintf('data_%s',ChName),'sphinc');
         % pathString = strcat('../Sphincdata/data_',ChName,'_',currDate,'/sphinc/');
         if ~exist(pathString,'dir')
-            mkdir (pathString)
+            mkdir(pathString)
             fprintf('Output directory is created at %s \n',pathString)
         end
-        SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
+        SaveFileName = fullfile(pathString,'sphinctalyzerResults.mat');
     else
         % currDate = strrep(datestr(datetime), ' ', '_');
-        pathString = strcat(batchDirectory,'/data_',ChName,'/sphinc/');
+        pathString = fullfile(batchDirectory,sprintf('data_%s',ChName),'sphinc');
         if ~exist(pathString,'dir')
-            mkdir (pathString)
+            mkdir(pathString)
             fprintf('Output directory is created at %s \n',pathString)
         end
-        SaveFileName = strcat(pathString,'sphinctalyzerResults.mat');
+        SaveFileName = fullfile(pathString,'sphinctalyzerResults.mat');
     end
 end
 end

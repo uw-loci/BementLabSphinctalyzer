@@ -37,6 +37,6 @@ end
 
 
 mkdir([SavePath,'Redo'])
-SaveFileName=[SavePath,'Redo/',SaveName];
+SaveFileName=fullfile([SavePath 'Redo'],SaveName);
 end
 

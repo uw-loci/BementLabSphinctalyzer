@@ -506,11 +506,35 @@ function sphinctalyzerInitializerGUI
             if keepAnalysisOpen.Value == 0
                 delete(guiCtrl);
             end
+            if loadParameters == 1
+                answerPost = questdlg('Create new movies using loaded pararmeters?', ...
+                	'Verify post-processing movie creatation', ...
+                	'YES','NO','YES');
+                % Handle response
+                switch answerPost
+                    case 'YES'
+                        disp('Loaded parameters are used for creating new movies...')
+                        PathtoParameters = fullfile(parameterFilePath,parameterFileName);
+                       
+                        for j = 1:length(processedPaths)
+                            %create new results for each movie using loaded parameters
+                            fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
+                            createNewMovie_post(processedPaths{j},PathtoParameters);
+                        end
+
+                    case 'NO'
+                        disp('Loaded parameters are not used for the post-processing')
+                end
+            end
             postProcessingGUI(processedPaths)
+            
+
         else
             disp('NO valid output folder is selected')
             return;
-        end
+            end
+       
+
     end
 
     function load_param_callback(hObject, eventData)

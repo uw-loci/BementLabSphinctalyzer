@@ -1,16 +1,22 @@
 function createNewMovie_post(outputPath, PathtoParameters)
 %creat new movie use post-processing parameters
-previousP = load(fullfile(outputPath,'parameters.mat'),'parameters');
-load(PathtoParameters,'parameters');   %mat file
-obj = parameters;
-obj.filePath = previousP.parameters.filePath;
-obj.moviePaths = previousP.parameters.moviePaths;
-obj.imageName = previousP.parameters.imageName;
+if nargin == 2
+    previousP = load(fullfile(outputPath,'parameters.mat'),'parameters');
+    load(PathtoParameters,'parameters');   %mat file
+    obj = parameters;
+    obj.filePath = previousP.parameters.filePath;
+    obj.moviePaths = previousP.parameters.moviePaths;
+    obj.imageName = previousP.parameters.imageName;
+    movieIndex = length(dir(fullfile(outputPath,'sphincRedo','*.avi')))+1;
+elseif nargin == 1
+    load(fullfile(outputPath,'parameters.mat'),'parameters')
+    obj = parameters;
+    movieIndex = 1; % use the parameters in the output folder to overwrite the first avi and xlsx file 
+else
+    error('1 or 2 parameters are needed for the new movie creation function')
+end
+
 ParentFolderPath = outputPath;
-% [ParentFolderPath] = fileparts(obj.filePath);
-% [ParentFolderPath] = fileparts(ParentFolderPath);
-% movieIndex = length(obj.moviePaths)+1;
-movieIndex = length(dir(fullfile(outputPath,'sphincRedo','*.avi')))+1;
 SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     obj.channelColors, ...
     obj.axesNames, ...

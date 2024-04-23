@@ -15,6 +15,7 @@ function sphinctalyzerInitializerGUI
     % mcc -v -W 'main:Sphinctalyzer0.2.1, version = 0.2.1' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.1 MAC(intel 64-bit) standalone built on 11/03/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.2, version = 0.2.2' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.2 MAC(intel 64-bit) standalone built on 12/07/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.3, version = 0.2.3' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.3 MAC(intel 64-bit) standalone built on 12/18/2023..."'
+    % mcc -v -W 'main:Sphinctalyzer0.2.4, version = 0.2.4' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer v0.2.4 MAC(intel 64-bit) standalone built on 04/23/2024..."'
 
     clc, home
     openningWindows= findobj(0,'Type', 'Figure');
@@ -46,7 +47,7 @@ function sphinctalyzerInitializerGUI
         'Position',[0.10 0.10 0.85 0.85], ...
         'Visible','on',...
         'MenuBar','none', ...
-        'name','Sphinctalyzer v0.2.4 : Analysis', ...
+        'name','Sphinctalyzer v0.2.4: Analysis', ...
         'Tag', 'mainGUI',...
         'NumberTitle','off');
     
@@ -519,6 +520,10 @@ function sphinctalyzerInitializerGUI
                         for j = 1:length(processedPaths)
                             %create new results for each movie using loaded parameters
                             fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
+                            if exist(fullfile(processedPaths{j},'sphincRedo','results_1.xlsx'),'file') ~=2 % if first file does not exit
+                                disp('create the first results file using the previous saved parameters')
+                                createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                            end
                             createNewMovie_post(processedPaths{j},PathtoParameters);
                         end
 

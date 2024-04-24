@@ -26,7 +26,7 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         javaaddpath(fullfile([pwd,'/poi_library'],validnames(i).name));
     end
     h='Yes';
-    i=2;
+   % i=2;
     path={};
     if guiInput == 0
         path{1}=uigetdir;
@@ -306,10 +306,10 @@ else
 end
 
 
-writerObj = VideoWriter(strcat([savename,'.avi']));
+writerObj = VideoWriter(fullfile(savepath,strcat([savename,'.avi'])));
 set(writerObj,'FrameRate',frmrate*InterpolationFrames);
 open(writerObj);
-figure;
+gcf1 = figure;
 
 for i= 1:size(Zr,1)
     hold off
@@ -317,7 +317,7 @@ for i= 1:size(Zr,1)
     eval(['plot(x,IntensityOut.',(matlab.lang.makeValidName(ChannelStrings{j})),'(i,:),''color'', [',num2str(ColorMat{j}),'] ,''linewidth'',4)'])%./(max(ImageOutputs.valyred{i})-median(ImageOutputs.valyred{i})),'r','LineWidth',4);%./max(valval1{i})
     hold on
     end
-    set(gcf,'Position',[1 1 1000 500]);
+    set(gcf1,'Position',[1 1 1000 500]);
     if guiInput == 1
         xlim(gca,[xmin, xmax])
         ylim(gca,[yMinStepMax(1),yMinStepMax(3)])
@@ -340,12 +340,12 @@ for i= 1:size(Zr,1)
         end
     end
     lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',24,'FontName','Arial');
-    set(gcf, 'Color', 'w')
+    set(gcf1, 'Color', 'w')
     set(gca, 'Color', 'w')
     ylabel(ystring)
     if guiInput == 1
         if darkBackgroundFlag == 1
-            set(gcf, 'Color', 'k')
+            set(gcf1, 'Color', 'k')
             set(gca, 'Color', 'k')
             set(gca, 'XColor', [1 1 1])
             set(gca, 'YColor', [1 1 1])
@@ -359,15 +359,13 @@ for i= 1:size(Zr,1)
     %'String',{'Wound'},...
     %'FitBoxToText','off','FontName','Arial','FontSize',24,'HorizontalAlignment','Center','BackgroundColor',[1 1 1]);
     pause(.01)
-frame=getframe(gcf);
- writeVideo(writerObj,frame);
-
-
+    frame=getframe(gcf1);
+    writeVideo(writerObj,frame);
 end
 %MovieWriter
 close(writerObj);
-movefile([savename,'.avi'],savepath);
-close gcf
+% movefile([savename,'.avi'],savepath);
+close(gcf1)
 %save parameters to the excel file
 parameters_post = cell(11,4);
 parameters_post{1,1} = 'Channel Colors'; 
@@ -398,18 +396,18 @@ writematrix(Halfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',['
 writematrix(AUCs,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo)]);
 
 %% Normalization Calculation
-if normalization == 1;
+if normalization == 1
     ylims=[-.1,1.1];
     yticks=[0:.2:1];
     ystring='Normalized gray value ';
-    if PreWoundFrame == 1;
+    if PreWoundFrame == 1
         for i=1:size(ChannelStrings,1)
             IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
             XVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=max(IntensityVals(XVals<=30&XVals>=-30));
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
         end
-    elseif PreWoundFrame == 2;
+    elseif PreWoundFrame == 2
         for i=1:size(ChannelStrings,1)
             IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
             XVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
@@ -417,24 +415,24 @@ if normalization == 1;
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=median(IntensityVals);
         end
     end
-elseif normalization == 2;
+elseif normalization == 2
     ylims=[-1 6];
     yticks=[0:1:5];
     ystring='Fold above background';
-    if PreWoundFrame == 1;
+    if PreWoundFrame == 1
         for i=1:size(ChannelStrings,1)
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=2*FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']));
         end
         
-    elseif PreWoundFrame == 2;
+    elseif PreWoundFrame == 2
         for i=1:size(ChannelStrings,1)
             IntensityVals=SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']));
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=median(IntensityVals);
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=2*FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']));
         end
     end
-elseif normalization == 3;
+elseif normalization == 3
     for i=1:size(ChannelStrings,1)
         FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
         FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
@@ -447,7 +445,7 @@ elseif normalization == 4
     ylims=[-.1,1.1];
     yticks=[0:.2:1];
     ystring='Normalized gray value ';
-    if PreWoundFrame == 1;
+    if PreWoundFrame == 1
         for i=1:size(ChannelStrings,1)
             for j=min(Range):max(Range)
                 IntensityVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
@@ -459,7 +457,7 @@ elseif normalization == 4
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
         end
-    elseif PreWoundFrame == 2;
+    elseif PreWoundFrame == 2
         for i=1:size(ChannelStrings,1)
             for j=min(Range):max(Range)
                 IntensityVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];

@@ -36,14 +36,14 @@
 
 
 # Installation of the standalone APP
-The lastest standaloen version (v0.2.4-Beta2) for MAC(intel) can be downloaded from [the release page] (https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.4-Beta2).  Follow the instructions there to install and launch this standalone app.
+The lastest standaloen version (v0.2.4-Beta2) for MAC(intel) can be downloaded from [the release page](https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.4-Beta2).  Follow the instructions there to install and launch this standalone app.
 
 # GUI Manual
 
 The general workflow for processing image(s) in the Sphinctalyzer tool is:
 <ol>
-  <li>Select either batch processing or single image processing.</li>
   <li>Click the "Open File(s)" button and select the desired image(s) in your file browser.</li>
+  <li>If an user wants to use customized parameters for the analysis/post-processing of one or more images, before importing any images in step 1, click the "Load Parameters" button to load a previously saved "parameters.csv" file.</li>  
   <li>A new GUI will open with an image previewer, parameters panel, and Image Queue table.</li><ul>
     <li>You can slide through the timepoints, change the channel, and customize the colormap of the current image displayed in the previewer.</li>
     <li>You can navigate between difference images in a batch using the Image Queue Table.</li>

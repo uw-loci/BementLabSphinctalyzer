@@ -1,9 +1,10 @@
 # BementLabSphinctalyzer
 > The Sphinctalyzer quantifies signal during the cell repair process.  It will work with anything that has a radial axis of symmetry or something close to it.  The key feature of this tool is the ability to track the edge of the wound over time.
 
-## Dependencies
+## Installation of the source-code version
+# Dependencies
 <ul>
-  <li>MATLAB (preferably 2022b, but other versions should work fine). The follow Add-Ons should be installed:
+  <li>MATLAB (preferably 2023b, but other versions should work fine). The follow Add-Ons should be installed:
   <ul>
     <li>Statistics and Machine Learning Toolbox</li>
     <li>Bioinformatics Toolbox</li>
@@ -15,7 +16,7 @@
   <li>Xcode if using a Mac operating system (for compiling mex files)</li>
 </ul>
 
-## Setup Instructions
+# Setup Instructions
 <ol>
   <li>Download the repository onto your computer.</li>
   <li>Open MATLAB and navigate into the SphinctalyzerFiles folder in the repository.</li>
@@ -27,11 +28,15 @@
   <li>Your repository is ready to Sphinctalyze.</li>
 </ol>
 
-## Usage
+# Usage
 <ul>
   <li>To run the GUI, simply open the fileOpenerGUI.m file in the SphinctalyzerFiles folder and run it. In the GUI interface, follow the manual below to process one or multiple images.</li>
   <li>Alternatively, The individual scripts can be run, following this manual: https://docs.google.com/document/d/1uKmW1dC0txRcns8DQJE83nbw5Co0auBl/edit?usp=sharing&ouid=112831865674885079233&rtpof=true&sd=true </li>
 </ul>
+
+
+## Installation of the standalone APP
+The lastest standaloen version (v0.2.4-Beta2) for MAC(intel) can be downloaded from [the release page] (https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.4-Beta2).  Follow the instructions there to install and launch this standalone app.
 
 ## GUI Manual
 

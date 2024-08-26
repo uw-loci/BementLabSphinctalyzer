@@ -36,7 +36,7 @@
 
 
 # Installation of the standalone APP
-The lastest standaloen version (v0.2.4-Beta2) for MAC(intel) can be downloaded from [the release page](https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.4-Beta2).  Follow the instructions there to install and launch this standalone app.
+The lastest standaloen version (v0.2.4-Beta3) for MAC(intel) can be downloaded from [the release page](https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.4-Beta3).  Follow the instructions there to install and launch this standalone app.
 
 # GUI Manual
 

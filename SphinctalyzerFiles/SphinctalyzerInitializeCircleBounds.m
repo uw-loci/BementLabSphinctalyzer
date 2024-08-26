@@ -1,8 +1,19 @@
 function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colorMap,guiInput,roiShape)
 
 % Open new figure
-figAnnotation = figure('Name','Annotating the Brightest Path', 'NumberTitle','off','NextPlot','replace');
+ssU = get(0,'ScreenSize');
+WidthvsDepth = ssU(3)/ssU(4);
+figWidth = 0.475;
+figDepth = 0.475*WidthvsDepth;
+if figDepth > 1
+    figDepth = 0.8;
+end
+figAnnotation = figure('Units','normalized', ...
+        'Position',[0.415 0.10 figWidth figDepth],'NumberTitle','off','NextPlot','replace');
 % ax1 = figAnnotation.CurrentAxes;
+%get the file name of the frame
+[~,imgName,imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
+
 ROIdeleted_flag = 0;
 
 if strcmp(SphinctalyzerOutputs(1).RefChannel,'Self') %Loop if each channel is scanned separately
@@ -13,12 +24,14 @@ end
 
 %loop through images
 for i = i
+    figure(figAnnotation);
     imagesc(SphinctalyzerOutputs(InputCells{i,2}).(matlab.lang.makeValidName([InputCells{i,1},'Data']))); %display image
     colormap (colorMap)
     axis image
     title('Trace the brightest path, then double click inside the ROI')
+    figAnnotation.Name = sprintf('Annotating the reference frame of %s',strcat(imgName,imgExt));
+    figAnnotation.NumberTitle = 'off';
     drawROI(figAnnotation,guiInput)
-    
 end
 %
     function drawROI(figAnnotation,guiInput)

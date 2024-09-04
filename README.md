@@ -40,7 +40,7 @@ The lastest standaloen version (v0.2.4-Beta3) for MAC(intel) can be downloaded f
 
 # GUI Manual
 
-The general workflow for processing image(s) in the Sphinctalyzer tool is:
+The general workflow for processing image(s) in the Sphinctalyzer tool is listed blow. We are still working on a [more detailed manual](https://docs.google.com/document/d/1_yNp7QNPn4qA1M7k3XayiUlr-asGTp4RkXmGyK4ycMc/edit?usp=sharing).
 <ol>
   <li>Click the "Open File(s)" button and select the desired image(s) in your file browser.</li>
   <li>If an user wants to use customized parameters for the analysis/post-processing of one or more images, before importing any images in step 1, click the "Load Parameters" button to load a previously saved "parameters.csv" file.</li>  

@@ -12,7 +12,17 @@ figAnnotation = figure('Units','normalized', ...
         'Position',[0.415 0.10 figWidth figDepth],'NumberTitle','off','NextPlot','replace');
 % ax1 = figAnnotation.CurrentAxes;
 %get the file name of the frame
-[~,imgName,imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
+if isfield(SphinctalyzerOutputs(1), 'channel1Filename')
+    if ~isempty(SphinctalyzerOutputs(1).channel1Filename)
+        [~, imgName, imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
+    else
+        imgName = 'channel1';
+        imgExt = '';
+    end
+else
+    imgName = 'channel1';
+    imgExt = '';
+end
 
 ROIdeleted_flag = 0;
 

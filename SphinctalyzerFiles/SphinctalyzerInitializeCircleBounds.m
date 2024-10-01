@@ -23,38 +23,22 @@ else
     imgName = 'channel1';
     imgExt = '';
 end
-% FIXED OUTPUT PATH: Ensure all outputs go to the correct directory in GitHub/BementLabSphinctalyzer/test_datasets/Sphicdata
-baseOutputPath = fullfile(pwd, '..', 'test_datasets', 'Sphincdata');
 
-% Ensure the baseOutputPath exists
-if ~exist(baseOutputPath, 'dir')
-    mkdir(baseOutputPath);  % Create the directory if it doesn't exist
+% Extract `refChannelName` and `framePosition` from InputCells
+refChannelIdx = find(cell2mat(InputCells(:, 3)) == 1);  % Get reference channel index
+if isempty(refChannelIdx)
+    error('No reference channel selected in InputCells.');
 end
+refChannelName = InputCells{refChannelIdx, 1};  % Get reference channel name
+framePosition = InputCells{refChannelIdx, 2};  % Assuming "Display Frame" is in the second column
 
-% Define the full path for saving/loading the user-drawn ROI based on imgName
-saveFileName = fullfile(baseOutputPath, sprintf('SavedPath_%s.mat', imgName));  % Use baseOutputPath to specify save location
+% Call the new function to validate and potentially reuse the saved path
+[reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgName, refChannelName, framePosition, colorMap, figAnnotation);
 
-% Check if a previously saved path exists for the current image
-if exist(saveFileName, 'file')
-    disp('Saved path file found');
-    % Load the saved path
-    savedData = load(saveFileName, 'UserDrawnBounds');
-    % Ask the user whether to reuse the saved path or draw a new one
-    choice = questdlg('A saved path exists for this image. Would you like to reuse it or draw a new one?', ...
-        'Saved Path Found', 'Reuse Saved Path', 'Draw New Path', 'Reuse Saved Path');
-    if strcmp(choice, 'Reuse Saved Path')
-        % If the user chooses to reuse the saved path, return the saved bounds
-        UserDrawnBounds = savedData.UserDrawnBounds;
-        disp('Reusing the saved path.');
-
-        % Close the figure if the user selects to reuse the saved path
-        close(figAnnotation);
-        return;
-    else
-        disp('User chose to draw a new path.');
-    end
-else
-    disp('No saved path found, proceeding to draw a new one.');
+if reuseSavedPath
+    % Close the figure if the user selects to reuse the saved path
+    close(figAnnotation);
+    return;
 end
 
 ROIdeleted_flag = 0;
@@ -107,7 +91,7 @@ end
             UserDrawnBounds(i).Position = h.Position;
 
             % Save the drawn path into the fixed directory (baseOutputPath)
-            save(saveFileName, 'UserDrawnBounds');  % Use the fixed saveFileName
+            save(saveFileName, 'UserDrawnBounds', 'imgName', 'refChannelName', 'framePosition');  % Save with validation parameters
             disp(['New path saved as ', saveFileName]);
             delete(h);
 

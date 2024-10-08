@@ -1,5 +1,27 @@
 function [UserDrawnBounds]=SphinctalyzerInitializeCircleBounds(SphinctalyzerOutputs, InputCells, colorMap,guiInput,roiShape)
 
+%% SPHINCTALYZERINITIALIZECIRCLEBOUNDS 
+%   Handles the initialization of circle bounds for image annotation.
+%   [USERDRAWNBOUNDS] = SPHINCTALYZERINITIALIZECIRCLEBOUNDS(SPHINCTALYZEROUTPUTS, INPUTCELLS, COLORMAP, GUIINPUT, ROISHAPE)
+%   Displays an image for the user to manually draw paths (ROIs), and optionally reuses previously saved paths.
+%
+%   INPUTS:
+%       SphinctalyzerOutputs - Image data outputs used for display.
+%       InputCells           - Cell array containing channel info, display frame, and reference flag.
+%       colorMap             - Colormap used for image visualization.
+%       guiInput             - Determines GUI behavior for path drawing.
+%       roiShape             - Shape of the ROI drawn by the user (e.g., circle, rectangle).
+%
+%   OUTPUTS:
+%       UserDrawnBounds - Contains the manually drawn or reused paths.
+%
+%   Key operations:
+%   - Extracts the reference channel and frame position from InputCells.
+%   - Checks for a previously saved path via the `validateSavedPath` function.
+%   - If no valid path exists, prompts the user to draw a new one and saves it.
+%
+%%
+
 % Open new figure
 ssU = get(0,'ScreenSize');
 WidthvsDepth = ssU(3)/ssU(4);
@@ -11,7 +33,7 @@ end
 figAnnotation = figure('Units','normalized', ...
         'Position',[0.415 0.10 figWidth figDepth],'NumberTitle','off','NextPlot','replace');
 % ax1 = figAnnotation.CurrentAxes;
-%get the file name of the frame
+
 if isfield(SphinctalyzerOutputs(1), 'channel1Filename')
     if ~isempty(SphinctalyzerOutputs(1).channel1Filename)
         [~, imgName, imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
@@ -24,19 +46,16 @@ else
     imgExt = '';
 end
 
-% Extract `refChannelName` and `framePosition` from InputCells
-refChannelIdx = find(cell2mat(InputCells(:, 3)) == 1);  % Get reference channel index
+refChannelIdx = find(cell2mat(InputCells(:, 3)) == 1);
 if isempty(refChannelIdx)
     error('No reference channel selected in InputCells.');
 end
-refChannelName = InputCells{refChannelIdx, 1};  % Get reference channel name
-framePosition = InputCells{refChannelIdx, 2};  % Assuming "Display Frame" is in the second column
+refChannelName = InputCells{refChannelIdx, 1};
+framePosition = InputCells{refChannelIdx, 2};
 
-% Call the new function to validate and potentially reuse the saved path
 [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgName, refChannelName, framePosition, colorMap, figAnnotation);
 
 if reuseSavedPath
-    % Close the figure if the user selects to reuse the saved path
     close(figAnnotation);
     return;
 end
@@ -89,12 +108,9 @@ end
         if ROIdeleted_flag == 0
             UserDrawnBounds(i).BWMaskOut=createMask(h);
             UserDrawnBounds(i).Position = h.Position;
-
-            % Save the drawn path into the fixed directory (baseOutputPath)
             save(saveFileName, 'UserDrawnBounds', 'imgName', 'refChannelName', 'framePosition');  % Save with validation parameters
             disp(['New path saved as ', saveFileName]);
             delete(h);
-
             %close figure
             close(figAnnotation);
         else

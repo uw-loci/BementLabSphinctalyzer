@@ -17,6 +17,7 @@ function sphinctalyzerInitializerGUI
     % mcc -v -W 'main:Sphinctalyzer0.2.3, version = 0.2.3' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer 0.2.3 MAC(intel 64-bit) standalone built on 12/18/2023..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.4 Beta2, version = 0.2.4 Beta2' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer v0.2.4 Beta2 MAC(intel 64-bit) standalone built on 04/23/2024..."'
     % mcc -v -W 'main:Sphinctalyzer0.2.4 Beta3, version = 0.2.4 Beta3' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer v0.2.4 Beta3 MAC(intel 64-bit) standalone built on 08/26/2024..."'
+    % mcc -v -W 'main:Sphinctalyzer0.2.5 Beta1, version = 0.2.5 Beta1' sphinctalyzerInitializerGUI.m -a ./ -R '-startmsg, "Launching Sphinctalyzer v0.2.5 Beta1 Windows(intel 64-bit) standalone built on 10/09/2024..."'
 
     clc, home
     openningWindows= findobj(0,'Type', 'Figure');

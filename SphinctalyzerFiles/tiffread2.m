@@ -13,7 +13,7 @@ function [stack, img_read] = tiffread2(filename, img_first, img_last)
 %
 % The function can be called with a file name in the current directory,
 % or without argument, in which case it pop up a file openning dialog
-% to allow manual selection of the file.
+% to allow manual selection of the file, or full absolute path to the file.
 % If the stacks contains multiples images, loading can be restricted by
 % specifying the first and last images to read, or just one image to read.
 %
@@ -120,7 +120,7 @@ ifd_pos = fread(TIF.file,1,'uint32', TIF.BOS);
 while (ifd_pos ~= 0)
 
     clear IMG;
-    IMG.filename = fullfile( pwd, filename );
+    IMG.filename = filename; %fullfile( pwd, filename ); % filename has to either include the absolute path to the file or include no path information (ie current directory)
     % move in the file to the first IFD
     fseek(TIF.file, ifd_pos, -1);
     %disp(strcat('reading img at pos :',num2str(ifd_pos)));

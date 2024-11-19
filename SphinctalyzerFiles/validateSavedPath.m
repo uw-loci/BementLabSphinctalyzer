@@ -1,4 +1,4 @@
-function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgName, refChannelName, framePosition, colorMap, figAnnotation)
+function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation)
 
 %% VALIDATESAVEDPATH
 %   Checks if a saved path can be reused based on image, reference channel, and frame position.
@@ -21,7 +21,7 @@ function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(img
 %   Looks for saved paths in 'test_datasets/Sphincdata' and prompts the user to reuse or redraw if a valid path is found.
 %%
 
-baseOutputPath = fullfile(pwd, '..', 'test_datasets', 'Sphincdata');
+baseOutputPath = fullfile(imgPath, 'Sphincdata');
 
 if ~exist(baseOutputPath, 'dir')
     mkdir(baseOutputPath);

@@ -36,7 +36,7 @@ figAnnotation = figure('Units','normalized', ...
 
 if isfield(SphinctalyzerOutputs(1), 'channel1Filename')
     if ~isempty(SphinctalyzerOutputs(1).channel1Filename)
-        [~, imgName, imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
+        [imgPath, imgName, imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
     else
         imgName = 'channel1';
         imgExt = '';
@@ -53,7 +53,7 @@ end
 refChannelName = InputCells{refChannelIdx, 1};
 framePosition = InputCells{refChannelIdx, 2};
 
-[reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgName, refChannelName, framePosition, colorMap, figAnnotation);
+[reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation);
 
 if reuseSavedPath
     close(figAnnotation);

@@ -33,19 +33,8 @@ end
 figAnnotation = figure('Units','normalized', ...
         'Position',[0.415 0.10 figWidth figDepth],'NumberTitle','off','NextPlot','replace');
 % ax1 = figAnnotation.CurrentAxes;
-
-if isfield(SphinctalyzerOutputs(1), 'channel1Filename')
-    if ~isempty(SphinctalyzerOutputs(1).channel1Filename)
-        [~, imgName, imgExt] = fileparts(SphinctalyzerOutputs(1).channel1Filename);
-    else
-        imgName = 'channel1';
-        imgExt = '';
-    end
-else
-    imgName = 'channel1';
-    imgExt = '';
-end
-
+fieldsname = fieldnames(SphinctalyzerOutputs);
+[imgPath, imgName, imgExt] = fileparts(SphinctalyzerOutputs(1).(fieldsname{1}));
 refChannelIdx = find(cell2mat(InputCells(:, 3)) == 1);
 if isempty(refChannelIdx)
     error('No reference channel selected in InputCells.');
@@ -53,7 +42,7 @@ end
 refChannelName = InputCells{refChannelIdx, 1};
 framePosition = InputCells{refChannelIdx, 2};
 
-[reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgName, refChannelName, framePosition, colorMap, figAnnotation);
+[reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation);
 
 if reuseSavedPath
     close(figAnnotation);

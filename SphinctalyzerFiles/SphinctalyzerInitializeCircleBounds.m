@@ -42,13 +42,6 @@ end
 refChannelName = InputCells{refChannelIdx, 1};
 framePosition = InputCells{refChannelIdx, 2};
 
-[reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation);
-
-if reuseSavedPath
-    close(figAnnotation);
-    return;
-end
-
 ROIdeleted_flag = 0;
 
 if strcmp(SphinctalyzerOutputs(1).RefChannel,'Self') %Loop if each channel is scanned separately
@@ -56,23 +49,32 @@ if strcmp(SphinctalyzerOutputs(1).RefChannel,'Self') %Loop if each channel is sc
 else %only use ref frame
     i = find(cell2mat(InputCells(:,3))==1);
 end
+refImageData = SphinctalyzerOutputs(InputCells{i,2}).(matlab.lang.makeValidName([InputCells{i,1},'Data']));
+
 
 %loop through images
 for i = i
     figure(figAnnotation);
-    imagesc(SphinctalyzerOutputs(InputCells{i,2}).(matlab.lang.makeValidName([InputCells{i,1},'Data']))); %display image
+    imagesc(refImageData); %display image
     colormap (colorMap)
     axis image
     title('Trace the brightest path, then double click inside the ROI')
     figAnnotation.Name = sprintf('Annotating the reference frame of %s',strcat(imgName,imgExt));
     figAnnotation.NumberTitle = 'off';
-    drawROI(figAnnotation,guiInput)
+    % check if previous annotation is available
+    [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation,refImageData,i);
+    if reuseSavedPath
+        close(figAnnotation);
+        return;
+    else
+        drawROI(figAnnotation,guiInput)
+    end
 end
 %
     function drawROI(figAnnotation,guiInput)
         figure(figAnnotation)
         if ROIdeleted_flag == 1
-            imagesc(SphinctalyzerOutputs(InputCells{i,2}).(matlab.lang.makeValidName([InputCells{i,1},'Data']))); %display image
+            imagesc(refImageData); %display image
             colormap (colorMap)
             axis image
             title('Trace the brightest path, then double click inside the ROI')            

@@ -1,4 +1,4 @@
-function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation)
+function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(imgPath, imgName, refChannelName, framePosition, colorMap, figAnnotation,refImageData,chIndex)
 
 %% VALIDATESAVEDPATH
 %   Checks if a saved path can be reused based on image, reference channel, and frame position.
@@ -12,6 +12,8 @@ function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(img
 %       framePosition  - Frame position for validation.
 %       colorMap       - Colormap for image visualization.
 %       figAnnotation  - Figure handle for image display.
+%       refImageData   - image data of the reference frame
+%       chIndex        - index to the reference channel
 %
 %   OUTPUTS:
 %       reuseSavedPath   - True if the saved path is reused, false otherwise.
@@ -37,6 +39,16 @@ if exist(saveFileName, 'file')
     savedData = load(saveFileName, 'UserDrawnBounds', 'imgName', 'refChannelName', 'framePosition');
 
     if strcmp(savedData.imgName, imgName) && strcmp(savedData.refChannelName, refChannelName) && savedData.framePosition == framePosition
+        %show previous path
+        figure(figAnnotation);
+        title('Previous annotated brightest path')
+        hold on
+        boundaryXY = bwboundaries(savedData.UserDrawnBounds(chIndex).BWMaskOut,4,'CoordinateOrder','xy');
+        boundaryXYc(:,1) = [boundaryXY{1}(:,1);boundaryXY{1}(1,1)];
+        boundaryXYc(:,2) = [boundaryXY{1}(:,2);boundaryXY{1}(1,2)];
+        % drawpolygon('Position',boundaryXY{1},'color','r','FaceAlpha' ,0.1);
+        plot(boundaryXYc(:,1),boundaryXYc(:,2),'color','r','LineWidth',2);
+        hold off
         choice = questdlg('A saved path exists for this image. Would you like to reuse it or draw a new one?', ...
             'Saved Path Found', 'Reuse Saved Path', 'Draw New Path', 'Reuse Saved Path');
         if strcmp(choice, 'Reuse Saved Path')
@@ -45,6 +57,11 @@ if exist(saveFileName, 'file')
             reuseSavedPath = true;
         else
             disp('User chose to draw a new path.');
+            figure(figAnnotation)
+            imagesc(refImageData); %display image
+            colormap (colorMap)
+            axis image
+            title('Trace the brightest path, then double click inside the ROI')  
         end
     else
         disp('Saved path does not match the current movie name, reference channel, or frame position.');

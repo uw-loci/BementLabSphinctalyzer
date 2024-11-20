@@ -23,7 +23,7 @@ function [reuseSavedPath, UserDrawnBounds, saveFileName] = validateSavedPath(img
 %   Looks for saved paths in 'test_datasets/Sphincdata' and prompts the user to reuse or redraw if a valid path is found.
 %%
 
-baseOutputPath = fullfile(imgPath, 'Sphincdata');
+baseOutputPath = fullfile(imgPath, 'Sphincdata','savedPath');
 
 if ~exist(baseOutputPath, 'dir')
     mkdir(baseOutputPath);

@@ -539,7 +539,7 @@ writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Halfwidths','Range',
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Locations','Range',['B' num2str(LineNo)]);
 
-savenamecrop=savename(1:findstr(savename,'scan movie')-2);
+savenamecrop=savename(1:findstr(savename,'scan_movie')-2); % extract the image name
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Percent Above Background','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','AUCs','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Halfwidths','Range',['A' num2str(LineNo)]);

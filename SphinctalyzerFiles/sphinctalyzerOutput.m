@@ -244,7 +244,7 @@ function sphinctalyzerOutput(objarray)
         % calculate wound closing velocity
         peakLocations = xlsSheets{2};
         for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
 
@@ -826,7 +826,7 @@ function sphinctalyzerOutput(objarray)
         % calculate wound closing velocity
         peakLocations = xlsSheets{2};
         for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) ;%* obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
     end
@@ -849,7 +849,7 @@ function sphinctalyzerOutput(objarray)
         % calculate wound closing velocity
         peakLocations = xlsSheets{2};
         for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) * obj.micronsPerPixel;
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
     end

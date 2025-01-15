@@ -394,6 +394,14 @@ writematrix(Peaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C
 writematrix(PeakLocs,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo)]);
 writematrix(Halfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo)]);
 writematrix(AUCs,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo)]);
+% add frame index in the first row of the output folder
+frameIndexes = 1:length(Peaks);
+writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C' num2str(LineNo-1)]);
+writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo-1)]);
+writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo-1)]);
+writematrix(frameIndexes,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo-1)]);
+writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo-1)]);
+
 
 %% Normalization Calculation
 if normalization == 1
@@ -538,6 +546,14 @@ writecell(ChannelStrings,[savepath, excelSavename],'Sheet','AUCs','Range',['B' n
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Halfwidths','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Locations','Range',['B' num2str(LineNo)]);
+%add frame Name
+frameLabel = {'Frame Index'};
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','AUCs','Range',['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Halfwidths','Range',['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Locations','Range',['B' num2str(LineNo-1)]);
+
 
 savenamecrop=savename(1:findstr(savename,'scan_movie')-2); % extract the image name
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Percent Above Background','Range',['A' num2str(LineNo)]);

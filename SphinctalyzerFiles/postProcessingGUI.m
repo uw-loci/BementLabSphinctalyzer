@@ -10,6 +10,29 @@ function postProcessingGUI(selpaths)
         catch
             error('PLEASE SELECT A VALID DATA FOLDER.');
         end
+        % check if the name of the original image folder is changed
+        if i == 1
+            filePath_post_index = strfind(selpaths{i},'Sphincdata');
+            filePath_post = selpaths{i}(1:filePath_post_index-1);
+            filePath_original_index = strfind(parameters.filePath,'Sphincdata');
+            filePath_original = parameters.filePath(1:filePath_original_index-1);
+            if strcmp(filePath_original,filePath_post)== 1
+                fprintf('The orignal movie directory is not moved or renamed after the previous analysis \n')
+                fprintf( '   The original movie path is %s \n',filePath_original)
+                filePath_changedFlag = 0;
+            else
+                fprintf(['The orignal movie directory is moved or renamed after the previous analysis \n' ...
+                    '   The original movie path is %s \n' ...
+                    '   The movie path in the post-processing is %s \n'],filePath_original,filePath_post)
+                filePath_changedFlag = 1;
+            end
+        end
+        if filePath_changedFlag == 1
+            parameters.filePath = strrep(parameters.filePath,filePath_original,filePath_post);
+            parameters.imagePath = filePath_post;
+            parameters.moviePaths = strrep(parameters.moviePaths,filePath_original,filePath_post);
+        end
+
         imgarray(i) = Image(parameters.cellArray, ...
             parameters.timepointStart, ...
             parameters.timepointEnd, ...

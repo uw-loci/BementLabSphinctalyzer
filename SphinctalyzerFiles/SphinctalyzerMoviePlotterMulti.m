@@ -360,6 +360,9 @@ for i= 1:size(Zr,1)
     %'FitBoxToText','off','FontName','Arial','FontSize',24,'HorizontalAlignment','Center','BackgroundColor',[1 1 1]);
     pause(.01)
     frame=getframe(gcf1);
+    % for debugging, if figure is shown in different diplays with different
+    % resolution, the frame size will probably change, and will casue error
+    %fprintf('%d: frame size-%dx%d \n',i,size(frame.cdata,1),size(frame.cdata,2)) 
     writeVideo(writerObj,frame);
 end
 %MovieWriter

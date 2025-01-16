@@ -370,6 +370,8 @@ function sphinctalyzerOutput(objarray)
                 current = get(viewerSelectionTable, 'String');
                 current = [current; strcat('scan movietalyzerResults_', num2str(length(obj.moviePaths)))];
                 set(viewerSelectionTable,'String',current)
+                set(viewerSelectionTable,'Value',3) % enable the the first results
+                viewer_selection(viewerSelectionTable)
                 objarray(currentObj) = obj;
             end
         end 
@@ -414,6 +416,7 @@ function sphinctalyzerOutput(objarray)
         drawnow
         update_image_data_panel(iTimepoint)
         set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
+
     end
 
     function update_image_timepoint(hObject, event)

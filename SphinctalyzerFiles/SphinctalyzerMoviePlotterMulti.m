@@ -275,6 +275,7 @@ for i=1:size(ChannelStrings,1)
         PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*micronsPerPixel;
        % else
        % end
+
                 catch
             i
             j
@@ -362,7 +363,7 @@ for i= 1:size(Zr,1)
     frame=getframe(gcf1);
     % for debugging, if figure is shown in different diplays with different
     % resolution, the frame size will probably change, and will casue error
-    %fprintf('%d: frame size-%dx%d \n',i,size(frame.cdata,1),size(frame.cdata,2)) 
+    % fprintf('%d: frame size-%dx%d \n',i,size(frame.cdata,1),size(frame.cdata,2)) 
     writeVideo(writerObj,frame);
 end
 %MovieWriter
@@ -397,6 +398,8 @@ writematrix(Peaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C
 writematrix(PeakLocs,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo)]);
 writematrix(Halfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo)]);
 writematrix(AUCs,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo)]);
+writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
+
 % add frame index in the first row of the output folder
 frameIndexes = 1:length(Peaks);
 writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C' num2str(LineNo-1)]);
@@ -405,145 +408,146 @@ writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Halfwidths','Range',
 writematrix(frameIndexes,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo-1)]);
 writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo-1)]);
 
+% %% Normalization Calculation
+% if normalization == 1
+%     ylims=[-.1,1.1];
+%     yticks=[0:.2:1];
+%     ystring='Normalized gray value ';
+%     if PreWoundFrame == 1
+%         for i=1:size(ChannelStrings,1)
+%             IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
+%             XVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=max(IntensityVals(XVals<=30&XVals>=-30));
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
+%         end
+%     elseif PreWoundFrame == 2
+%         for i=1:size(ChannelStrings,1)
+%             IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
+%             XVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=max(IntensityVals(XVals<=30&XVals>=-30));
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=median(IntensityVals);
+%         end
+%     end
+% elseif normalization == 2
+%     ylims=[-1 6];
+%     yticks=[0:1:5];
+%     ystring='Fold above background';
+%     if PreWoundFrame == 1
+%         for i=1:size(ChannelStrings,1)
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=2*FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']));
+%         end
+% 
+%     elseif PreWoundFrame == 2
+%         for i=1:size(ChannelStrings,1)
+%             IntensityVals=SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']));
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=median(IntensityVals);
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=2*FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']));
+%         end
+%     end
+% elseif normalization == 3
+%     for i=1:size(ChannelStrings,1)
+%         FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
+%         FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
+%     end
+% 
+%     ylims=[0 4100];
+%     yticks=[0:500:4000];
+%     ystring='Gray Value';
+% elseif normalization == 4
+%     ylims=[-.1,1.1];
+%     yticks=[0:.2:1];
+%     ystring='Normalized gray value ';
+%     if PreWoundFrame == 1
+%         for i=1:size(ChannelStrings,1)
+%             for j=min(Range):max(Range)
+%                 IntensityVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
+%                 XVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
+%                 Max=max(IntensityVals(XVals<=30&XVals>=-30));
+%                 Med=median(median(double([SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data']))])));
+%                 [SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))]=(IntensityVals-Med)/(Max-Med)
+%             end
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
+%         end
+%     elseif PreWoundFrame == 2
+%         for i=1:size(ChannelStrings,1)
+%             for j=min(Range):max(Range)
+%                 IntensityVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
+%                 XVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
+%                 Max=max(IntensityVals(XVals<=30&XVals>=-30));
+%                 Med=median(median(double(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
+%                 [SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))]=(IntensityVals-Med)/(Max-Med)
+%             end
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
+%             FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
+%         end
+%     end
+% end
+% 
+% %% Centroid Calculation
+% if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
+%     for i=1:size(ChannelStrings,1)
+%         VariableNames(i).CentroidOutline={SphinctalyzerOutputs.(matlab.lang.makeValidName([ChannelStrings{i,:},'Outline']))};
+%     end
+%     centroids=CentroidfromOutline(VariableNames.CentroidOutline);
+%     for i = min(Range):max(Range)
+%         for j = 1:size(ChannelStrings,1)
+%         Shifts(i).(matlab.lang.makeValidName([ChannelStrings{j},'Shifts']))=OutlineDistfromCentroid(centroids(i,:), {SphinctalyzerOutputs(i).(matlab.lang.makeValidName([ChannelStrings{j},'Outline']))});
+%         end
+%     end
+% else
+%     centroids=CentroidfromOutline({SphinctalyzerOutputs.(matlab.lang.makeValidName([SphinctalyzerOutputs(1).RefChannel{:}, 'Outline']))}) ;
+%         for i = min(Range):max(Range)
+%         for j = 1:size(ChannelStrings,1)
+%         Shifts(i).(matlab.lang.makeValidName([ChannelStrings{j},'Shifts']))=OutlineDistfromCentroid(centroids(i,:), {SphinctalyzerOutputs(i).(matlab.lang.makeValidName([SphinctalyzerOutputs(1).RefChannel{:},'Outline']))});
+%         end
+%     end
+% end
+% 
+% %% Iteration over data
+% xprime=[-350:1:350];
+% yprime=Range;
+% [xprimegrid,yprimegrid]=meshgrid(xprime,yprime);
+% x=[xmin:(1/InterpolationX):xmax];
+% y=[min(Range):1/InterpolationFrames:max(Range)];
+% [X2,Y2]=meshgrid(xprime,y);
+% [Xr,Yr]=meshgrid(x,y);
+% for i=1:size(ChannelStrings,1)
+%     zprimegrid=NaN(size(xprimegrid));
+%     for j=min(Range):max(Range)
+%         XVals=double(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances'])));
+%         Intensities=(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])))/(FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])));
+%         try
+%             [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals);
+% 
+%         Peaks(i,j)=PeakIntensity;
+%         Halfwidths(i,j)=HalfWidth*micronsPerPixel;
+%         AUCs(i,j)=PeakAUC*micronsPerPixel;
+%       %  if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
+%         PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*micronsPerPixel;
+%        % else
+%        % end
+%                 catch
+%             i
+%             j
+%         end
+%         zprimegrid(j-min(Range)+1, :)=interp1(XVals,Intensities,xprime);
+%     end
+%     Z2r=interp2(xprimegrid,yprimegrid,zprimegrid, X2,Y2);
+%     Zr=zeros(size(Xr));
+%     ShiftInterp=interp1(Range,[Shifts.(matlab.lang.makeValidName([ChannelStrings{i},'Shifts']))],y);
+%     for k=1:length(y)
+%         XVals=xprime-ShiftInterp(k);
+%         Intensities=Z2r(k,:);
+%         Zr(k, :)=interp1(XVals,Intensities,x);
+%     end
+%     IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
+% end
 
-%% Normalization Calculation
-if normalization == 1
-    ylims=[-.1,1.1];
-    yticks=[0:.2:1];
-    ystring='Normalized gray value ';
-    if PreWoundFrame == 1
-        for i=1:size(ChannelStrings,1)
-            IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
-            XVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=max(IntensityVals(XVals<=30&XVals>=-30));
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
-        end
-    elseif PreWoundFrame == 2
-        for i=1:size(ChannelStrings,1)
-            IntensityVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
-            XVals=[SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=max(IntensityVals(XVals<=30&XVals>=-30));
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=median(IntensityVals);
-        end
-    end
-elseif normalization == 2
-    ylims=[-1 6];
-    yticks=[0:1:5];
-    ystring='Fold above background';
-    if PreWoundFrame == 1
-        for i=1:size(ChannelStrings,1)
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=mean(mean(double(SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=2*FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']));
-        end
-        
-    elseif PreWoundFrame == 2
-        for i=1:size(ChannelStrings,1)
-            IntensityVals=SphinctalyzerOutputs(Range).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']));
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=median(IntensityVals);
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=2*FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']));
-        end
-    end
-elseif normalization == 3
-    for i=1:size(ChannelStrings,1)
-        FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
-        FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
-    end
-    
-    ylims=[0 4100];
-    yticks=[0:500:4000];
-    ystring='Gray Value';
-elseif normalization == 4
-    ylims=[-.1,1.1];
-    yticks=[0:.2:1];
-    ystring='Normalized gray value ';
-    if PreWoundFrame == 1
-        for i=1:size(ChannelStrings,1)
-            for j=min(Range):max(Range)
-                IntensityVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
-                XVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
-                Max=max(IntensityVals(XVals<=30&XVals>=-30));
-                Med=median(median(double([SphinctalyzerOutputs(normalizationframe).(matlab.lang.makeValidName([ChannelStrings{i},'Data']))])));
-                [SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))]=(IntensityVals-Med)/(Max-Med)
-            end
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
-        end
-    elseif PreWoundFrame == 2
-        for i=1:size(ChannelStrings,1)
-            for j=min(Range):max(Range)
-                IntensityVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))];
-                XVals=[SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances']))];
-                Max=max(IntensityVals(XVals<=30&XVals>=-30));
-                Med=median(median(double(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'Data'])))));
-                [SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))]=(IntensityVals-Med)/(Max-Med)
-            end
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))=1;
-            FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med']))=0;
-        end
-    end
-end
+% writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
 
-%% Centroid Calculation
-if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
-    for i=1:size(ChannelStrings,1)
-        VariableNames(i).CentroidOutline={SphinctalyzerOutputs.(matlab.lang.makeValidName([ChannelStrings{i,:},'Outline']))};
-    end
-    centroids=CentroidfromOutline(VariableNames.CentroidOutline);
-    for i = min(Range):max(Range)
-        for j = 1:size(ChannelStrings,1)
-        Shifts(i).(matlab.lang.makeValidName([ChannelStrings{j},'Shifts']))=OutlineDistfromCentroid(centroids(i,:), {SphinctalyzerOutputs(i).(matlab.lang.makeValidName([ChannelStrings{j},'Outline']))});
-        end
-    end
-else
-    centroids=CentroidfromOutline({SphinctalyzerOutputs.(matlab.lang.makeValidName([SphinctalyzerOutputs(1).RefChannel{:}, 'Outline']))}) ;
-        for i = min(Range):max(Range)
-        for j = 1:size(ChannelStrings,1)
-        Shifts(i).(matlab.lang.makeValidName([ChannelStrings{j},'Shifts']))=OutlineDistfromCentroid(centroids(i,:), {SphinctalyzerOutputs(i).(matlab.lang.makeValidName([SphinctalyzerOutputs(1).RefChannel{:},'Outline']))});
-        end
-    end
-end
 
-%% Iteration over data
-xprime=[-350:1:350];
-yprime=Range;
-[xprimegrid,yprimegrid]=meshgrid(xprime,yprime);
-x=[xmin:(1/InterpolationX):xmax];
-y=[min(Range):1/InterpolationFrames:max(Range)];
-[X2,Y2]=meshgrid(xprime,y);
-[Xr,Yr]=meshgrid(x,y);
-for i=1:size(ChannelStrings,1)
-    zprimegrid=NaN(size(xprimegrid));
-    for j=min(Range):max(Range)
-        XVals=double(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances'])));
-        Intensities=(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])))/(FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])));
-        try
-            [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals);
-
-        Peaks(i,j)=PeakIntensity;
-        Halfwidths(i,j)=HalfWidth*micronsPerPixel;
-        AUCs(i,j)=PeakAUC*micronsPerPixel;
-      %  if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
-        PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*micronsPerPixel;
-       % else
-       % end
-                catch
-            i
-            j
-        end
-        zprimegrid(j-min(Range)+1, :)=interp1(XVals,Intensities,xprime);
-    end
-    Z2r=interp2(xprimegrid,yprimegrid,zprimegrid, X2,Y2);
-    Zr=zeros(size(Xr));
-    ShiftInterp=interp1(Range,[Shifts.(matlab.lang.makeValidName([ChannelStrings{i},'Shifts']))],y);
-    for k=1:length(y)
-        XVals=xprime-ShiftInterp(k);
-        Intensities=Z2r(k,:);
-        Zr(k, :)=interp1(XVals,Intensities,x);
-    end
-    IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
-end
-
-writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','AUCs','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Halfwidths','Range',['B' num2str(LineNo)]);
@@ -564,5 +568,6 @@ writecell({savenamecrop},[savepath, excelSavename],'Sheet','AUCs','Range',['A' n
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Halfwidths','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Intensity','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Locations','Range',['A' num2str(LineNo)]);
+
 
 LineNo=LineNo+size(ChannelStrings,1);

@@ -241,12 +241,6 @@ function sphinctalyzerOutput(objarray)
                 imageSliderDataPanel.Data{n, m} = ' ';
             end
         end
-        % % calculate wound closing velocity
-        % peakLocations = xlsSheets{2};
-        % for b = 1:obj.nChannels
-        %     woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
-        %     imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        % end
 
         referenceArray = [obj.cellArray{:,3}];
         % load in SphinctalyzerOutputs data structure
@@ -577,7 +571,8 @@ function sphinctalyzerOutput(objarray)
                 obj.xMinStepMax, ...
                 obj.yMinStepMax, ...
                 movieIndex, ...
-                obj.imageName)
+                obj.imageName,...
+                obj.velocityStartStop)
             newMoviePath = strrep(obj.moviePaths{1},'Results_1',strcat('Results_',(num2str(length(obj.moviePaths) + 1))));
             obj.moviePaths = [obj.moviePaths; newMoviePath];
             current = get(viewerSelectionTable, 'String');
@@ -667,7 +662,8 @@ function sphinctalyzerOutput(objarray)
                     obj.xMinStepMax, ...
                     obj.yMinStepMax, ...
                     movieIndex, ...
-                    obj.imageName)
+                    obj.imageName,...
+                    obj.velocityStartStop)
 
                 % update the viewer
                 set(viewerSelectionTable,'Value',str2double(movieIndex) + 2)
@@ -830,12 +826,6 @@ function sphinctalyzerOutput(objarray)
         obj.axesNames = axesNames;
         objarray(currentObj) = obj;
         set(enterMicronsPerPixel, 'UserData', usr_input)
-        % % calculate wound closing velocity
-        % peakLocations = xlsSheets{2};
-        % for b = 1:obj.nChannels
-        %     woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) ;%* obj.micronsPerPixel;
-        %     imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        % end
     end
 
     function get_timePerFrame(hObject, event)
@@ -853,12 +843,6 @@ function sphinctalyzerOutput(objarray)
         end
         objarray(currentObj).timePerFrame = usr_input;
         obj = objarray(currentObj);
-        % % calculate wound closing velocity
-        % peakLocations = xlsSheets{2};
-        % for b = 1:obj.nChannels
-        %     woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
-        %     imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        % end
     end
     
     function get_legend_location(hObject, event)
@@ -965,33 +949,18 @@ function sphinctalyzerOutput(objarray)
         end
 
         % calculate wound closing velocity
-        peakLocations = xlsSheets{2};
-        for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
-            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        end
+        closingVelocityLocation = xlsSheets{6};
         % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
-        % of peak location vale
-        location_checkpoint_values = [2/3 1/2 1/3];
-        location_checkpoint_strings = {'2/3' '1/2' '1/3'};
-        location_start = obj.velocityStartStop(1);
-        location_end = obj.velocityStartStop(2);
-        frame_locations = nan(length(location_checkpoint_values),obj.nChannels);
-
-         for b = 1:obj.nChannels
-            peakLocation_start = peakLocations(b, obj.velocityStartStop(1));  % distance to the center
-           locations_inRange = peakLocations(b, location_start:location_end);
-            %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
-            for cp = 1:length(location_checkpoint_values)
-                location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
-                distances2checkpoint = abs(locations_inRange - location_checkpoint);
-                nearestFrame_index = find(distances2checkpoint== min(distances2checkpoint));
-                nearestFrame_value = location_start+nearestFrame_index-1;
-                fprintf('Channel %d: \n nearest frame around %s (%3.2f) of start peak location (%3.2f) is:%d (location:%3.2f) \n',...
-                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,peakLocations(b,nearestFrame_value));
-                frame_locations(cp,b) = nearestFrame_value;
+        % of closing location
+        for b = 1:obj.nChannels
+            woundClosingVelocity = closingVelocityLocation{3,b+1}; %* obj.micronsPerPixel;
+            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+            for cp = 1:size(closingVelocityLocation,1)-3
+                imageSliderDataPanel.Data{6+cp, b} = closingVelocityLocation{3+cp,b+1};
+                if b == 1
+                     imageSliderDataPanel.RowName{6+cp} = strrep(closingVelocityLocation{3+cp,1},'closing position','close');
+                end
             end
-            imageSliderDataPanel.Data{7, b} = frame_locations(1,b);
         end
 
     end
@@ -1007,6 +976,8 @@ function sphinctalyzerOutput(objarray)
         xlsSheets{3} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Halfwidths','Range',rangeStart);
         xlsSheets{4} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart);
         xlsSheets{5} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart);
+        xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
+
     end
     function update_movieOptions(excelSavename)
 

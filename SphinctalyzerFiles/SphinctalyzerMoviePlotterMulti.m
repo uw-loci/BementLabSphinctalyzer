@@ -3,7 +3,8 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     xMinStepMax, ...
     yMinStepMax, ...
     num, ...
-    imageFileName)
+    imageFileName,...
+    velocityStartStop)
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -17,6 +18,7 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
         yMinStepMax = 0;
         num = 0;
         imageFileName = 0;
+        obj.velocityStartStop = [1 2];
     else 
         guiInput = 1;
     end
@@ -39,8 +41,10 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
             xMinStepMax, ...
             yMinStepMax, ...
             num, ...
-            imageFileName);
+            imageFileName,...
+            velocityStartStop);
     end
+end
 
 
 function LineNo=OutlinerFolderLoader(path, ...
@@ -48,7 +52,8 @@ function LineNo=OutlinerFolderLoader(path, ...
     xMinStepMax, ...
     yMinStepMax, ...
     num, ...
-    imageFileName)
+    imageFileName,...
+    velocityStartStop)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -62,7 +67,8 @@ validnames=dir(fullfile(path, '*.mat'));
                 xMinStepMax, ...
                 yMinStepMax, ...
                 num, ...
-                imageFileName);
+                imageFileName,...
+                velocityStartStop);
         end
     end
 end
@@ -77,7 +83,9 @@ for i=1:size(allnames,1)
         xMinStepMax, ...
         yMinStepMax, ...
         num, ...
-        imageFileName);
+        imageFileName,...
+        velocityStartStop);
+end
 end
 
 function LineNo=SphinctalyzerMP(filename,path,LineNo, ...
@@ -85,7 +93,8 @@ function LineNo=SphinctalyzerMP(filename,path,LineNo, ...
     xMinStepMax, ...
     yMinStepMax, ...
     num, ...
-    imageFileName)
+    imageFileName,...
+    velocityStartStop)
 frmrate=2; %this is the framerate in frames/second
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
@@ -371,7 +380,7 @@ close(writerObj);
 % movefile([savename,'.avi'],savepath);
 close(gcf1)
 %save parameters to the excel file
-parameters_post = cell(11,4);
+parameters_post = cell(13,4);
 parameters_post{1,1} = 'Channel Colors'; 
 nColors = length(channelColors);
 for i = 1:nColors
@@ -392,13 +401,60 @@ parameters_post{9,1} = 'yMinStepMax'; parameters_post{9,2} = mat2str(yMinStepMax
 parameters_post{10,1} = 'File Index'; parameters_post{10,2} = num; 
 parameters_post{11,1} = 'Image Filename'; parameters_post{11,2} = imageFileName;
 parameters_post{12,1} = 'Results Folder'; parameters_post{12,2} = savepath;
+parameters_post{13,1} = 'velocityStartStop';parameters_post{13,2} = mat2str(velocityStartStop);
 writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range','A1');
+
+%% add a sheet of "Closing Velocity and Location" 
+% calculate wound closing velocity
+% peakLocations = xlsSheets{2};
+peakLocations = PeakLocs;
+timePerFrame = secondsPerFrame;
+closing_checkpoint_values = [2/3 1/2 1/3];   % 2/3 closing
+closing_checkpoint_strings = {'2/3' '1/2' '1/3'};
+nChannels = length(ChannelStrings);
+closingVelocityLocation_value = nan(6,nChannels);
+closingVelocityLocation_label = {'Velocity start frame';...
+    'Velocity end frame';...
+    'Closing velocity (um/second)';...
+    sprintf('frame at %s closing position',closing_checkpoint_strings{1});...
+    sprintf('frame at %s closing position',closing_checkpoint_strings{2});...
+    sprintf('frame at %s closing position',closing_checkpoint_strings{3})};
+
+for b = 1:nChannels
+    woundClosingVelocity = ((peakLocations(b, velocityStartStop(2)) - peakLocations(b, velocityStartStop(1))) / ((velocityStartStop(2) - velocityStartStop(1)) * timePerFrame)); %* obj.micronsPerPixel;
+    closingVelocityLocation_value(1,b) = velocityStartStop(1);
+    closingVelocityLocation_value(2,b) = velocityStartStop(2);
+    closingVelocityLocation_value(3,b) = woundClosingVelocity;
+end
+% calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
+% of peak location value
+location_checkpoint_values = closing_checkpoint_values;
+location_checkpoint_strings = closing_checkpoint_strings;
+location_start = velocityStartStop(1);
+location_end = velocityStartStop(2);
+for b = 1:nChannels
+    peakLocation_start = peakLocations(b, location_start);  % distance to the center
+    locations_inRange = peakLocations(b, location_start:location_end);
+    %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
+    for cp = 1:length(location_checkpoint_values)
+        location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
+        distances2checkpoint = abs(locations_inRange - location_checkpoint);
+        nearestFrame_index = find(distances2checkpoint== min(distances2checkpoint));
+        nearestFrame_value = location_start+nearestFrame_index-1;
+        fprintf('Channel %d: \n nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d (location:%3.2f) \n',...
+            b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,peakLocations(b,nearestFrame_value));
+        closingVelocityLocation_value(cp+3,b) = nearestFrame_value;
+    end
+end
+
 %save results to the excel file
 writematrix(Peaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C' num2str(LineNo)]);
 writematrix(PeakLocs,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo)]);
 writematrix(Halfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo)]);
 writematrix(AUCs,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo)]);
 writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
+writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
+
 
 % add frame index in the first row of the output folder
 frameIndexes = 1:length(Peaks);
@@ -553,6 +609,10 @@ writecell(ChannelStrings,[savepath, excelSavename],'Sheet','AUCs','Range',['B' n
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Halfwidths','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['B' num2str(LineNo)]);
 writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Locations','Range',['B' num2str(LineNo)]);
+writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo-1)]);
+writecell(closingVelocityLocation_label,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['B' num2str(LineNo)]);
+
+
 %add frame Name
 frameLabel = {'Frame Index'};
 writecell(frameLabel,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['B' num2str(LineNo-1)]);
@@ -568,7 +628,9 @@ writecell({savenamecrop},[savepath, excelSavename],'Sheet','AUCs','Range',['A' n
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Halfwidths','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Intensity','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Locations','Range',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['A' num2str(LineNo)]);
 
 
 
 LineNo=LineNo+size(ChannelStrings,1);
+end

@@ -364,17 +364,21 @@ function sphinctalyzerOutput(objarray)
         % attribute
         ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
         validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+        if isempty(validnames)
+            fprintf('No results movie is found in %s \n',ParentFolderPath)
+            return
+        end
         for i=1:size(validnames,1)
             if ~any(strcmp(obj.moviePaths, fullfile(validnames(i).folder,validnames(i).name)))
                 obj.moviePaths = [obj.moviePaths; fullfile(validnames(i).folder,validnames(i).name)];
                 current = get(viewerSelectionTable, 'String');
                 current = [current; strcat('scan movietalyzerResults_', num2str(length(obj.moviePaths)))];
                 set(viewerSelectionTable,'String',current)
-                set(viewerSelectionTable,'Value',3) % enable the the first results
-                viewer_selection(viewerSelectionTable)
                 objarray(currentObj) = obj;
             end
         end 
+        set(viewerSelectionTable,'Value',3) % enable the the first results
+        viewer_selection(viewerSelectionTable)
     end
 
     function viewer_selection(hObject, event)

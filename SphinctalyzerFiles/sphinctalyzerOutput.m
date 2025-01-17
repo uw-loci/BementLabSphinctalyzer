@@ -194,7 +194,7 @@ function sphinctalyzerOutput(objarray)
     addlistener(sliderTimepoint,'ContinuousValueChange',@(hObject, event) update_image_timepoint(hObject, event));
     imageSliderDataPanel = uitable('Parent',guiCtrl, ...
     'ColumnName',{'channel1','channel2','channel3'}, ...
-    'RowName', {'Peak Intens', 'Peak Locs', 'Halfwidths', 'AUCs', '% Abv Backg', 'Closing Vel'},...
+    'RowName', {'Peak Intens', 'Peak Locs', 'Halfwidths', 'AUCs', '% Abv Backg', 'Closing Vel','2/3 frame loc'},...
     'Units','normalized', ...
     'Position',[0.3525 0.02 0.35 .275]);
     
@@ -237,7 +237,7 @@ function sphinctalyzerOutput(objarray)
         % xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Percent Above Background','Range',rangeStart);
         
         for m = 1:3
-            for n = 1:6
+            for n = 1:7
                 imageSliderDataPanel.Data{n, m} = ' ';
             end
         end
@@ -970,6 +970,30 @@ function sphinctalyzerOutput(objarray)
             woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
         end
+        % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
+        % of peak location vale
+        location_checkpoint_values = [2/3 1/2 1/3];
+        location_checkpoint_strings = {'2/3' '1/2' '1/3'};
+        location_start = obj.velocityStartStop(1);
+        location_end = obj.velocityStartStop(2);
+        frame_locations = nan(length(location_checkpoint_values),obj.nChannels);
+
+         for b = 1:obj.nChannels
+            peakLocation_start = peakLocations(b, obj.velocityStartStop(1));  % distance to the center
+           locations_inRange = peakLocations(b, location_start:location_end);
+            %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
+            for cp = 1:length(location_checkpoint_values)
+                location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
+                distances2checkpoint = abs(locations_inRange - location_checkpoint);
+                nearestFrame_index = find(distances2checkpoint== min(distances2checkpoint));
+                nearestFrame_value = location_start+nearestFrame_index-1;
+                fprintf('Channel %d: \n nearest frame around %s (%3.2f) of start peak location (%3.2f) is:%d (location:%3.2f) \n',...
+                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,peakLocations(b,nearestFrame_value));
+                frame_locations(cp,b) = nearestFrame_value;
+            end
+            imageSliderDataPanel.Data{7, b} = frame_locations(1,b);
+        end
+
     end
 
     function update_xlssheet(excelSavename)

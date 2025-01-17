@@ -439,7 +439,7 @@ function sphinctalyzerOutput(objarray)
         drawnow
         update_image_data_panel(iTimepoint)
         set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
-        update_table
+        % update_table
     end
     
     function I = bf_reader(iTimepoint, iChannel)

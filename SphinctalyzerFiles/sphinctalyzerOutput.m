@@ -241,12 +241,12 @@ function sphinctalyzerOutput(objarray)
                 imageSliderDataPanel.Data{n, m} = ' ';
             end
         end
-        % calculate wound closing velocity
-        peakLocations = xlsSheets{2};
-        for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
-            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        end
+        % % calculate wound closing velocity
+        % peakLocations = xlsSheets{2};
+        % for b = 1:obj.nChannels
+        %     woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
+        %     imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+        % end
 
         referenceArray = [obj.cellArray{:,3}];
         % load in SphinctalyzerOutputs data structure
@@ -826,12 +826,12 @@ function sphinctalyzerOutput(objarray)
         obj.axesNames = axesNames;
         objarray(currentObj) = obj;
         set(enterMicronsPerPixel, 'UserData', usr_input)
-        % calculate wound closing velocity
-        peakLocations = xlsSheets{2};
-        for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) ;%* obj.micronsPerPixel;
-            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        end
+        % % calculate wound closing velocity
+        % peakLocations = xlsSheets{2};
+        % for b = 1:obj.nChannels
+        %     woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)) ;%* obj.micronsPerPixel;
+        %     imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+        % end
     end
 
     function get_timePerFrame(hObject, event)
@@ -849,12 +849,12 @@ function sphinctalyzerOutput(objarray)
         end
         objarray(currentObj).timePerFrame = usr_input;
         obj = objarray(currentObj);
-        % calculate wound closing velocity
-        peakLocations = xlsSheets{2};
-        for b = 1:obj.nChannels
-            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
-            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-        end
+        % % calculate wound closing velocity
+        % peakLocations = xlsSheets{2};
+        % for b = 1:obj.nChannels
+        %     woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
+        %     imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+        % end
     end
     
     function get_legend_location(hObject, event)
@@ -959,7 +959,15 @@ function sphinctalyzerOutput(objarray)
                 end
             end
         end
+
+        % calculate wound closing velocity
+        peakLocations = xlsSheets{2};
+        for b = 1:obj.nChannels
+            woundClosingVelocity = ((peakLocations(b, obj.velocityStartStop(2)) - peakLocations(b, obj.velocityStartStop(1))) / ((obj.velocityStartStop(2) - obj.velocityStartStop(1)) * obj.timePerFrame)); %* obj.micronsPerPixel;
+            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+        end
     end
+
     function update_xlssheet(excelSavename)
         obj = objarray(currentObj);
         [ParentFolderPath] = fileparts(obj.filePath);

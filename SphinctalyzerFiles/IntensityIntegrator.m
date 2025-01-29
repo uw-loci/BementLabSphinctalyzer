@@ -40,4 +40,16 @@ PeakAUC=trapz(TrimPeak);
 if isempty(HalfWidth)
     HalfWidth=NaN;
 end
+%debugging starts here
+if isnan(HalfWidth)
+    fig1 = figure, plot(XVals,NewIM,'k<')
+    hold on, plot(XVals,Intensities,'bo')
+    hold on, plot(XVals,NewIM2,'m*')
 
+    fprintf('Peak Location = %d \n, XVals position = %d \n Max intensity position = %d \n',...
+        PeakLocation, find(XVals==0),find(Intensities == max(Intensities)))
+    xlim([-20 20])
+    close(fig1)
+end
+
+%debugging ends here

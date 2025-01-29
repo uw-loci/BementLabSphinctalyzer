@@ -147,7 +147,9 @@ else
 end
 TypeString='Smooth'; %'Mean' 'Median' or 'Smooth'
 
-load([path,'/',filename]);
+matResults = load([path,'/',filename],'SphinctalyzerOutputs','InputCells');
+SphinctalyzerOutputs = matResults.SphinctalyzerOutputs;
+InputCells =  matResults.InputCells;
 
 Range=find([SphinctalyzerOutputs.InRange]==1)';
 if SpecifyRange==1

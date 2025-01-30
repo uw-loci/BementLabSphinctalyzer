@@ -955,13 +955,13 @@ function sphinctalyzerOutput(objarray)
         for b = 1:obj.nChannels
             woundClosingVelocity = closingVelocityLocation{3,b+1}; %* obj.micronsPerPixel;
             if ismissing(woundClosingVelocity)
-                woundClosingVelocity = 'NaN';
+                woundClosingVelocity = 'N/A';
             end
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
             for cp = 1:size(closingVelocityLocation,1)-3
                 closingVelocityLocation_load = closingVelocityLocation{3+cp,b+1};
                 if ismissing(closingVelocityLocation_load)
-                    closingVelocityLocation_load = 'NaN';
+                    closingVelocityLocation_load = 'N/A';
                 end
                 imageSliderDataPanel.Data{6+cp, b} = closingVelocityLocation_load;
                 if b == 1

@@ -954,9 +954,16 @@ function sphinctalyzerOutput(objarray)
         % of closing location
         for b = 1:obj.nChannels
             woundClosingVelocity = closingVelocityLocation{3,b+1}; %* obj.micronsPerPixel;
+            if ismissing(woundClosingVelocity)
+                woundClosingVelocity = 'NaN';
+            end
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
             for cp = 1:size(closingVelocityLocation,1)-3
-                imageSliderDataPanel.Data{6+cp, b} = closingVelocityLocation{3+cp,b+1};
+                closingVelocityLocation_load = closingVelocityLocation{3+cp,b+1};
+                if ismissing(closingVelocityLocation_load)
+                    closingVelocityLocation_load = 'NaN';
+                end
+                imageSliderDataPanel.Data{6+cp, b} = closingVelocityLocation_load;
                 if b == 1
                      imageSliderDataPanel.RowName{6+cp} = strrep(closingVelocityLocation{3+cp,1},'closing position','close');
                 end

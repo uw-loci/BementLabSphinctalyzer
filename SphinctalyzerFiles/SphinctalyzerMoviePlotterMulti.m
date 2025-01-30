@@ -271,6 +271,13 @@ x=[xmin:(1/InterpolationX):xmax];
 y=[min(Range):1/InterpolationFrames:max(Range)];
 [X2,Y2]=meshgrid(xprime,y);
 [Xr,Yr]=meshgrid(x,y);
+%initialize the peak parameters
+channelsNo = size(ChannelStrings,1);
+frameInrange = length(min(Range):max(Range));
+Peaks=nan(channelsNo,frameInrange);
+Halfwidths=nan(channelsNo,frameInrange);
+AUCs=nan(channelsNo,frameInrange);
+PeakLocs=nan(channelsNo,frameInrange);
 for i=1:size(ChannelStrings,1)
     zprimegrid=NaN(size(xprimegrid));
     for j=min(Range):max(Range)
@@ -287,9 +294,14 @@ for i=1:size(ChannelStrings,1)
        % else
        % end
 
-                catch
-            i
-            j
+        catch peakError
+            fprintf("peak location calculation error: %s \n", peakError.message)
+            Peaks(i,j) = nan;
+            PeakLocs(i,j) = nan;
+            Halfwidths(i,j) = nan;
+            AUCs(i,j) = nan;
+            PeakLocs(i,j) = nan;
+            fprintf('peak location, half width, AUCs,  are set to NaN for frame %d of Channel %d \n', j,i)
         end
         zprimegrid(j-min(Range)+1, :)=interp1(XVals,Intensities,xprime);
     end
@@ -434,19 +446,24 @@ location_checkpoint_values = closing_checkpoint_values;
 location_checkpoint_strings = closing_checkpoint_strings;
 location_start = velocityStartStop(1);
 location_end = velocityStartStop(2);
-for b = 1:nChannels
-    peakLocation_start = peakLocations(b, location_start);  % distance to the center
-    locations_inRange = peakLocations(b, location_start:location_end);
-    %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
-    for cp = 1:length(location_checkpoint_values)
-        location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
-        distances2checkpoint = abs(locations_inRange - location_checkpoint);
-        nearestFrame_index = find(distances2checkpoint== min(distances2checkpoint));
-        nearestFrame_value = location_start+nearestFrame_index-1;
-        fprintf('Channel %d: \n nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d (location:%3.2f) \n',...
-            b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,peakLocations(b,nearestFrame_value));
-        closingVelocityLocation_value(cp+3,b) = nearestFrame_value;
+try
+    for b = 1:nChannels
+        peakLocation_start = peakLocations(b, location_start);  % distance to the center
+        locations_inRange = peakLocations(b, location_start:location_end);
+        %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
+        for cp = 1:length(location_checkpoint_values)
+            location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
+            distances2checkpoint = abs(locations_inRange - location_checkpoint);
+            nearestFrame_index = find(distances2checkpoint== min(distances2checkpoint));
+            nearestFrame_value = location_start+nearestFrame_index-1;
+            fprintf('Channel %d: \n nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d (location:%3.2f) \n',...
+                b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,peakLocations(b,nearestFrame_value));
+            closingVelocityLocation_value(cp+3,b) = nearestFrame_value;
+        end
     end
+catch closingLocationEXP
+    fprintf('%s closing location of channel %d is not found, \n error message:%s \n',...
+        closing_checkpoint_strings{cp},b, closingLocationEXP.message)
 end
 
 %save results to the excel file

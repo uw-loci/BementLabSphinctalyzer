@@ -450,21 +450,24 @@ try
     for b = 1:nChannels
         peakLocation_start = peakLocations(b, location_start);  % distance to the center
         locations_inRange = peakLocations(b, location_start:location_end);
-        averageDistance = abs((peakLocations(b,location_start)-peakLocations(b,location_end))/(location_end-location_start))
+        averageDistance = abs((peakLocations(b,location_start)-peakLocations(b,location_end))/(location_end-location_start));
         %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
         for cp = 1:length(location_checkpoint_values)
             location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
             distances2checkpoint = abs(locations_inRange - location_checkpoint);
             minimum_distance = min(distances2checkpoint);
-            if  minimum_distance> 1.25*averageDistance
+            if  minimum_distance> averageDistance
                 nearestFrame_value = nan;
-                fprintf('Channel %d: No frame found near to the %s (%3.2f) of closing start location. Minimum distance is %3.2f \n',...
-                    b, location_checkpoint_strings{cp}, location_checkpoint, minimum_distance)
+                fprintf(['Channel %d: No frame found near to the %s (%3.2f um) of closing start location.\n ' ...
+                    '  Minimum distance( %3.2f um) is bigger than the averarge distance between adjacent frames(%3.2f um) \n'],...
+                    b, location_checkpoint_strings{cp}, location_checkpoint, minimum_distance,averageDistance)
             else
                 nearestFrame_index = find(distances2checkpoint== minimum_distance);
                 nearestFrame_value = location_start+nearestFrame_index-1;
-                fprintf('Channel %d: nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d (distance:%3.2f) \n',...
-                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,minimum_distance);
+                fprintf(['Channel %d: nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d. \n ' ...
+                    '  The distance between this frame and this closing location is :%3.2f um,\n    equal or smaller than' ...
+                    'the average distance between adjacent frames %3.2f um \n'],...
+                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,minimum_distance,averageDistance);
             end
             closingVelocityLocation_value(cp+3,b) = nearestFrame_value;
         end

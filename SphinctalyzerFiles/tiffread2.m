@@ -303,7 +303,10 @@ while (ifd_pos ~= 0)
             end
 
             img_read = img_read + 1;
-
+            if isfield(IMG,'software')
+                fprintf('Delete image property "software" %s of the frame %d of image-%s \n',IMG.software,img_read,filename)
+                IMG = rmfield(IMG,'software');
+            end
             try
                 stack( img_read ) = IMG;
             catch

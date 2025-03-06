@@ -2,7 +2,22 @@ function [PeakIntensity,HalfWidth, PeakAUC, PeakLocationX]=IntensityIntegrator(I
 IntensitiesOld=Intensities;
 Intensities=Intensities-min(IntensitiesOld);
 % Marker=Intensities.*(XVals==0);
-Marker=Intensities.*(Intensities==max(Intensities));  %update on 01/30/2025: mark the maximum intensity position instead of XVals==0
+index_Xref = find(XVals == 0);
+maxIntensity = max(Intensities);
+index_Imax = find(Intensities == maxIntensity);
+searching_radius = 15; % shift from the reference frame set on the interface
+if searching_radius > 0
+    if abs(index_Imax-index_Xref) > searching_radius
+        searching_start = index_Xref-searching_radius;
+        searching_end = index_Xref+searching_radius;
+        if searching_start <1; searching_start = 1; end
+        if searching_end > length(XVals); searching_end = length(XVals); end
+        maxIntensity = max(Intensities(searching_start:searching_end));
+    end
+else
+    % use the global intensity to detect the peak
+end  
+Marker=Intensities.*(Intensities==maxIntensity);  %update on 01/30/2025: mark the maximum intensity position instead of XVals==0
 NewIM=imreconstruct(Marker, Intensities);
 PeakLogic=NewIM==max(NewIM);
 PeakLocation=find(Intensities==max(Intensities.*PeakLogic));
@@ -47,7 +62,8 @@ if isempty(HalfWidth)
 end
 %debugging starts here
 if isnan(HalfWidth)
-    fig1 = figure('Position',[1800 900 600 400]), plot(XVals,NewIM,'k<')
+    fig1 = figure('Position',[1800 900 600 400]);
+    plot(XVals,NewIM,'k<');
     hold on, plot(XVals,Intensities,'bo')
     hold on, plot(XVals,NewIM2,'m*')
     hold on, plot(0,Intensities(find(XVals==0)),'rd')

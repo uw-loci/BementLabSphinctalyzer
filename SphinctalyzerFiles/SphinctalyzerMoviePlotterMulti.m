@@ -433,25 +433,35 @@ closingVelocityLocation_label = {'Velocity start frame';...
     sprintf('frame at %s closing position',closing_checkpoint_strings{1});...
     sprintf('frame at %s closing position',closing_checkpoint_strings{2});...
     sprintf('frame at %s closing position',closing_checkpoint_strings{3})};
+% add the options of using different velocity Start and Stop points
+if nChannels>1 & size(velocityStartStop,1)==1
+    velocityStartStop_channel = repmat(velocityStartStop,nChannels,1);
+    %debugging
+    velocityStartStop_channel(2,1) =  velocityStartStop_channel(2,1)+4;
+    velocityStartStop_channel(2,2) =  velocityStartStop_channel(2,2)-3;  
+else
+    velocityStartStop_channel = velocityStartStop;
+end
 
 for b = 1:nChannels
-    woundClosingVelocity = ((peakLocations(b, velocityStartStop(2)) - peakLocations(b, velocityStartStop(1))) / ((velocityStartStop(2) - velocityStartStop(1)) * timePerFrame)); %* obj.micronsPerPixel;
-    closingVelocityLocation_value(1,b) = velocityStartStop(1);
-    closingVelocityLocation_value(2,b) = velocityStartStop(2);
+    woundClosingVelocity = ((peakLocations(b, velocityStartStop_channel(b,2)) - peakLocations(b, velocityStartStop_channel(b,1))) / ((velocityStartStop_channel(b,2) - velocityStartStop_channel(b,1)) * timePerFrame)); %* obj.micronsPerPixel;
+    closingVelocityLocation_value(1,b) = velocityStartStop_channel(b,1);
+    closingVelocityLocation_value(2,b) = velocityStartStop_channel(b,2);
     closingVelocityLocation_value(3,b) = woundClosingVelocity;
 end
 % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
 % of peak location value
 location_checkpoint_values = closing_checkpoint_values;
 location_checkpoint_strings = closing_checkpoint_strings;
-location_start = velocityStartStop(1);
-location_end = velocityStartStop(2);
+
 try
     for b = 1:nChannels
+        location_start = velocityStartStop_channel(b,1);
+        location_end = velocityStartStop_channel(b,2);
         peakLocation_start = peakLocations(b, location_start);  % distance to the center
         locations_inRange = peakLocations(b, location_start:location_end);
         averageDistance = abs((peakLocations(b,location_start)-peakLocations(b,location_end))/(location_end-location_start));
-        %peakLocation_end = peakLocations(b, obj.velocityStartStop(2));
+        %peakLocation_end = peakLocations(b, obj.velocityStartStop_channel(b,2));
         for cp = 1:length(location_checkpoint_values)
             location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
             distances2checkpoint = abs(locations_inRange - location_checkpoint);

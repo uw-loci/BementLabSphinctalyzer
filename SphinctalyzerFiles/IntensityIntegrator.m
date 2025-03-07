@@ -60,21 +60,21 @@ PeakAUC=trapz(TrimPeak);
 if isempty(HalfWidth)
     HalfWidth=NaN;
 end
-%debugging starts here
-if isnan(HalfWidth)
-    fig1 = figure('Position',[1800 900 600 400]);
-    plot(XVals,NewIM,'k<');
-    hold on, plot(XVals,Intensities,'bo')
-    hold on, plot(XVals,NewIM2,'m*')
-    hold on, plot(0,Intensities(find(XVals==0)),'rd')
-    fprintf('Check calculation  \n Peak Location = %d \n, XVals position = %d \n Max intensity position = %d \n',...
-        PeakLocation, find(XVals==0),find(Intensities == max(Intensities)))
-    disp('Half width is not obtained, the peak calculation might be incorrect for this frame')
-    xlim([-50 50])
-    legend({'NewIM','Intensities','NewIM2','X0'},'Location','northwest')
-    pause(3) 
-    xlim([XVals(PeakLocation)-10,XVals(PeakLocation)+10])
-    pause(3)
-    close(fig1)
-end
-%debugging ends here
+% %debugging starts here
+% if isnan(HalfWidth)
+%     fig1 = figure('Position',[1800 900 600 400]);
+%     plot(XVals,NewIM,'k<');
+%     hold on, plot(XVals,Intensities,'bo')
+%     hold on, plot(XVals,NewIM2,'m*')
+%     hold on, plot(0,Intensities(find(XVals==0)),'rd')
+%     fprintf('Check calculation  \n Peak Location = %d \n, XVals position = %d \n Max intensity position = %d \n',...
+%         PeakLocation, find(XVals==0),find(Intensities == max(Intensities)))
+%     disp('Half width is not obtained, the peak calculation might be incorrect for this frame')
+%     xlim([-50 50])
+%     legend({'NewIM','Intensities','NewIM2','X0'},'Location','northwest')
+%     pause(3) 
+%     xlim([XVals(PeakLocation)-10,XVals(PeakLocation)+10])
+%     pause(3)
+%     close(fig1)
+% end
+% %debugging ends here

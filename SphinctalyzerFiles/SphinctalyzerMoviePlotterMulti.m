@@ -10,7 +10,7 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
 if nargin == 13
     advancedOptions.velocityStartStop = velocityStartStop;
     advancedOptions.peakSearchingRadius = 0;
-    advancedOptions.closingCheckpoint = 0.667;
+    advancedOptions.closingCheckpoint = [0.667 0.500 0.333];
 elseif nargin == 14
     advancedOptions = moreOptions;
 end
@@ -440,16 +440,16 @@ parameters_post{12,1} = 'Results Folder'; parameters_post{12,2} = savepath;
 parameters_post{13,1} = 'velocityStartStop';
 velocityStartStop_load = advancedOptions.velocityStartStop;
 if size(velocityStartStop_load,1) == 1
-    parameters_post{13,2} = num2str(velocityStartStop_load);
+    parameters_post{13,2} = mat2str(velocityStartStop_load);
 elseif size(velocityStartStop_load,1) > 1
     for iC = 1: size(velocityStartStop_load,1)
-        parameters_post{13,1+iC} = num2str(velocityStartStop_load(iC,:));
+        parameters_post{13,1+iC} = mat2str(velocityStartStop_load(iC,:));
     end
 else
     parameters_post{13,2} = num2str([1 2]);
 end
 parameters_post{14,1} = 'peak searching radius';parameters_post{14,2} = advancedOptions.peakSearchingRadius;
-parameters_post{15,1} = 'closing check point';parameters_post{15,2} = advancedOptions.closingCheckpoint;
+parameters_post{15,1} = 'closing check point';parameters_post{15,2} = mat2str(advancedOptions.closingCheckpoint);
 writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range','A1');
 
 %% add a sheet of "Closing Velocity and Location" 
@@ -459,7 +459,7 @@ peakLocations = PeakLocs;
 timePerFrame = secondsPerFrame;
 % closing_checkpoint_values = [2/3 1/2 1/3];   % 2/3 closing
 % closing_checkpoint_strings = {'2/3' '1/2' '1/3'};
-closing_checkpoint_values = sort(advancedOptions.closingCheckpoint,2);
+closing_checkpoint_values = advancedOptions.closingCheckpoint;
 closing_checkpoint_strings = cell(size(closing_checkpoint_values,2),1);
 for iCP = 1:size(closing_checkpoint_values,2)
     closing_checkpoint_strings{iCP,1} = sprintf('frame at %3.1f%% open',closing_checkpoint_values(1,iCP)*100);
@@ -709,7 +709,6 @@ writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Intensity','Ran
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Locations','Range',['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['A' num2str(LineNo)]);
 
-
-
+fprintf('Created output results file: %s \n', fullfile([savepath, excelSavename]));
 LineNo=LineNo+size(ChannelStrings,1);
 end

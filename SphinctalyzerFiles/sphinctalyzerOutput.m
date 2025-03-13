@@ -15,7 +15,7 @@ function sphinctalyzerOutput(objarray)
     iTimepoint = 1;
     frameRate = 20;
     readFunction = {@bf_reader, @circle_reader, @movie_reader};
-    advancedOptions = struct('peakSearchingRadius',0,'velocityStartStop',[],'closingCheckpoint',0.667);
+    advancedOptions = struct('peakSearchingRadius',0,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333]);
     % display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
     guiCtrl = figure('Resize','on', ...
@@ -230,16 +230,16 @@ function sphinctalyzerOutput(objarray)
         'FontSize',fontsize_option1, ...
         'HorizontalAlignment','right',...
         'Units','normalized', ...
-        'Position',[text_start h_start-0.7 text_width-0.075 value_height]);
+        'Position',[text_start h_start-0.7 text_width-0.175 value_height]);
 
          enterClosingCheckpoint = uicontrol('Parent',peakVelocityOptions, ...
         'Style','edit', ...
-        'String','0.667', ...
+        'String','0.667 0.500 0.333', ...
         'Units','normalized',...
         'BackgroundColor','w', ...
-        'UserData',0.667,...
-        'Position',[value_start-0.1 h_start-0.685 value_width+0.105 value_height], ...
-        'Tooltip','checkpoint for closing position: Velocity start-1, Velocity end-0',...
+        'UserData',[0.667 0.500 0.333],...
+        'Position',[value_start-0.2 h_start-0.685 value_width+0.205 value_height], ...
+        'Tooltip','wound opening fraction : 1: fully open at velocity start; 0: fully closed at wound center',...
         'Enable','on',...
         'Callback',{@get_closingCheckpoint});  
 
@@ -780,7 +780,7 @@ function sphinctalyzerOutput(objarray)
                 movieFileButton(u) = uicontrol('Style','radiobutton', ...
                     'String',name, ...
                     'Units','normalized',...
-                    'pos',[0.1 1-(u*0.15) 0.8 0.12], ...
+                    'pos',[0.1 1-(u*0.085) 0.8 0.085], ...
                     'parent',hsr, ...
                     'HandleVisibility','on', ...
                     'FontSize',10, ...
@@ -1061,7 +1061,7 @@ function sphinctalyzerOutput(objarray)
     end
     function get_velocityRangeC1(hObject,event)
         usr_input = get(hObject,'String');
-        if isnan(str2num(usr_input(1))) || size(str2num(usr_input),2)~=2
+        if any([isnan(str2num(usr_input)), size(str2num(usr_input),2)~=2])
             errordlg('Please enter a number pair.')
             set(enterVelocityRangeC1,'String',num2str(get(enterVelocityRangeC1,'UserData')))
             return
@@ -1079,7 +1079,7 @@ function sphinctalyzerOutput(objarray)
     end
     function get_velocityRangeC2(hObject,event)
         usr_input = get(hObject,'String');
-        if isnan(str2num(usr_input(1))) || size(str2num(usr_input),2)~=2
+        if any([isnan(str2num(usr_input)), size(str2num(usr_input),2)~=2])
             errordlg('Please enter a number pair.')
             set(enterVelocityRangeC2,'String',num2str(get(enterVelocityRangeC2,'UserData')))
             return
@@ -1098,7 +1098,7 @@ function sphinctalyzerOutput(objarray)
 
     function get_velocityRangeC3(hObject,event)
         usr_input = get(hObject,'String');
-        if isnan(str2num(usr_input(1))) || size(str2num(usr_input),2)~=2
+        if any([isnan(str2num(usr_input)), size(str2num(usr_input),2)~=2])
             errordlg('Please enter a number pair.')
             set(enterVelocityRangeC3,'String',num2str(get(enterVelocityRangeC3,'UserData')))
             return
@@ -1125,7 +1125,7 @@ function sphinctalyzerOutput(objarray)
         usr_input = str2num(usr_input);
         enterClosingCheckpoint.UserData = usr_input;
         advancedOptions.closingCheckpoint = usr_input;
-        fprintf('Check point for wound closing %s added \n',num2str(usr_input));
+        fprintf('Check point for wound closing %s added \n',num2str(usr_input,'% 4.3f'));
     end
 
     function channel_changed(hObject, event)
@@ -1274,13 +1274,19 @@ function sphinctalyzerOutput(objarray)
               end
               advancedOptions.velocityStartStop =obj.velocityStartStop;
               advancedOptions.peakSearchingRadius = 0;
-              advancedOptions.closingCheckpoint= 0.667;
+              advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
         elseif size(movieOptions,1) == 15
             for iC = 1:obj.nChannels
                 advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
             end
             advancedOptions.peakSearchingRadius = movieOptions{14,2};
-            advancedOptions.closingCheckpoint = movieOptions{15,2};
+            try
+                advancedOptions.closingCheckpoint = str2num(movieOptions{15,2});
+            catch
+                advancedOptions.closingCheckpoint = movieOptions{15,2};
+            end
+            fprintf('number of closing checkpoint(s) is %d \n', size(advancedOptions.closingCheckpoint,2))
+
         end
         if obj.nChannels == 1
             set(enterVelocityRangeC2,'Enable','off')
@@ -1301,7 +1307,7 @@ function sphinctalyzerOutput(objarray)
         end
         set(enterSearchingRadius,'String',num2str(advancedOptions.peakSearchingRadius),...
             'UserData',advancedOptions.peakSearchingRadius);
-        set(enterClosingCheckpoint,'String',num2str(advancedOptions.closingCheckpoint),...
+        set(enterClosingCheckpoint,'String',num2str(advancedOptions.closingCheckpoint,' %4.3f'),...
             'UserData',advancedOptions.closingCheckpoint);
 
         objarray(currentObj) = obj;

@@ -8,7 +8,9 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     moreOptions)
 
 if nargin == 13
-    advancedOptions.velocityStartStop = velocityStartStop;
+    if size(velocityStartStop,1) == 1
+        advancedOptions.velocityStartStop = repmat(velocityStartStop,3,1);
+    end
     advancedOptions.peakSearchingRadius = 0;
     advancedOptions.closingCheckpoint = [0.667 0.500 0.333];
 elseif nargin == 14
@@ -465,7 +467,7 @@ for iCP = 1:size(closing_checkpoint_values,2)
     closing_checkpoint_strings{iCP,1} = sprintf('frame at %3.1f%% open',closing_checkpoint_values(1,iCP)*100);
 end
 
-nChannels = 2;%length(ChannelStrings);
+nChannels = size(InputCells,1);
 closingVelocityLocation_value = nan(3+size(closing_checkpoint_values,2),nChannels);
 closingVelocityLocation_label = [{'Velocity start frame';...
     'Velocity end frame';...
@@ -475,9 +477,7 @@ closingVelocityLocation_label = [{'Velocity start frame';...
 % add the options of using different velocity Start and Stop points
 if nChannels>1 & size(velocityStartStop,1)==1
     velocityStartStop_channel = repmat(velocityStartStop,nChannels,1);
-    %debugging
-    velocityStartStop_channel(2,1) =  velocityStartStop_channel(2,1)+4;
-    velocityStartStop_channel(2,2) =  velocityStartStop_channel(2,2)-3;  
+    advancedOptions.velocityStartStop = velocityStartStop_channel;
 else
     velocityStartStop_channel = advancedOptions.velocityStartStop;
 end

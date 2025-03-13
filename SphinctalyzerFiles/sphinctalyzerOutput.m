@@ -15,10 +15,10 @@ function sphinctalyzerOutput(objarray)
     iTimepoint = 1;
     frameRate = 20;
     readFunction = {@bf_reader, @circle_reader, @movie_reader};
-    advancedOptions = struct('peakSearchingRadius',0,'velocityStartStop',[],'closingCheckpoint',0);
+    advancedOptions = struct('peakSearchingRadius',0,'velocityStartStop',[],'closingCheckpoint',0.667);
     % display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
-    guiCtrl = figure('Resize','off', ...
+    guiCtrl = figure('Resize','on', ...
         'Color',defaultBackground', ...
         'Units','normalized', ...
         'Position',[0.25 0.25 0.65 0.65], ...
@@ -234,10 +234,10 @@ function sphinctalyzerOutput(objarray)
 
          enterClosingCheckpoint = uicontrol('Parent',peakVelocityOptions, ...
         'Style','edit', ...
-        'String','0', ...
+        'String','0.667', ...
         'Units','normalized',...
         'BackgroundColor','w', ...
-        'UserData',0,...
+        'UserData',0.667,...
         'Position',[value_start-0.1 h_start-0.685 value_width+0.105 value_height], ...
         'Tooltip','checkpoint for closing position: Velocity start-1, Velocity end-0',...
         'Enable','on',...
@@ -526,19 +526,6 @@ function sphinctalyzerOutput(objarray)
 
     function viewer_selection(hObject, event)
         obj = objarray(currentObj);
-        % if obj.nChannels == 1
-        %     set(enterVelocityRangeC2,'Enable','off')
-        %     set(enterVelocityRangeC3,'Enable',off)
-        % elseif obj.nChannels == 2
-        %     set(enterVelocityRangeC2,'Enable','on')
-        %     set(enterVelocityRangeC3,'Enable','off')
-        % elseif obj.nChannels == 3
-        %     set(enterVelocityRangeC2,'Enable','on')
-        %     set(enterVelocityRangeC3,'Enable','on')
-        % else
-        %     error('only support images with no more than 3 channels')
-        % end
-
         if hObject.Value > length(obj.moviePaths) + 2
             set(hObject,'Value',length(obj.moviePaths) + 2)
             return
@@ -826,7 +813,8 @@ function sphinctalyzerOutput(objarray)
                     obj.yMinStepMax, ...
                     movieIndex, ...
                     obj.imageName,...
-                    obj.velocityStartStop)
+                    obj.velocityStartStop,...
+                    advancedOptions)
 
                 % update the viewer
                 set(viewerSelectionTable,'Value',str2double(movieIndex) + 2)
@@ -1069,7 +1057,7 @@ function sphinctalyzerOutput(objarray)
         end
         % objarray(currentObj).peakSearchingRadius = usr_input;
         eneterSearchingRadius.UserData = usr_input;
-        advancedOptions.peakPearchingRadius = usr_input;
+        advancedOptions.peakSearchingRadius = usr_input;
     end
     function get_velocityRangeC1(hObject,event)
         usr_input = get(hObject,'String');
@@ -1129,17 +1117,15 @@ function sphinctalyzerOutput(objarray)
 
     function get_closingCheckpoint(hObject,event)
         usr_input = get(hObject,'String');
-        if isnan(str2num(usr_input)) || str2num(usr_input)<0 ||str2num(usr_input)>1
-            errordlg('Please enter a number between 0-1.')
+        if any([isnan(str2num(usr_input)),str2num(usr_input)<0, str2num(usr_input)>1])
+            errordlg('Please enter number(s) between 0-1.')
             set(enterClosingCheckpoint,'String',num2str(get(enterClosingCheckpoint,'UserData')))
             return
         end
         usr_input = str2num(usr_input);
         enterClosingCheckpoint.UserData = usr_input;
         advancedOptions.closingCheckpoint = usr_input;
-        if usr_input ~= 0
-            fprintf('New check point for wound closing %3.2f is added \n',usr_input);
-        end
+        fprintf('Check point for wound closing %s added \n',num2str(usr_input));
     end
 
     function channel_changed(hObject, event)
@@ -1187,6 +1173,9 @@ function sphinctalyzerOutput(objarray)
   
     function update_image_data_panel(currentTimepoint)
         obj = objarray(currentObj);
+        %initialize the imageSliderDataPanel
+        imageSliderDataPanel.Data=[];
+        imageSliderDataPanel.RowName= imageSliderDataPanel.RowName(1:6); % only keep the first 6 row names
         for m = 1:obj.nChannels
             for n = 1:5
                 sheet = xlsSheets{n};
@@ -1209,8 +1198,10 @@ function sphinctalyzerOutput(objarray)
                 woundClosingVelocity = 'N/A';
             end
             imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-            for cp = 1:size(closingVelocityLocation,1)-3
+            checkpoint_num = size(closingVelocityLocation,1)-3;
+            for cp = 1:checkpoint_num
                 closingVelocityLocation_load = closingVelocityLocation{3+cp,b+1};
+
                 if ismissing(closingVelocityLocation_load)
                     closingVelocityLocation_load = 'N/A';
                 end
@@ -1270,12 +1261,49 @@ function sphinctalyzerOutput(objarray)
         obj.legendLocation = movieOptions{6,2};
         obj.micronsPerPixel = movieOptions{7,2};
         obj.timePerFrame = movieOptions{4,2};
-        for i = 1:obj.nChannels
-            obj.channelColors{i} = str2num(movieOptions{1,i+1});
+        for iC = 1:obj.nChannels
+            obj.channelColors{iC} = str2num(movieOptions{1,iC+1});
         end
         obj.axesNames = movieOptions(2,2:3);
         obj.xMinStepMax = str2num(movieOptions{8,2});
         obj.yMinStepMax = str2num(movieOptions{9,2});
+        velocityRanges = {enterVelocityRangeC1 enterVelocityRangeC2 enterVelocityRangeC3};
+        if size(movieOptions,1) == 13
+              if size(obj.velocityStartStop,1) == 1
+                obj.velocityStartStop = repmat(obj.velocityStartStop,obj.nChannels,1);
+              end
+              advancedOptions.velocityStartStop =obj.velocityStartStop;
+              advancedOptions.peakSearchingRadius = 0;
+              advancedOptions.closingCheckpoint= 0.667;
+        elseif size(movieOptions,1) == 15
+            for iC = 1:obj.nChannels
+                advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
+            end
+            advancedOptions.peakSearchingRadius = movieOptions{14,2};
+            advancedOptions.closingCheckpoint = movieOptions{15,2};
+        end
+        if obj.nChannels == 1
+            set(enterVelocityRangeC2,'Enable','off')
+            set(enterVelocityRangeC3,'Enable','off')
+        elseif obj.nChannels == 2
+            set(enterVelocityRangeC2,'Enable','on')
+            set(enterVelocityRangeC3,'Enable','off')
+        elseif obj.nChannels == 3
+            set(enterVelocityRangeC2,'Enable','on')
+            set(enterVelocityRangeC3,'Enable','on')
+        else
+            error('only support images with no more than 3 channels')
+        end
+
+        for iC = 1:obj.nChannels
+            set(velocityRanges{iC},'String',num2str(advancedOptions.velocityStartStop(iC,:)),...
+                'UserData',advancedOptions.velocityStartStop(iC,:));
+        end
+        set(enterSearchingRadius,'String',num2str(advancedOptions.peakSearchingRadius),...
+            'UserData',advancedOptions.peakSearchingRadius);
+        set(enterClosingCheckpoint,'String',num2str(advancedOptions.closingCheckpoint),...
+            'UserData',advancedOptions.closingCheckpoint);
+
         objarray(currentObj) = obj;
         set(darkBackground, 'Value', obj.darkBackground);
         set(enterNormalization, 'String', num2str(obj.normalization));

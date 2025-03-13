@@ -4,7 +4,16 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     yMinStepMax, ...
     num, ...
     imageFileName,...
-    velocityStartStop)
+    velocityStartStop,...
+    moreOptions)
+
+if nargin == 13
+    advancedOptions.velocityStartStop = velocityStartStop;
+    advancedOptions.peakSearchingRadius = 0;
+    advancedOptions.closingCheckpoint = 0.667;
+elseif nargin == 14
+    advancedOptions = moreOptions;
+end
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -42,7 +51,8 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
             yMinStepMax, ...
             num, ...
             imageFileName,...
-            velocityStartStop);
+            velocityStartStop,...
+            advancedOptions);
     end
 end
 
@@ -53,7 +63,8 @@ function LineNo=OutlinerFolderLoader(path, ...
     yMinStepMax, ...
     num, ...
     imageFileName,...
-    velocityStartStop)
+    velocityStartStop,...
+    advancedOptions)
 
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
@@ -68,7 +79,8 @@ validnames=dir(fullfile(path, '*.mat'));
                 yMinStepMax, ...
                 num, ...
                 imageFileName,...
-                velocityStartStop);
+                velocityStartStop,...
+                advancedOptions);
         end
     end
 end
@@ -84,7 +96,8 @@ for i=1:size(allnames,1)
         yMinStepMax, ...
         num, ...
         imageFileName,...
-        velocityStartStop);
+        velocityStartStop,...
+        advancedOptions);
 end
 end
 
@@ -94,7 +107,8 @@ function LineNo=SphinctalyzerMP(filename,path,LineNo, ...
     yMinStepMax, ...
     num, ...
     imageFileName,...
-    velocityStartStop)
+    velocityStartStop,...
+    advancedOptions)
 frmrate=2; %this is the framerate in frames/second
 PreWoundFrame=1;  %Choose 1 to use a pre-wound frame for background removal, 2 for best guess.
 normalizationframe= 1; %if choosing to use pre-wound frame for normalization, select frame
@@ -278,13 +292,14 @@ Peaks=nan(channelsNo,frameInrange);
 Halfwidths=nan(channelsNo,frameInrange);
 AUCs=nan(channelsNo,frameInrange);
 PeakLocs=nan(channelsNo,frameInrange);
+searchingRadius = advancedOptions.peakSearchingRadius;
 for i=1:size(ChannelStrings,1)
     zprimegrid=NaN(size(xprimegrid));
     for j=min(Range):max(Range)
         XVals=double(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances'])));
         Intensities=(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])))/(FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])));
         try
-            [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals);
+            [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals,searchingRadius);
 
         Peaks(i,j)=PeakIntensity;
         Halfwidths(i,j)=HalfWidth*micronsPerPixel;
@@ -327,6 +342,11 @@ if guiInput == 1
     excelSavename = strcat('Results','_',num2str(num),'.xlsx');
 else
     excelSavename = 'Results_1.xlsx';
+end
+
+if exist(fullfile(savepath, excelSavename),'file')
+    delete(fullfile(savepath, excelSavename))
+    fprintf('Deleted previous results file: %s \n', fullfile(savepath, excelSavename))
 end
 
 
@@ -386,7 +406,8 @@ for i= 1:size(Zr,1)
     frame=getframe(gcf1);
     % for debugging, if figure is shown in different diplays with different
     % resolution, the frame size will probably change, and will casue error
-    % fprintf('%d: frame size-%dx%d \n',i,size(frame.cdata,1),size(frame.cdata,2)) 
+    % fprintf('%d: frame size-%dx%d
+    % \n',i,size(frame.cdata,1),size(frame.cdata,2)) 10
     writeVideo(writerObj,frame);
 end
 %MovieWriter
@@ -394,7 +415,7 @@ close(writerObj);
 % movefile([savename,'.avi'],savepath);
 close(gcf1)
 %save parameters to the excel file
-parameters_post = cell(13,4);
+parameters_post = cell(15,4); % add searchingRadius and closingCheckpoint
 parameters_post{1,1} = 'Channel Colors'; 
 nColors = length(channelColors);
 for i = 1:nColors
@@ -415,7 +436,20 @@ parameters_post{9,1} = 'yMinStepMax'; parameters_post{9,2} = mat2str(yMinStepMax
 parameters_post{10,1} = 'File Index'; parameters_post{10,2} = num; 
 parameters_post{11,1} = 'Image Filename'; parameters_post{11,2} = imageFileName;
 parameters_post{12,1} = 'Results Folder'; parameters_post{12,2} = savepath;
-parameters_post{13,1} = 'velocityStartStop';parameters_post{13,2} = mat2str(velocityStartStop);
+
+parameters_post{13,1} = 'velocityStartStop';
+velocityStartStop_load = advancedOptions.velocityStartStop;
+if size(velocityStartStop_load,1) == 1
+    parameters_post{13,2} = num2str(velocityStartStop_load);
+elseif size(velocityStartStop_load,1) > 1
+    for iC = 1: size(velocityStartStop_load,1)
+        parameters_post{13,1+iC} = num2str(velocityStartStop_load(iC,:));
+    end
+else
+    parameters_post{13,2} = num2str([1 2]);
+end
+parameters_post{14,1} = 'peak searching radius';parameters_post{14,2} = advancedOptions.peakSearchingRadius;
+parameters_post{15,1} = 'closing check point';parameters_post{15,2} = advancedOptions.closingCheckpoint;
 writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range','A1');
 
 %% add a sheet of "Closing Velocity and Location" 
@@ -423,16 +457,21 @@ writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range'
 % peakLocations = xlsSheets{2};
 peakLocations = PeakLocs;
 timePerFrame = secondsPerFrame;
-closing_checkpoint_values = [2/3 1/2 1/3];   % 2/3 closing
-closing_checkpoint_strings = {'2/3' '1/2' '1/3'};
-nChannels = length(ChannelStrings);
-closingVelocityLocation_value = nan(6,nChannels);
-closingVelocityLocation_label = {'Velocity start frame';...
+% closing_checkpoint_values = [2/3 1/2 1/3];   % 2/3 closing
+% closing_checkpoint_strings = {'2/3' '1/2' '1/3'};
+closing_checkpoint_values = sort(advancedOptions.closingCheckpoint,2);
+closing_checkpoint_strings = cell(size(closing_checkpoint_values,2),1);
+for iCP = 1:size(closing_checkpoint_values,2)
+    closing_checkpoint_strings{iCP,1} = sprintf('frame at %3.1f%% open',closing_checkpoint_values(1,iCP)*100);
+end
+
+nChannels = 2;%length(ChannelStrings);
+closingVelocityLocation_value = nan(3+size(closing_checkpoint_values,2),nChannels);
+closingVelocityLocation_label = [{'Velocity start frame';...
     'Velocity end frame';...
-    'Closing velocity (um/second)';...
-    sprintf('frame at %s closing position',closing_checkpoint_strings{1});...
-    sprintf('frame at %s closing position',closing_checkpoint_strings{2});...
-    sprintf('frame at %s closing position',closing_checkpoint_strings{3})};
+    'Closing velocity (um/second)'};closing_checkpoint_strings];
+
+
 % add the options of using different velocity Start and Stop points
 if nChannels>1 & size(velocityStartStop,1)==1
     velocityStartStop_channel = repmat(velocityStartStop,nChannels,1);
@@ -440,7 +479,7 @@ if nChannels>1 & size(velocityStartStop,1)==1
     velocityStartStop_channel(2,1) =  velocityStartStop_channel(2,1)+4;
     velocityStartStop_channel(2,2) =  velocityStartStop_channel(2,2)-3;  
 else
-    velocityStartStop_channel = velocityStartStop;
+    velocityStartStop_channel = advancedOptions.velocityStartStop;
 end
 
 for b = 1:nChannels
@@ -476,7 +515,7 @@ try
                 nearestFrame_value = location_start+nearestFrame_index-1;
                 fprintf(['Channel %d: nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d. \n ' ...
                     '  The distance between this frame and this closing location is :%3.2f um,\n    equal or smaller than' ...
-                    'the average distance between adjacent frames %3.2f um \n'],...
+                    ' the average distance between adjacent frames %3.2f um \n'],...
                     b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,minimum_distance,averageDistance);
             end
             closingVelocityLocation_value(cp+3,b) = nearestFrame_value;

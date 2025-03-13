@@ -1,11 +1,11 @@
-function [PeakIntensity,HalfWidth, PeakAUC, PeakLocationX]=IntensityIntegrator(Intensities, XVals)
+function [PeakIntensity,HalfWidth, PeakAUC, PeakLocationX]=IntensityIntegrator(Intensities, XVals,searchingRadius)
 IntensitiesOld=Intensities;
 Intensities=Intensities-min(IntensitiesOld);
 % Marker=Intensities.*(XVals==0);
 index_Xref = find(XVals == 0);
 maxIntensity = max(Intensities);
 index_Imax = find(Intensities == maxIntensity);
-searching_radius = 15; % shift from the reference frame set on the interface
+searching_radius = searchingRadius; % shift from the reference frame set on the interface
 if searching_radius > 0
     if abs(index_Imax-index_Xref) > searching_radius
         searching_start = index_Xref-searching_radius;
@@ -17,7 +17,7 @@ if searching_radius > 0
 else
     % use the global intensity to detect the peak
 end  
-Marker=Intensities.*(Intensities==maxIntensity);  %update on 01/30/2025: mark the maximum intensity position instead of XVals==0
+Marker=Intensities.*(Intensities==maxIntensity);  % mark the maximum intensity position in a given searching region
 NewIM=imreconstruct(Marker, Intensities);
 PeakLogic=NewIM==max(NewIM);
 PeakLocation=find(Intensities==max(Intensities.*PeakLogic));

@@ -1,24 +1,10 @@
-function createNewMovie_post(outputPath, PathtoParameters)
+function createNewMovie_post(outputPath)
 %creat new movie use post-processing parameters
-if nargin == 2
-    previousP = load(fullfile(outputPath,'parameters.mat'),'parameters');
-    load(PathtoParameters,'parameters');   %mat file
-    obj = parameters;
-    %use parameters in the results file to upate parameters
-    [processingParameters, advancedOptions] = get_postParameters(matFilePath);
-
-    obj.filePath = previousP.parameters.filePath;
-    obj.moviePaths = previousP.parameters.moviePaths;
-    obj.imageName = previousP.parameters.imageName;
-    movieIndex = length(dir(fullfile(outputPath,'sphincRedo','*.avi')))+1;
-elseif nargin == 1
-    load(fullfile(outputPath,'parameters.mat'),'parameters')
-    obj = parameters;
-    movieIndex = 1; % use the parameters in the output folder to overwrite the first avi and xlsx file 
-
-else
-    error('1 or 2 parameters are needed for the new movie creation function')
-end
+%use parameters in the results file or default mat file to upate parameters
+matFilePath = outputPath;
+[processingParameters, advancedOptions] = get_postParameters(matFilePath);
+obj = processingParameters;
+movieIndex = 1; %length(dir(fullfile(outputPath,'sphincRedo','*.avi')))+1;
 
 ParentFolderPath = outputPath;
 SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...

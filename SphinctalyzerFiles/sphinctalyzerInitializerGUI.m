@@ -512,30 +512,30 @@ function sphinctalyzerInitializerGUI
             if keepAnalysisOpen.Value == 0
                 delete(guiCtrl);
             end
-            if loadParameters == 1
-                answerPost = questdlg('Create new movies using loaded pararmeters?', ...
-                	'Verify post-processing movie creatation', ...
-                	'YES','NO','YES');
-                % Handle response
-                switch answerPost
-                    case 'YES'
-                        disp('Loaded parameters are used for creating new movies...')
-                        PathtoParameters = fullfile(parameterFilePath,parameterFileName);
-                       
-                        for j = 1:length(processedPaths)
-                            %create new results for each movie using loaded parameters
-                            fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
-                            if exist(fullfile(processedPaths{j},'sphincRedo','results_1.xlsx'),'file') ~=2 % if first file does not exit
-                                disp('create the first results file using the previous saved parameters')
-                                createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
-                            end
-                            createNewMovie_post(processedPaths{j},PathtoParameters);
-                        end
+            % update previously processed images
+            answerPost = questdlg('Create new movies using pararmeters saved in Results_1.xlsx file or default parameters file?', ...
+                'Verify post-processing movie creatation', ...
+                'YES','NO','YES');
+            % Handle response
+            switch answerPost
+                case 'YES'
+                    disp('Loading post-processing parameters saved in Results_1.xlsx file or default parameters for creating new movies...')
+                    % PathtoParameters = fullfile(parameterFilePath,parameterFileName);
 
-                    case 'NO'
-                        disp('Loaded parameters are not used for the post-processing')
-                end
+                    for j = 1:length(processedPaths)
+                        %create new results for each movie using loaded parameters
+                        fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
+                        if exist(fullfile(processedPaths{j},'sphincRedo','results_1.xlsx'),'file') ~=2 % if first file does not exit
+                            disp('create the first results file using the previous saved parameters')
+                            createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                        end
+                        createNewMovie_post(processedPaths{j});
+                    end
+
+                case 'NO'
+                    disp('No new movie created the post-processing. Launch the post-processing GUI.')
             end
+
             postProcessingGUI(processedPaths)
             
 

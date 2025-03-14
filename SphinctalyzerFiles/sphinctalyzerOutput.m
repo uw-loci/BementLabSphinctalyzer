@@ -1285,7 +1285,15 @@ function sphinctalyzerOutput(objarray)
         xlsSheets{3} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Halfwidths','Range',rangeStart);
         xlsSheets{4} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart);
         xlsSheets{5} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart);
-        xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
+        try
+            xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
+        catch exp_xlss6
+           suggestonSTR = sprintf(['The sheet of Clsoing Velocity and Location of %s doesnot exist. \n' ...
+               '    This file is probably created by an earlier version. \n' ...
+               '    To proceed, press the Post-Process button in the Main window, and choose the option to create new output files \n'],fullfile(ParentFolderPath,'sphincRedo',excelSavename))
+           delete(guiCtrl)
+           error('Error message: %s \n   %s \n',exp_xlss6.message, suggestonSTR)
+        end
 
     end
     function update_movieOptions(excelSavename)

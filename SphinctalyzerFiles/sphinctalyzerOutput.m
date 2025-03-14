@@ -858,6 +858,41 @@ function sphinctalyzerOutput(objarray)
             end
         end
     end
+
+    function write_movies(~,~)
+        numImages = size(objarray,2);
+        processedPaths = cell(numImages,1);
+        for imageIndex = 1: numImages
+            moviePath = objarray(imageIndex).moviePaths{1};
+            foldermarkerIndex = strfind(moviePath,'sphincRedo');
+            postPath = moviePath(1:foldermarkerIndex-1);
+            processedPaths{imageIndex} = postPath;
+        end
+        % update previously processed images
+        answerPost = questdlg('Create new movies using pararmeters saved in post-parameters.xlsx file or Results_1.xlsx file?', ...
+            'Verify post-processing movie creatation', ...
+            'YES','NO','YES');
+        % Handle response
+        switch answerPost
+            case 'YES'
+                disp('Loading post-processing parameters saved in Results_1.xlsx file or default parameters for creating new movies...')
+                % PathtoParameters = fullfile(parameterFilePath,parameterFileName);
+
+                for j = 1:length(processedPaths)
+                    %create new results for each movie using loaded parameters
+                    fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
+                    if exist(fullfile(processedPaths{j},'sphincRedo','results_1.xlsx'),'file') ~=2 % if first file does not exit
+                        disp('create the first results file using the previous saved parameters')
+                        createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                    end
+                    createNewMovie_post(processedPaths{j});
+                end
+
+            case 'NO'
+                disp('No new movie created the post-processing. Launch the post-processing GUI.')
+        end
+
+    end
     
     %% Callbacks
     function change_x_axis(hObject, event)

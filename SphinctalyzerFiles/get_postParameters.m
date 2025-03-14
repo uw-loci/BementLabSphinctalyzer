@@ -12,7 +12,7 @@ function [processingParameters, advancedOptions] = get_postParameters(matFilePat
 %%
 matFileName = 'parameters.mat';
 resultsFileName = 'Results_1.xlsx';
-postParametersFileName = 'post_parameters.xlsx';
+postParametersFileName = 'parameters_post.xlsx';
 parameterFilePath = matFilePath;
 parameterFileName = matFileName;
 load(fullfile(parameterFilePath,parameterFileName),"parameters");

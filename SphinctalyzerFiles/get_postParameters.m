@@ -54,6 +54,10 @@ try
     obj.axesNames = movieOptions(2,2:3);
     obj.xMinStepMax = str2num(movieOptions{8,2});
     obj.yMinStepMax = str2num(movieOptions{9,2});
+    if size(movieOptions,1) == 12
+        movieOptions{13,1} = 'velocityStartStop';
+        movieOptions{13,2} = obj.velocityStartStop;
+    end
 
     if size(movieOptions,1) == 13
         if size(obj.velocityStartStop,1) == 1

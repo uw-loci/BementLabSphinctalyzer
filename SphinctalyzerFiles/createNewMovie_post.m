@@ -4,6 +4,9 @@ if nargin == 2
     previousP = load(fullfile(outputPath,'parameters.mat'),'parameters');
     load(PathtoParameters,'parameters');   %mat file
     obj = parameters;
+    %use parameters in the results file to upate parameters
+    [processingParameters, advancedOptions] = get_postParameters(matFilePath);
+
     obj.filePath = previousP.parameters.filePath;
     obj.moviePaths = previousP.parameters.moviePaths;
     obj.imageName = previousP.parameters.imageName;
@@ -12,6 +15,7 @@ elseif nargin == 1
     load(fullfile(outputPath,'parameters.mat'),'parameters')
     obj = parameters;
     movieIndex = 1; % use the parameters in the output folder to overwrite the first avi and xlsx file 
+
 else
     error('1 or 2 parameters are needed for the new movie creation function')
 end
@@ -29,5 +33,6 @@ SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     obj.yMinStepMax, ...
     movieIndex, ...
     obj.imageName, ...
-    obj.velocityStartStop)
+    obj.velocityStartStop,...
+    advancedOptions)
 end

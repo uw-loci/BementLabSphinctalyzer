@@ -475,11 +475,17 @@ closingVelocityLocation_label = [{'Velocity start frame';...
 
 
 % add the options of using different velocity Start and Stop points
-if nChannels>1 & size(velocityStartStop,1)==1
-    velocityStartStop_channel = repmat(velocityStartStop,nChannels,1);
-    advancedOptions.velocityStartStop = velocityStartStop_channel;
-else
+try
     velocityStartStop_channel = advancedOptions.velocityStartStop;
+    fprintf('Current velocity start and stop frames are used. \n')
+catch
+    if nChannels>1 & size(velocityStartStop,1)==1
+        velocityStartStop_channel = repmat(velocityStartStop,nChannels,1);
+        advancedOptions.velocityStartStop = velocityStartStop_channel;
+        fprintf('Previous saved velocity start and stop frames are used. \n')
+    else
+        error('Velocity start and end frames are not set correctly. \n')
+    end
 end
 
 for b = 1:nChannels

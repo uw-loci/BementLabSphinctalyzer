@@ -12,7 +12,7 @@ if nargin == 13
         advancedOptions.velocityStartStop = repmat(velocityStartStop,3,1);
     end
     advancedOptions.peakSearchingRadius = 0;
-    advancedOptions.closingCheckpoint = [0.667 0.500 0.333];
+    advancedOptions.closingCheckpoint = 0.75;
 elseif nargin == 14
     advancedOptions = moreOptions;
 end

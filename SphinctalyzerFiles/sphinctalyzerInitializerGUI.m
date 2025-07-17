@@ -854,8 +854,9 @@ function sphinctalyzerInitializerGUI
         % disable the GUI parameters during the process
         set(handlesArray,'Enable','off')
         % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
-        try
-            for i = 1:length(objarray)
+        skippedobjIndex1 = [];
+        for i = 1:length(objarray)
+            try
                 obj = objarray(i);
                 file = SphinctalyzerInitializer(obj.cellArray,obj.timepointStart, ...
                     obj.timepointEnd, ...
@@ -871,13 +872,20 @@ function sphinctalyzerInitializerGUI
                     obj.batchDirectory);
                 obj.filePath = file;
                 objarray(i) = obj;
+            catch ME
+                set(handlesArray,'Enable','on')
+                fprintf(' Initialize of object %d  did not go through, error message: %s \n',i,ME.message)
+                fprintf ('Image %d %s is skipped \n',i,objarray(i).imageName)
+                skippedobjIndex1 = [skippedobjIndex1 i];
             end
-        catch ME
-            set(handlesArray,'Enable','on')
-            errordlg(sprintf(strcat('Error in image %d: ', ME.message), i))
-            rethrow(ME)
+
         end
-        skippedobjIndex = [];
+       if ~isempty(skippedobjIndex1)
+           skip_handling(skippedobjIndex1);    
+       else
+           disp('Path annotation for all images has gone through, proceed to the next operation' )
+       end
+        skippedobjIndex2 = [];
         for i = 1:length(objarray)
             fprintf('Ongoing processing %d/%d: %s \n',i,length(objarray),objarray(i).imageName)
             try
@@ -956,26 +964,13 @@ function sphinctalyzerInitializerGUI
             catch exp1
                 fprintf(' Analysis of Object %d  did not go through, error message: %s \n',i,exp1.message)
                 fprintf ('Image %d %s is skipped \n',i,objarray(i).imageName)
-                skippedobjIndex = [skippedobjIndex i];
+                skippedobjIndex2 = [skippedobjIndex2 i];
             end
         end
-        if ~isempty(skippedobjIndex)
-            objarray(skippedobjIndex) = [];
-            if ~isempty(objarray)
-                %update the image list
-                imageNames = cell(length(objarray));
-                for l = 1:length(objarray)
-                    imageNames{l} = objarray(l).imageName;
-                end
-                set(imageQueueTable,'String',imageNames)
-                set(imageQueueTable, 'Value', 1)
-                currentObj = 1;
-            else
-                set(imageQueueTable,'String','')
-                disp('NO image is processed. Load image(s) to proceed')
-                set(handlesArray,'Enable','on')
-                return
-            end
+        if ~isempty(skippedobjIndex2)
+            skip_handling(skippedobjIndex2)
+        else
+            disp('All images on the list have been succesfully sphinctalyzed.')
             
         end
 
@@ -1451,4 +1446,23 @@ function sphinctalyzerInitializerGUI
             end
         end
     end
+    
+    function skip_handling(skippedobjIndex)
+        objarray(skippedobjIndex) = [];
+        if ~isempty(objarray)
+            %update the image list
+            imageNames = cell(length(objarray));
+            for l = 1:length(objarray)
+                imageNames{l} = objarray(l).imageName;
+            end
+            set(imageQueueTable,'String',imageNames)
+            set(imageQueueTable, 'Value', 1)
+            currentObj = 1;
+        else
+            set(imageQueueTable,'String','')
+            set(handlesArray,'Enable','on')
+            error('All is skipped. Load new image(s) to proceed')
+        end
+    end
+
 end

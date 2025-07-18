@@ -546,7 +546,23 @@ writematrix(Halfwidths',[savepath, excelSavename],'Sheet','Halfwidths','Range','
 writematrix(AUCs',[savepath, excelSavename],'Sheet','AUCs','Range','C2');%['C' num2str(LineNo)]);
 writematrix(Peaks',[savepath, excelSavename],'Sheet','Percent Above Background','Range','C2');%['C' num2str(LineNo)]);
 writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
+% add instantaneous calculations
+instantPeaks = diff(Peaks'); 
+instantPeaks = [nan nan;instantPeaks];
+instantPeakLocs = diff(PeakLocs'); 
+instantPeakLocs = [nan nan;instantPeakLocs];
+instantVelocity = abs(instantPeakLocs/timePerFrame);
+instantHalfwidths = diff(Halfwidths'); 
+instantHalfwidths = [nan nan;instantHalfwidths];
+instantAUCs = diff(AUCs'); 
+instantAUCs = [nan nan; instantAUCs];
+instantColumn1= strcat(char(2+nChannels+1+'A'-1),'2'); 
 
+writematrix(instantPeaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',instantColumn1);
+writematrix([instantPeakLocs instantVelocity],[savepath, excelSavename],'Sheet','Peak Locations','Range',instantColumn1);
+writematrix(instantHalfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',instantColumn1);
+writematrix(instantAUCs,[savepath, excelSavename],'Sheet','AUCs','Range',instantColumn1);
+writematrix(instantPeaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',instantColumn1);
 
 % add frame index in the first row of the output folder
 frameIndexes = 1:length(Peaks);
@@ -694,16 +710,21 @@ writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Percent Above Backg
 % end
 
 % writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
+%add instantanesous label in the channelstrings
+instantStr1 = cell(1,2);
+instantStr2 = cell(1,2);
+for i = 1:nChannels
+    instantStr1{i} = strcat(ChannelStrings{i}, '_Instant');
+    instantStr2{i} = strcat(ChannelStrings{i}, '_InstantVelocity');
+end
 
-
-writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Percent Above Background','Range','C1');%['C' num2str(LineNo)]);
-writecell(ChannelStrings',[savepath, excelSavename],'Sheet','AUCs','Range','C1');%['C' num2str(LineNo)]);
-writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Halfwidths','Range','C1');%['C' num2str(LineNo)]);
-writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Peak Intensity','Range','C1');%['C' num2str(LineNo)]);
-writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Peak Locations','Range','C1');%['C' num2str(LineNo)]);
+writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Percent Above Background','Range','C1');%['C' num2str(LineNo)]);
+writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','AUCs','Range','C1');%['C' num2str(LineNo)]);
+writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Halfwidths','Range','C1');%['C' num2str(LineNo)]);
+writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Peak Intensity','Range','C1');%['C' num2str(LineNo)]);
+writecell([ChannelStrings' instantStr1 instantStr2],[savepath, excelSavename],'Sheet','Peak Locations','Range','C1');%['C' num2str(LineNo)]);
 writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo-1)]);
 writecell(closingVelocityLocation_label,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['B' num2str(LineNo)]);
-
 
 %add frame Name
 frameLabel = {'Frame Index'};

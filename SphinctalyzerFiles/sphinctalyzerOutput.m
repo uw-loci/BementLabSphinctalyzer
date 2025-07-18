@@ -1238,9 +1238,10 @@ function sphinctalyzerOutput(objarray)
         imageSliderDataPanel.RowName= imageSliderDataPanel.RowName(1:6); % only keep the first 6 row names
         for m = 1:obj.nChannels
             for n = 1:5
-                sheet = xlsSheets{n};
+                sheet = xlsSheets{n}; % 
                 try
-                    imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
+                    % imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
+                    imageSliderDataPanel.Data{n, m} = sheet(m, currentTimepoint); % each sheet only contains the measurments from velocity start through end 
                 catch exp1
                     fprintf(' %s \n %s is empty \n',exp1.message,imageSliderDataPanel.RowName{n})
                     imageSliderDataPanel.Data{n, m} = [];
@@ -1281,11 +1282,11 @@ function sphinctalyzerOutput(objarray)
         rangeStart = 'C2';
         try
             xlsSheets = cell(1,6);
-            xlsSheets{1} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename),'Sheet', 'Peak Intensity','Range',rangeStart);
-            xlsSheets{2} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Peak Locations','Range',rangeStart);
-            xlsSheets{3} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Halfwidths','Range',rangeStart);
-            xlsSheets{4} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart);
-            xlsSheets{5} = readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart);
+            xlsSheets{1} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename),'Sheet', 'Peak Intensity','Range',rangeStart))';
+            xlsSheets{2} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Peak Locations','Range',rangeStart))';
+            xlsSheets{3} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Halfwidths','Range',rangeStart))';
+            xlsSheets{4} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart))';
+            xlsSheets{5} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart))';
             xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
         catch exp_xlsread
             suggestonSTR = sprintf(['The results reading didnot go through \n' ...

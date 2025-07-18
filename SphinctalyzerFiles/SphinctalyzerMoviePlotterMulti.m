@@ -294,11 +294,11 @@ y=[min(Range):1/InterpolationFrames:max(Range)];
 [Xr,Yr]=meshgrid(x,y);
 %initialize the peak parameters
 channelsNo = size(ChannelStrings,1);
-frameInrange = length(min(Range):max(Range));
-Peaks=nan(channelsNo,frameInrange);
-Halfwidths=nan(channelsNo,frameInrange);
-AUCs=nan(channelsNo,frameInrange);
-PeakLocs=nan(channelsNo,frameInrange);
+frameInrangeMax = max(Range); %length(min(Range):max(Range)); %maximum frame in range
+Peaks=nan(channelsNo,frameInrangeMax);
+Halfwidths=nan(channelsNo,frameInrangeMax);
+AUCs=nan(channelsNo,frameInrangeMax);
+PeakLocs=nan(channelsNo,frameInrangeMax);
 searchingRadius = advancedOptions.peakSearchingRadius;
 for i=1:size(ChannelStrings,1)
     zprimegrid=NaN(size(xprimegrid));
@@ -540,21 +540,21 @@ catch closingLocationEXP
 end
 
 %save results to the excel file
-writematrix(Peaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C' num2str(LineNo)]);
-writematrix(PeakLocs,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo)]);
-writematrix(Halfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo)]);
-writematrix(AUCs,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo)]);
-writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
+writematrix(Peaks',[savepath, excelSavename],'Sheet','Peak Intensity','Range','C2');%['C' num2str(LineNo)]);
+writematrix(PeakLocs',[savepath, excelSavename],'Sheet','Peak Locations','Range','C2');%['C' num2str(LineNo)]);
+writematrix(Halfwidths',[savepath, excelSavename],'Sheet','Halfwidths','Range','C2');%['C' num2str(LineNo)]);
+writematrix(AUCs',[savepath, excelSavename],'Sheet','AUCs','Range','C2');%['C' num2str(LineNo)]);
+writematrix(Peaks',[savepath, excelSavename],'Sheet','Percent Above Background','Range','C2');%['C' num2str(LineNo)]);
 writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
 
 
 % add frame index in the first row of the output folder
 frameIndexes = 1:length(Peaks);
-writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['C' num2str(LineNo-1)]);
-writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Peak Locations','Range',['C' num2str(LineNo-1)]);
-writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Halfwidths','Range',['C' num2str(LineNo-1)]);
-writematrix(frameIndexes,[savepath, excelSavename],'Sheet','AUCs','Range',['C' num2str(LineNo-1)]);
-writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo-1)]);
+writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Peak Intensity','Range','B2');%['C' num2str(LineNo-1)]);
+writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Peak Locations','Range','B2');%['C' num2str(LineNo-1)]);
+writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Halfwidths','Range','B2');%['C' num2str(LineNo-1)]);
+writematrix(frameIndexes',[savepath, excelSavename],'Sheet','AUCs','Range','B2');%['C' num2str(LineNo-1)]);
+writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Percent Above Background','Range','B2');%['C' num2str(LineNo-1)]);
 
 % %% Normalization Calculation
 % if normalization == 1
@@ -696,31 +696,31 @@ writematrix(frameIndexes,[savepath, excelSavename],'Sheet','Percent Above Backgr
 % writematrix(Peaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['C' num2str(LineNo)]);
 
 
-writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['B' num2str(LineNo)]);
-writecell(ChannelStrings,[savepath, excelSavename],'Sheet','AUCs','Range',['B' num2str(LineNo)]);
-writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Halfwidths','Range',['B' num2str(LineNo)]);
-writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['B' num2str(LineNo)]);
-writecell(ChannelStrings,[savepath, excelSavename],'Sheet','Peak Locations','Range',['B' num2str(LineNo)]);
+writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Percent Above Background','Range','C1');%['C' num2str(LineNo)]);
+writecell(ChannelStrings',[savepath, excelSavename],'Sheet','AUCs','Range','C1');%['C' num2str(LineNo)]);
+writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Halfwidths','Range','C1');%['C' num2str(LineNo)]);
+writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Peak Intensity','Range','C1');%['C' num2str(LineNo)]);
+writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Peak Locations','Range','C1');%['C' num2str(LineNo)]);
 writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo-1)]);
 writecell(closingVelocityLocation_label,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['B' num2str(LineNo)]);
 
 
 %add frame Name
 frameLabel = {'Frame Index'};
-writecell(frameLabel,[savepath, excelSavename],'Sheet','Percent Above Background','Range',['B' num2str(LineNo-1)]);
-writecell(frameLabel,[savepath, excelSavename],'Sheet','AUCs','Range',['B' num2str(LineNo-1)]);
-writecell(frameLabel,[savepath, excelSavename],'Sheet','Halfwidths','Range',['B' num2str(LineNo-1)]);
-writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Intensity','Range',['B' num2str(LineNo-1)]);
-writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Locations','Range',['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Percent Above Background','Range','B1');%['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','AUCs','Range','B1');%['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Halfwidths','Range','B1');%['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Intensity','Range','B1');%['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Locations','Range','B1');%['B' num2str(LineNo-1)]);
 
 
 savenamecrop=savename(1:findstr(savename,'scan_movie')-2); % extract the image name
-writecell({savenamecrop},[savepath, excelSavename],'Sheet','Percent Above Background','Range',['A' num2str(LineNo)]);
-writecell({savenamecrop},[savepath, excelSavename],'Sheet','AUCs','Range',['A' num2str(LineNo)]);
-writecell({savenamecrop},[savepath, excelSavename],'Sheet','Halfwidths','Range',['A' num2str(LineNo)]);
-writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Intensity','Range',['A' num2str(LineNo)]);
-writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Locations','Range',['A' num2str(LineNo)]);
-writecell({savenamecrop},[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Percent Above Background','Range','A1');%['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','AUCs','Range','A1');%['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Halfwidths','Range','A1');%['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Intensity','Range','A1');%['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Locations','Range','A1');%['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range','A1');%['A' num2str(LineNo)]);
 
 fprintf('Created output results file: %s \n', fullfile([savepath, excelSavename]));
 LineNo=LineNo+size(ChannelStrings,1);

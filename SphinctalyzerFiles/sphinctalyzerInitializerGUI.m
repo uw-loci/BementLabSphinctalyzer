@@ -59,12 +59,12 @@ function sphinctalyzerInitializerGUI
         'NumberTitle','off');
     
     % Keep Analysis Window open
-    keepAnalysisOpen = uicontrol('Parent', guiCtrl, ...
+    runInBackgroundFlag = uicontrol('Parent', guiCtrl, ...
         'Style','checkbox', ...
-        'String','Keep This Window Open', ...
+        'String','Run in the background', ...
         'FontSize', 11, ...
         'Enable', 'off', ...
-        'Value', 1, ...
+        'Value', 0, ...
         'Units', 'normalized', ...
         'Position', [0.67 0 0.2 0.05]);
 
@@ -448,7 +448,7 @@ function sphinctalyzerInitializerGUI
         sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
         enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
         colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
-        openFile,postProcess,keepAnalysisOpen,cellInputs];  
+        openFile,postProcess,runInBackgroundFlag,cellInputs];  
     
   %GUI layout ends here ------------------------------------------------
 
@@ -511,9 +511,6 @@ function sphinctalyzerInitializerGUI
             end
         end
         if ~isempty(processedPaths)
-            if keepAnalysisOpen.Value == 0
-                delete(guiCtrl);
-            end
             % update previously processed images
             answerPost = questdlg('Overwrite Results_1 using pararmeters saved in parameters_post.xlsx or Results_1.xlsx file or default parameters file?', ...
                 'Verify post-processing movie creatation', ...
@@ -731,7 +728,7 @@ function sphinctalyzerInitializerGUI
         set(sphinctalyzeButton,'Enable','on')
         set(cancelButton,'Enable','on')
         % set(resetButton,'Enable','on')
-        set(keepAnalysisOpen, 'Enable','on')
+        set(runInBackgroundFlag, 'Enable','on')
         set(cellInputs,'Enable','on')
         update_parameters(currentObj)
         % Populate Image Queue
@@ -849,11 +846,19 @@ function sphinctalyzerInitializerGUI
         update_parameters(hObject.Value)
     end
 
+
     function sphinctalyze(hObject, eventdata)
         % Run sphinctalyerinitalizer on all images
         % disable the GUI parameters during the process
         set(handlesArray,'Enable','off')
         % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
+        % initialize default values for parameter "moreOptions"
+        velocityStartStop = [1 2];
+        moreOptions.velocityStartStop = velocityStartStop;
+        moreOptions.peakSearchingRadius = 0;
+        moreOptions.closingCheckpoint = 0.75;
+        moreOptions.runInBackgroundFlag = runInBackgroundFlag.Value;
+
         skippedobjIndex1 = [];
         for i = 1:length(objarray)
             try
@@ -885,6 +890,11 @@ function sphinctalyzerInitializerGUI
        else
            disp('Path annotation for all images has gone through, proceed to the next operation' )
        end
+       %minimize the main GUI if run in the background
+       if runInBackgroundFlag.Value == 1
+           guiCtrl.WindowState = 'minimized';
+       end
+
         skippedobjIndex2 = [];
         for i = 1:length(objarray)
             fprintf('Ongoing processing %d/%d: %s \n',i,length(objarray),objarray(i).imageName)
@@ -893,13 +903,18 @@ function sphinctalyzerInitializerGUI
                 % Run sphincrescue and movieplotter on all images
                 [ParentFolderPath] = fileparts(obj.filePath);
                 [ParentFolderPath] = fileparts(ParentFolderPath);
-
+                if size(obj.velocityStartStop,1) == 1
+                    moreOptions.velocityStartStop = repmat(velocityStartStop,3,1);
+                else
+                    moreOptions.velocityStartStop = obj.velocityStartStop;
+                end
                 SphincRescue(ParentFolderPath, ...
                     obj.speed, ...
                     obj.loadMulti, ...
                     obj.shape, ...
                     obj.detection, ...
-                    obj.step)
+                    obj.step,...
+                    runInBackgroundFlag.Value)
 
                 SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
                     obj.channelColors, ...
@@ -913,7 +928,8 @@ function sphinctalyzerInitializerGUI
                     obj.yMinStepMax, ...
                     1, ...
                     obj.imageName,...
-                    obj.velocityStartStop)
+                    obj.velocityStartStop,...
+                    moreOptions)
 
                 % set movie path for the movie
                 ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
@@ -982,22 +998,17 @@ function sphinctalyzerInitializerGUI
             set(handlesArray,'Enable','on')
             return
         end
-        
-        if ~get(keepAnalysisOpen, 'Value')
-            delete(guiCtrl);
-        else
-            % make new directory for each new analysis in SphinctalyzerImageLoader
-            currDate = strrep(datestr(datetime), ' ', '_');
-            currDate = strrep(currDate,':','-');
-            % pathString = strcat(imagePath,'/Sphincdata/Output_',currDate)
-            pathString = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
-            for i = 1:length(objarray)
-                objarray(i).batchDirectory = pathString;
-                objarray(i).moviePaths = {};
-            end
-            % update_parameters(objarray)
-            set(handlesArray,'Enable','on')
+        % make new directory for each new analysis in SphinctalyzerImageLoader
+        currDate = strrep(datestr(datetime), ' ', '_');
+        currDate = strrep(currDate,':','-');
+        % pathString = strcat(imagePath,'/Sphincdata/Output_',currDate)
+        pathString = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
+        for i = 1:length(objarray)
+            objarray(i).batchDirectory = pathString;
+            objarray(i).moviePaths = {};
         end
+        % update_parameters(objarray)
+        set(handlesArray,'Enable','on')
     end
     
 % Cancel or abort a process

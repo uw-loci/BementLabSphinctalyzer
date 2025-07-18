@@ -1,4 +1,4 @@
-function SphinctalyzerInitialized(filename,path,speed,multi,shape,detection,step)
+function SphinctalyzerInitialized(filename,path,speed,multi,shape,detection,step,runInBackgroundFlag)
 
 %% Input parameter initialization
 % Set up input vaiables in cell array
@@ -14,6 +14,7 @@ if nargin == 2
     SmoothNo=0;
     
     Step=8; %Line segment length for livewire operation
+    backgroundFlag = 0; % by default donot run in the background
 else
     load(fullfile(path,filename));
     Range = find([SphinctalyzerOutputs(:).InRange]==1);  % Select the range of images to scan in form first frame:last frame
@@ -26,6 +27,7 @@ else
     SmoothNo=0;
     
     Step=step; %Line segment length for livewire operation
+    backgroundFlag = runInBackgroundFlag;
 end
 
 
@@ -43,7 +45,11 @@ try
         if max(RefCheckMatrix)==0
             waitincrement=length(RefCheckMatrix).*(length(Range)+1);
             waitposition=0;
-            h = waitbar(0,'Sphinctalyzing','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+            if backgroundFlag == 1
+                h = waitbar(0,'Sphinctalyzing...','Visible','off','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+            else
+                h = waitbar(0,'Sphinctalyzing...','Visible','on','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+            end
             setappdata(h,'canceling',0);
             for i=1:size(RefCheckMatrix,1)
                 RefFrame=DisplayFrameMatrix(i);
@@ -90,7 +96,11 @@ try
             NonRefName=InputCells(~logical(RefCheckMatrix),1);waitincrement=length(RefCheckMatrix).*length(Range);
             waitincrement=length(Range);
             waitposition=0;
-            h = waitbar(0,'Sphinctalyzing','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+            if backgroundFlag == 1
+                h = waitbar(0,'Sphinctalyzing...','Visible','off','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+            else
+                h = waitbar(0,'Sphinctalyzing...','Visible','on','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+            end
             setappdata(h,'canceling',0);
             SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Outline'])) = CircleScanLivewire(SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Data'])),...
                 SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Data'])), UserDrawnBounds(RefChannel).BWMaskOut, 1, DetectionMethod, Step,SmoothNo);

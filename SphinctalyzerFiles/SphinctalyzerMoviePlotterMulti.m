@@ -13,8 +13,13 @@ if nargin == 13
     end
     advancedOptions.peakSearchingRadius = 0;
     advancedOptions.closingCheckpoint = 0.75;
+    advancedOptions.runInBackgoundFlag = 0;
 elseif nargin == 14
     advancedOptions = moreOptions;
+    fieldsAll = fieldnames(advancedOptions);
+    if isempty(find(strcmp(fieldsAll,'runInBackgroundFlag')))
+        advancedOptions.runInBackgroundFlag = 0;  % default is don't run in the background, unless it is explicily set.
+    end
 end
     if nargin == 0
         guiInput = 0;
@@ -350,13 +355,15 @@ if exist(fullfile(savepath, excelSavename),'file')
     delete(fullfile(savepath, excelSavename))
     fprintf('Deleted previous results file: %s \n', fullfile(savepath, excelSavename))
 end
-
-
 writerObj = VideoWriter(fullfile(savepath,strcat([savename,'.avi'])));
 set(writerObj,'FrameRate',frmrate*InterpolationFrames);
 open(writerObj);
-gcf1 = figure;
-
+% set the figure visibility
+if advancedOptions.runInBackgroundFlag == 1
+    gcf1 = figure('Visible','off');
+else
+    gcf1 = figure;
+end
 for i= 1:size(Zr,1)
     hold off
     for j = 1:size(ChannelStrings,1)

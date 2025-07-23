@@ -853,8 +853,8 @@ function sphinctalyzerInitializerGUI
         set(handlesArray,'Enable','off')
         % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
         % initialize default values for parameter "moreOptions"
-        velocityStartStop = [1 2];
-        moreOptions.velocityStartStop = velocityStartStop;
+        % velocityStartStop = [1 2];
+        moreOptions.velocityStartStop = [1 2];
         moreOptions.peakSearchingRadius = 0;
         moreOptions.closingCheckpoint = 0.75;
         moreOptions.runInBackgroundFlag = runInBackgroundFlag.Value;
@@ -904,7 +904,7 @@ function sphinctalyzerInitializerGUI
                 [ParentFolderPath] = fileparts(obj.filePath);
                 [ParentFolderPath] = fileparts(ParentFolderPath);
                 if size(obj.velocityStartStop,1) == 1
-                    moreOptions.velocityStartStop = repmat(velocityStartStop,3,1);
+                    moreOptions.velocityStartStop = repmat(obj.velocityStartStop,3,1);
                 else
                     moreOptions.velocityStartStop = obj.velocityStartStop;
                 end

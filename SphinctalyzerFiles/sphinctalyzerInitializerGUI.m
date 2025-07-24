@@ -78,17 +78,27 @@ function sphinctalyzerInitializerGUI
         'Position',[0.15 0.91 0.12 0.08],...
         'Callback', {@open_file_callback});
 
-    % Load parameters button
+    % button to load user specified parameters from a csv file
     loadParam = uicontrol('Parent',guiCtrl, ...
         'Style','pushbutton', ...
         'String','Load Parameters',...
         'FontSize',11, ...
         'Enable','on', ...
         'Units','normalized', ...
-        'Position',[0.01 0.91 0.12 0.08],...
+        'Position',[0.01 0.95 0.12 0.04],...
         'Tooltip','Select a parameter.csv file for the subsequently loaded image(s)',...
         'Callback', {@load_param_callback});
 
+     % button to update commonly used parameters
+    updateCommonParam = uicontrol('Parent',guiCtrl, ...
+        'Style','pushbutton', ...
+        'String','Update Parameters',...
+        'FontSize',11, ...
+        'Enable','off', ...
+        'Units','normalized', ...
+        'Position',[0.01 0.905 0.12 0.04],...
+        'Tooltip','Update commonly used parameters for the opened image(s)',...
+        'Callback', {@updateCommonParam_callback});
     % Post processing button
     postProcess = uicontrol('Parent',guiCtrl, ...
         'Style','pushbutton', ...
@@ -448,7 +458,7 @@ function sphinctalyzerInitializerGUI
         sru1,sru2,sru3,sru4,sru5,enterSpeed,enterStep,enterSmooth,enterDetection,...
         enterShape,enterMicronsPerPixel,enterNormalization,entertimePerFrame,...
         colorMapSelection,roiSelection,channelSelection,sliderTimepoint,imageQueueTable,sphinctalyzeButton,...
-        openFile,postProcess,runInBackgroundFlag,cellInputs];  
+        openFile,postProcess,runInBackgroundFlag,cellInputs,updateCommonParam];  
     
   %GUI layout ends here ------------------------------------------------
 
@@ -479,7 +489,7 @@ function sphinctalyzerInitializerGUI
             load_image(imageName,imagePath,outputDirectory)
         end
         set(loadParam,'Enable','off')
-        fprintf(' "Load Parameters" button is disabled". \n To specify a parameters file for the anlaysis, click on the "Load Parameters" butoon before loading images. \n' )
+        fprintf(' "Load Parameters" button is disabled". \n To specify a parameters file for the anlaysis, click on the "Load Parameters" button before loading images. \n' )
     end
     
 
@@ -612,6 +622,65 @@ function sphinctalyzerInitializerGUI
             end
         end
     end
+% Update common parameters for all opened images
+    function updateCommonParam_callback(~, ~)
+        answerUpdateQ = questdlg(['Update the common analayis parameters ' ...
+            'for all opened images?'], 'Update common parameters','Proceed', ...
+            'Abort','Proceed');
+        % Handle response
+        updateCommonParam_flag = [];
+        switch answerUpdateQ
+            case 'Proceed'
+                disp('Updating common analyzis parameters for all opened images...')
+                updateCommonParam_flag = 1;
+            case 'Abort'
+                disp('Common parameters update aborted.')
+                return
+        end
+        if updateCommonParam_flag == 1
+            % update following parameters: Channel names
+            % cellArray
+            % speed
+            % shape
+            % detection
+            % smooth
+            % step
+            % colormap
+            % timePerFrame
+            % axesNames
+            % xMinStepMax
+            % yMinStepMax
+            % normalization
+            % micronsPerPixel
+            % channelNames
+            % roiShape
+            obj = objarray(currentObj);
+            objNumber = length(objarray);
+            for i = 1:objNumber
+                objarray(i).cellArray(:,3) = obj.cellArray(:,3); % update the reference channel flag
+                objarray(i).cellArray(:,1) = obj.cellArray(:,1); % update the channel name on the table
+                objarray(i).speed = obj.speed;
+                objarray(i).shape = obj.shape;
+                objarray(i).detection = obj.detection;
+                objarray(i).smooth = obj.smooth;
+                objarray(i).step = obj.step;
+                objarray(i).colormap = obj.colormap;
+                objarray(i).timePerFrame = obj.timePerFrame;
+                objarray(i).axesNames = obj.axesNames;
+                objarray(i).xMinStepMax = obj.xMinStepMax;
+                objarray(i).yMinStepMax = obj.yMinStepMax;
+                objarray(i).normalization = obj.normalization;
+                objarray(i).micronsPerPixel = obj.micronsPerPixel;
+                objarray(i).channelNames = obj.channelNames;
+                objarray(i).roiShape = obj.roiShape;
+            end
+            disp('Common parameters are updated for all images on the list.')
+            % update correspoinding parameters csv and mat file
+            saveAnalysisParameters(obj)
+            disp('Default parameters files(parameters.csv, parameters.mat) are updated')
+        end
+
+    end
     
     function load_image(imageNames, imagePath, batchDirectory)
         % create an object array of length fileNames, with default values
@@ -730,6 +799,7 @@ function sphinctalyzerInitializerGUI
         % set(resetButton,'Enable','on')
         set(runInBackgroundFlag, 'Enable','on')
         set(cellInputs,'Enable','on')
+        set(updateCommonParam,'Enable','on')
         update_parameters(currentObj)
         % Populate Image Queue
         imageNames = cell(length(objarray));
@@ -940,42 +1010,44 @@ function sphinctalyzerInitializerGUI
                 parameters = obj;
                 % save parameters
                 [ParentFolderPath] = fileparts(ParentFolderPath);
-                save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
-                %save editable parameters into a csv file
-                csvfileName = 'parameters.csv';
-                propertiesList = properties(parameters);
-                propertiesLength = length(propertiesList);
-                [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
-                csvfileValue =  cell(propertiesLength,1+m*n);
-                for iP = 1:propertiesLength
-                    propertiesName = propertiesList{iP};
-                    csvfileValue{iP,1} = propertiesName;
-                    if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
-                        if strcmp(propertiesName, 'channelColors') == 1
-                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
-                            csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
-                            csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
-                        elseif strcmp(propertiesName, 'xMinStepMax') == 1
-                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
-                        elseif strcmp(propertiesName, 'yMinStepMax') == 1
-                            csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
-                        elseif strcmp(propertiesName, 'velocityStartStop') == 1
-                            csvfileValue{iP,2} = parameters.(propertiesName)(1);
-                            csvfileValue{iP,3} = parameters.(propertiesName)(2);
-                        else
-                            csvfileValue{iP,2} = parameters.(propertiesName);
-                        end
-                    else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
-                        [m,n] = size(parameters.(propertiesName));
-                        for iM = 1:m
-                            for iN = 1:n
-                                csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
-                            end
-                        end
-                    end
-                end
-                %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
-                writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+
+                saveAnalysisParameters(parameters,ParentFolderPath);
+                % save(fullfile(ParentFolderPath,'parameters.mat'),'parameters','-mat');
+                % %save editable parameters into a csv file
+                % csvfileName = 'parameters.csv';
+                % propertiesList = properties(parameters);
+                % propertiesLength = length(propertiesList);
+                % [m,n] = size(parameters.cellArray); %m*n is the maximum number of values that one properties can contain
+                % csvfileValue =  cell(propertiesLength,1+m*n);
+                % for iP = 1:propertiesLength
+                %     propertiesName = propertiesList{iP};
+                %     csvfileValue{iP,1} = propertiesName;
+                %     if isempty(find(strcmp(propertiesName,{'cellArray','axesNames','channelNames','moviePaths'}),1))
+                %         if strcmp(propertiesName, 'channelColors') == 1
+                %             csvfileValue{iP,2} = mat2str(parameters.(propertiesName){1});
+                %             csvfileValue{iP,3} = mat2str(parameters.(propertiesName){2});
+                %             csvfileValue{iP,4} = mat2str(parameters.(propertiesName){3});
+                %         elseif strcmp(propertiesName, 'xMinStepMax') == 1
+                %             csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                %         elseif strcmp(propertiesName, 'yMinStepMax') == 1
+                %             csvfileValue{iP,2} = mat2str(parameters.(propertiesName));
+                %         elseif strcmp(propertiesName, 'velocityStartStop') == 1
+                %             csvfileValue{iP,2} = parameters.(propertiesName)(1);
+                %             csvfileValue{iP,3} = parameters.(propertiesName)(2);
+                %         else
+                %             csvfileValue{iP,2} = parameters.(propertiesName);
+                %         end
+                %     else % for cell arrays: 'cellArray','axesNames','channelNames','moviePaths'
+                %         [m,n] = size(parameters.(propertiesName));
+                %         for iM = 1:m
+                %             for iN = 1:n
+                %                 csvfileValue{iP,1+(iM-1)*n+iN} =  parameters.(propertiesName){iM,iN};
+                %             end
+                %         end
+                %     end
+                % end
+                % %             writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
+                % writecell(csvfileValue, fullfile(ParentFolderPath,csvfileName));
                 objarray(i) = obj;
             catch exp1
                 fprintf(' Analysis of Object %d  did not go through, error message: %s \n',i,exp1.message)
@@ -1367,7 +1439,7 @@ function sphinctalyzerInitializerGUI
         objarray(currentObj).timePerFrame = usr_input;
     end
 
-    function change_color_map(hObject, eventdata)
+   function change_color_map(hObject, eventdata)
         obj = objarray(currentObj);
         selection = hObject.Value;
         colorMaps = hObject.String;

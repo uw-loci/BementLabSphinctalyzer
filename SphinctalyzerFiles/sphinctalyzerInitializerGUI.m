@@ -138,7 +138,7 @@ function sphinctalyzerInitializerGUI
         'FontSize',10,...
         'Units','normalized', ...
         'Position',[0.70 0.5075 0.290 0.395], ...
-        'callback',{@prompt_names});
+        'callback',{@changeChannelNames_callback});
 
     changeVelocityRange = uicontrol('Parent',cellInputsPanel, ...
         'Style','pushbutton', ...
@@ -1179,7 +1179,7 @@ function sphinctalyzerInitializerGUI
         end
     end
     
-    function prompt_names(hObject, event)
+    function changeChannelNames_callback(~, ~)
         % prompt the user for new channel names
         obj = objarray(currentObj);
         nChannels = obj.nChannels;
@@ -1198,6 +1198,11 @@ function sphinctalyzerInitializerGUI
         end
         dlgtitle = 'Edit Channel Names';
         answer = inputdlg(prompts,dlgtitle,dims,definput);
+                unique_channels = unique(answer);
+        if numel(unique_channels) < numel(answer)
+            msgbox('Do not accept identical channel names. Channel name change failed')
+            return
+        end
         if ~isempty(answer)
             % update the channel name
             for iC = 1:nChannels

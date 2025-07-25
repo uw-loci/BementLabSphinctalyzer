@@ -141,7 +141,14 @@ function sphinctalyzerOutput(objarray)
         'units','normalized', ...
         'Value',1 ,...
         'Position',[value_start-0.3 h_start-0.585 value_width+0.30 value_height], ...
-        'Callback',{@get_legend_location});  
+        'Callback',{@get_legend_location});
+    %Button to change the channel names
+    changeChannelNames = uicontrol('Parent',moviePlotOptions,...
+        'Style','pushbutton','String','Change Channel Name', ...
+        'Units','normalized', ...
+        'Position',[0.05 0.005 .90 .075],...
+        'Callback',{@changeChannelNames_callback});
+    defaultChannelNames = {'Channel1','Channel2','Channel3'}; %
 
 % peak dection options
      peakVelocityOptions = uipanel('Parent',movieVelocityOptions, ...
@@ -391,8 +398,6 @@ function sphinctalyzerOutput(objarray)
             error('only support images with no more than 3 channels')
         end
 
-
-
         [ParentFolderPath] = fileparts(obj.filePath);
         [ParentFolderPath] = fileparts(ParentFolderPath);
          % excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
@@ -416,6 +421,9 @@ function sphinctalyzerOutput(objarray)
         % load in SphinctalyzerOutputs data structure
         pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
         SphincOutputs = load(pathToResults);
+        % update channel names from the .mat file
+        obj.channelNames = SphincOutputs.InputCells(:,1);
+        objarray(currentObj) = obj;
         if max(referenceArray) == 0
             oneIndices = 1:obj.nChannels;
             SphinctalyzerOutputs = cell(obj.nChannels, obj.timepointEnd - obj.timepointStart + 1);
@@ -579,6 +587,7 @@ function sphinctalyzerOutput(objarray)
             update_xlssheet(excelSavename);
             %update the movie options
             update_movieOptions(excelSavename);
+            
         end
         axis image equal
         drawnow
@@ -1061,6 +1070,57 @@ function sphinctalyzerOutput(objarray)
         selected_legend_location = legend_locations{get(hObject, 'Value')};
         objarray(currentObj).legendLocation = selected_legend_location;
     end
+% call back fuction to changeChannelNames
+    function changeChannelNames_callback(~, ~)
+        % prompt the user for new channel name
+        obj = objarray(currentObj);
+        nChannels = obj.nChannels;
+         % get the saved channle names from the results .mat file 
+        ParentFolderPath = fileparts(obj.filePath);
+        [ParentFolderPath] = fileparts(ParentFolderPath);
+        pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
+        SphincOutputs_load = load(pathToResults,'InputCells');
+        cellArray = SphincOutputs_load.InputCells;
+        % cellArray = SphincOutputs_load.InputCells;
+        oldChannelNames = cellArray(:,1);
+        %channel name change dialog window 
+        prompts = cell(obj.nChannels, 1);
+        for i = 1:length(prompts)
+            prompts{i} = "Enter name of channel " + i + ":";
+        end
+        dims = [1 35];
+        definput = cell(nChannels, 1);
+        if nChannels == 1
+            definput = {cellArray{1, 1}};
+        elseif nChannels == 2
+            definput = {cellArray{1, 1}, cellArray{2, 1}};
+        elseif nChannels == 3
+            definput = {cellArray{1, 1}, cellArray{2, 1}, cellArray{3, 1}};
+        end
+        dlgtitle = 'Edit Channel Names';
+        answer = inputdlg(prompts,dlgtitle,dims,definput);
+        unique_channels = unique(answer);
+        if numel(unique_channels) < numel(answer)
+            msgbox('Do not accept identical channel names. Channel name change failed')
+            return
+        end
+        if ~isempty(answer)
+            % update the channel name
+            for iC = 1:nChannels
+                if ~isempty(answer{iC})
+                    obj.cellArray{iC, 1} = answer{iC};
+                    obj.channelNames{iC} = answer{iC};
+                else
+                    fprintf('Name of Channel %d is not entered.Channel %d name NOT changed \n', iC, iC)
+                end
+            end
+        else
+            disp('Channel name NOT changed ')
+        end
+        newChannelNames = obj.cellArray(:,1);
+        %find the current channel names in the .mat file
+        updateChannelNamesInResultsMatFile(obj,oldChannelNames,newChannelNames);
+    end
     
     function cc_button(hObject, event, channelNumber)
         obj = objarray(currentObj);
@@ -1292,8 +1352,10 @@ function sphinctalyzerOutput(objarray)
             suggestonSTR = sprintf(['The results reading didnot go through \n' ...
                 '    This file is probably created by an earlier version. \n' ...
                 '    To proceed, press the Post-Process button in the Main window, and choose the option to create new output files \n'],fullfile(ParentFolderPath,'sphincRedo',excelSavename))
-            delete(guiCtrl)
-            error('Error message: %s \n   %s \n',exp_xlsread.message, suggestonSTR)
+            %delete(guiCtrl)
+            msgbox(sprintf('Error message: %s \n   %s \n',exp_xlsread.message, suggestonSTR))
+
+
         end
 
     end
@@ -1424,5 +1486,67 @@ function sphinctalyzerOutput(objarray)
 
         end
     end
+    function updateChannelNamesInResultsMatFile(obj,oldChannelNames,newChannelNames)
+        if strcmp(oldChannelNames,newChannelNames)== 1
+           disp('Channel name is not changed, results mat file is not changed')
+           return
+        end
+        % 
+        disp('Changing the channel names in the results .mat file')
+        ParentFolderPath = fileparts(obj.filePath);
+        [ParentFolderPath] = fileparts(ParentFolderPath);
+        referenceArray = [obj.cellArray{:,3}];
+        % load in SphinctalyzerOutputs data structure
+        pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
+        pathToResults_bak = strrep(pathToResults,'sphincRedo/sphinctalyzerResults.mat','sphinctalyzerResults_bak.mat');
+        copyfile(pathToResults,pathToResults_bak)
+        SphincOutputs_old = load(pathToResults,'InputCells', 'SphinctalyzerOutputs','UserDrawnBounds');
+        SphincOutputs = SphincOutputs_old;
+        InputCells = obj.cellArray;
+        UserDrawnBounds = SphincOutputs.UserDrawnBounds;
+        SphinctalyzerOutputs = SphincOutputs.SphinctalyzerOutputs;
+        nFrames = size(SphinctalyzerOutputs,2); % number of frames
+        oldFieldNames =fieldnames(SphincOutputs.SphinctalyzerOutputs);
+        newFieldNames = oldFieldNames;
+        for i = 1:obj.nChannels
+            oldChannelName = oldChannelNames{i};
+            newChannelName = newChannelNames{i};
+            newFieldNames = strrep(newFieldNames, oldChannelName, newChannelName);
+        end
+        nFields = length(oldFieldNames);
 
+        for iField = 1: nFields
+            for jFrames = 1: nFrames
+                SphinctalyzerOutputs(jFrames).(newFieldNames{iField}) = SphinctalyzerOutputs(jFrames).(oldFieldNames{iField});
+            end
+        end
+        referenceChannel = find(referenceArray == 1);
+        if ~isempty(referenceChannel) & length(referenceChannel) == 1
+            for jFrame = 1:nFrames
+                SphinctalyzerOutputs(jFrame).RefChannel = strrep( SphinctalyzerOutputs(jFrame).RefChannel, ...
+                    oldChannelNames{referenceChannel}, newChannelNames{referenceChannel});
+            end
+            disp('Reference channel name in the results .mat file will be updated. ')
+        else
+            disp('Reference channel name in the results .mat file will NOT be updated ')
+        end
+        % Keep two fields RefChannel and 'InRange' in the updated new
+        % output
+        fieldKeep1 = find(strcmp(oldFieldNames,'RefChannel'));
+        fieldKeep2 = find(strcmp(oldFieldNames,'InRange'));
+        oldFieldNames([fieldKeep1 fieldKeep2]) = [];
+        %compare oldFieldNames and newFieldNames
+        %check which element of oldFieldNames are in newFieldNames
+        inNewNames = find(ismember(oldFieldNames,newFieldNames) == 1);
+        if ~isempty(inNewNames)
+            disp(['The oldFieldNames variable has same elements as the newFieldNames, ...' ...
+                'quit results .MAT file update']) 
+            return
+        end
+        SphinctalyzerOutputs = rmfield(SphinctalyzerOutputs,oldFieldNames);
+        % update the results .mat file
+        save(pathToResults,'InputCells', 'SphinctalyzerOutputs','UserDrawnBounds');
+        fprintf('Results .mat file is updated for  %s \n', pathToResults)
+        objarray(currentObj) = obj;        
+    end
 end

@@ -1379,16 +1379,16 @@ function sphinctalyzerInitializerGUI
         obj.normalization = usr_input;
         switch usr_input
             case 1
-                axesNames{2} = 'Normalized Gray Value';
+                axesNames{2} = 'Normalized Fluorescence Value';
                 obj.yMinStepMax = [-0.1 0.1 1.1];
             case 2
                 axesNames{2} = 'Fold Over Background';
                 obj.yMinStepMax = [-1 1 6];
             case 3
-                axesNames{2} = 'Gray Value';
+                axesNames{2} = 'Fluorescence Value';
                 obj.yMinStepMax = [0 500 4100];
             otherwise
-                axesNames{2} = 'Normalized Gray Value';
+                axesNames{2} = 'Normalized Fluorescence Value';
                 obj.yMinStepMax = [-0.1 .1 1.1];
         end
         obj.axesNames = axesNames;

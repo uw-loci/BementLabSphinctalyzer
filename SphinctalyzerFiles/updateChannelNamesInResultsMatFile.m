@@ -20,13 +20,21 @@ function SphinctalyzerOutputs = updateChannelNamesInResultsMatFile(obj,oldChanne
         copyfile(pathToResults,pathToResults_bak)
         SphincOutputs_old = load(pathToResults,'InputCells', 'SphinctalyzerOutputs','UserDrawnBounds');
         SphincOutputs = SphincOutputs_old;
-
-        InputCells = obj.cellArray;
+        channelNamesInMat = SphincOutputs_old.InputCells(:,1); 
+        % change the channel namke in the InputCells
+        InputCells = obj.cellArray; 
+        InputCells(:,1) = newChannelNames; % update the names in the obj.cellArray
         UserDrawnBounds = SphincOutputs.UserDrawnBounds;
+        if ~strcmp(channelNamesInMat,oldChannelNames)  % the channel names can be get from post/pre/excelfile/
+            oldChannelNames = channelNamesInMat; % use the channel names in the mat file to match the output names
+        end
         SphinctalyzerOutputs = SphincOutputs.SphinctalyzerOutputs;
         nFrames = size(SphinctalyzerOutputs,2); % number of frames
         oldFieldNames =fieldnames(SphincOutputs.SphinctalyzerOutputs);
         newFieldNames = oldFieldNames;
+
+       
+        
         for i = 1:obj.nChannels
             oldChannelName = oldChannelNames{i};
             newChannelName = newChannelNames{i};

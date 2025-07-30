@@ -299,14 +299,17 @@ Peaks=nan(channelsNo,frameInrangeMax);
 Halfwidths=nan(channelsNo,frameInrangeMax);
 AUCs=nan(channelsNo,frameInrangeMax);
 PeakLocs=nan(channelsNo,frameInrangeMax);
-searchingRadius = advancedOptions.peakSearchingRadius;
+searchingRadiusInMicron = advancedOptions.peakSearchingRadius; 
+%convert to pixels
+searchingRadiusInPixels = round(searchingRadiusInMicron/micronsPerPixel);
+
 for i=1:size(ChannelStrings,1)
     zprimegrid=NaN(size(xprimegrid));
     for j=min(Range):max(Range)
         XVals=double(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'XDistances'])));
         Intensities=(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},TypeString,'Intensities']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])))/(FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Max']))-FuncData.(matlab.lang.makeValidName([ChannelStrings{i},'Med'])));
         try
-            [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals,searchingRadius);
+            [PeakIntensity,HalfWidth, PeakAUC, PeakLocation]=IntensityIntegrator(Intensities, XVals,searchingRadiusInPixels);
 
         Peaks(i,j)=PeakIntensity;
         Halfwidths(i,j)=HalfWidth*micronsPerPixel;

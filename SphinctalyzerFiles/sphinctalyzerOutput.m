@@ -903,8 +903,50 @@ function sphinctalyzerOutput(objarray)
 
     end
     function save_postParameters(~,~)
-        obj = objarray(currentObj);
-        save_post_parameters(obj,advancedOptions);
+        % add a question dialog to update parameters for current movie or common parameters to all movies
+        saveCommonFlag = [];
+        saveID = currentObj;
+        answerPostSave = questdlg('Save current post-processing parameters for current movie or all movies in parameters_post.xlsx file?', ...
+            'Updating post-processing parameters for one movie or all movies ', ...
+            'Save current','Save common parameters for all','Save current');
+        % Handle response
+        switch answerPostSave
+            case 'Save current'
+                saveCommonFlag = 0;
+                obj_current = objarray(currentObj);
+                moviePath = obj_current.moviePaths{1};
+                save_post_parameters(obj_current,advancedOptions,saveCommonFlag, moviePath);
+            case 'Save common parameters for all'
+                disp('Common post-processing parameters will be updated for all movies')
+                % specify the common parameters
+                % 1: Channel Colors
+                % 2: Axes Names
+                % 3: DarkBackgroundFlag
+                % 4: SecondsPerFrame
+                % 5: Normalization
+                % 6: Legend Location
+                % 7: MicronsPerPixel
+                % 8: xMinStepMax
+                % 9: yMinStepMax
+                % 10: File Index
+                % 11: Image Filename
+                % 12: Results Folder
+                % 13: velocityStartStop
+                % 14: peak searching radius
+                % 15: closing check point
+                % 16: Channel Names
+                saveCommonFlag = 1;
+                obj_current = objarray(currentObj);
+                for objID = 1:length(objarray)
+                    obj = objarray(objID);
+                    moviePath = obj.moviePaths{1};
+                    save_post_parameters(obj_current,advancedOptions,saveCommonFlag,moviePath);
+                end
+        end
+
+
+
+        
     end
     
     %% Callbacks

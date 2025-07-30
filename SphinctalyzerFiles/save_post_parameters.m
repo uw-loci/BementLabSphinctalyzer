@@ -53,7 +53,11 @@ if saveCommonFlag ~= 1
         delete(fullfile(savePath, excelSavename))
         fprintf('  deleted previous post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
     end
-
+    parameters_post{16,1} = 'channelNames';
+    nChannels = obj.nChannels;
+    for i = 1:nChannels
+        parameters_post{16,i+1} = obj.channelNames{i};
+    end
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 else  % save common parameters
@@ -81,7 +85,8 @@ else  % save common parameters
     parameters_post{8,1} = 'xMinStepMax'; parameters_post{8,2} = mat2str(obj.xMinStepMax); 
     parameters_post{9,1} = 'yMinStepMax'; parameters_post{9,2} = mat2str(obj.yMinStepMax); 
     parameters_post{10,1} = 'File Index'; parameters_post{10,2} = 1; %obj.movieIndex;
-    parameters_post{11,1} = 'Image Filename'; parameters_post{11,2} = processingParametersLoad.imageName; % movie dependent
+    obj.imageName = processingParametersLoad.imageName;% movie dependent
+    parameters_post{11,1} = 'Image Filename'; parameters_post{11,2} = obj.imageName; 
     parameters_post{12,1} = 'Results Folder'; parameters_post{12,2} = fullfile(savePath,'sphincRedo');%obj.savepath;
 
     parameters_post{13,1} = 'velocityStartStop';
@@ -101,7 +106,18 @@ else  % save common parameters
         delete(fullfile(savePath, excelSavename))
         fprintf('  deleted previous post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
     end
-
+    % if saved channel names are different from the current channel names
+    % update the results file
+     oldChannelNames = (processingParametersLoad.channelNames)'; %row -> col
+     newChannelNames = obj.channelNames;
+    if strcmp(oldChannelNames,newChannelNames)~= 1
+        updateChannelNamesInResultsMatFile(processingParametersLoad,oldChannelNames,newChannelNames);
+    end
+    parameters_post{16,1} = 'channelNames';
+    nChannels = obj.nChannels;
+    for i = 1:nChannels
+        parameters_post{16,i+1} = obj.channelNames{i};
+    end
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 

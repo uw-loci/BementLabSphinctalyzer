@@ -66,7 +66,7 @@ try
         advancedOptions.velocityStartStop =obj.velocityStartStop;
         advancedOptions.peakSearchingRadius = 0;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
-    elseif size(movieOptions,1) == 15
+    elseif size(movieOptions,1) >= 15
         for iC = 1:obj.nChannels
             advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
         end
@@ -77,6 +77,10 @@ try
             advancedOptions.closingCheckpoint = movieOptions{15,2};
         end
         fprintf('number of closing checkpoint(s) is %d \n', size(advancedOptions.closingCheckpoint,2))
+        if size(movieOptions,1) == 16
+            movieOptions{16,1} = 'channelNames';
+            movieOptions{16,2} = obj.channelNames;
+        end
 
     end
     processingParameters = obj;

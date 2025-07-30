@@ -547,7 +547,7 @@ writematrix(Peaks',[savepath, excelSavename],'Sheet','Peak Intensity','Range','C
 writematrix(PeakLocs',[savepath, excelSavename],'Sheet','Peak Locations','Range','C2');%['C' num2str(LineNo)]);
 writematrix(Halfwidths',[savepath, excelSavename],'Sheet','Halfwidths','Range','C2');%['C' num2str(LineNo)]);
 writematrix(AUCs',[savepath, excelSavename],'Sheet','AUCs','Range','C2');%['C' num2str(LineNo)]);
-writematrix(Peaks',[savepath, excelSavename],'Sheet','Percent Above Background','Range','C2');%['C' num2str(LineNo)]);
+writematrix(Peaks'*100,[savepath, excelSavename],'Sheet','Percent Above Background','Range','C2');%['C' num2str(LineNo)]);
 writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
 % add instantaneous calculations
 instantPeaks = diff(Peaks'); 
@@ -565,7 +565,7 @@ writematrix(instantPeaks,[savepath, excelSavename],'Sheet','Peak Intensity','Ran
 writematrix([instantPeakLocs instantVelocity],[savepath, excelSavename],'Sheet','Peak Locations','Range',instantColumn1);
 writematrix(instantHalfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',instantColumn1);
 writematrix(instantAUCs,[savepath, excelSavename],'Sheet','AUCs','Range',instantColumn1);
-writematrix(instantPeaks,[savepath, excelSavename],'Sheet','Percent Above Background','Range',instantColumn1);
+writematrix(instantPeaks*100,[savepath, excelSavename],'Sheet','Percent Above Background','Range',instantColumn1);
 
 % add frame index in the first row of the output folder
 frameIndexes = 1:length(Peaks);

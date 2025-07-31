@@ -338,7 +338,12 @@ for i=1:size(ChannelStrings,1)
         Intensities=Z2r(k,:);
         Zr(k, :)=interp1(XVals,Intensities,x);
     end
-    IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
+    % if normalization is 2 (Fold over background), add 1 to the output 
+    if normalization == 2
+        IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr+1;
+    else
+        IntensityOut.(matlab.lang.makeValidName(ChannelStrings{i}))=Zr;
+    end
 end
 savepath=[path,'/'];
 savename=strrep(filename,'sphinc','Scan movie');
@@ -543,13 +548,20 @@ catch closingLocationEXP
 end
 
 %save results to the excel file
-writematrix(Peaks',[savepath, excelSavename],'Sheet','Peak Intensity','Range','C2');%['C' num2str(LineNo)]);
+if normalization == 2
+    PeaksValues = 1+ Peaks;
+else
+    PeaksValues = Peaks;
+end
+writematrix(PeaksValues',[savepath, excelSavename],'Sheet','Peak Intensity','Range','C2');%['C' num2str(LineNo)]);
 writematrix(PeakLocs',[savepath, excelSavename],'Sheet','Peak Locations','Range','C2');%['C' num2str(LineNo)]);
 writematrix(Halfwidths',[savepath, excelSavename],'Sheet','Halfwidths','Range','C2');%['C' num2str(LineNo)]);
 writematrix(AUCs',[savepath, excelSavename],'Sheet','AUCs','Range','C2');%['C' num2str(LineNo)]);
 writematrix(Peaks'*100,[savepath, excelSavename],'Sheet','Percent Above Background','Range','C2');%['C' num2str(LineNo)]);
 writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
 % add instantaneous calculations
+instantPeaksValues = diff(PeaksValues'); 
+instantPeaksValues = [nan nan;instantPeaksValues];
 instantPeaks = diff(Peaks'); 
 instantPeaks = [nan nan;instantPeaks];
 instantPeakLocs = diff(PeakLocs'); 
@@ -561,7 +573,7 @@ instantAUCs = diff(AUCs');
 instantAUCs = [nan nan; instantAUCs];
 instantColumn1= strcat(char(2+nChannels+1+'A'-1),'2'); 
 
-writematrix(instantPeaks,[savepath, excelSavename],'Sheet','Peak Intensity','Range',instantColumn1);
+writematrix(instantPeaksValues,[savepath, excelSavename],'Sheet','Peak Intensity','Range',instantColumn1);
 writematrix([instantPeakLocs instantVelocity],[savepath, excelSavename],'Sheet','Peak Locations','Range',instantColumn1);
 writematrix(instantHalfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',instantColumn1);
 writematrix(instantAUCs,[savepath, excelSavename],'Sheet','AUCs','Range',instantColumn1);

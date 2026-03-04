@@ -561,16 +561,16 @@ writematrix(Peaks'*100,[savepath, excelSavename],'Sheet','Percent Above Backgrou
 writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
 % add instantaneous calculations
 instantPeaksValues = diff(PeaksValues'); 
-instantPeaksValues = [nan nan;instantPeaksValues];
+instantPeaksValues = [nan(1,nChannels);instantPeaksValues];
 instantPeaks = diff(Peaks'); 
-instantPeaks = [nan nan;instantPeaks];
+instantPeaks = [nan(1,nChannels);instantPeaks];
 instantPeakLocs = diff(PeakLocs'); 
-instantPeakLocs = [nan nan;instantPeakLocs];
+instantPeakLocs = [nan(1,nChannels);instantPeakLocs];
 instantVelocity = abs(instantPeakLocs/timePerFrame);
 instantHalfwidths = diff(Halfwidths'); 
-instantHalfwidths = [nan nan;instantHalfwidths];
+instantHalfwidths = [nan(1,nChannels);instantHalfwidths];
 instantAUCs = diff(AUCs'); 
-instantAUCs = [nan nan; instantAUCs];
+instantAUCs = [nan(1,nChannels); instantAUCs];
 instantColumn1= strcat(char(2+nChannels+1+'A'-1),'2'); 
 
 writematrix(instantPeaksValues,[savepath, excelSavename],'Sheet','Peak Intensity','Range',instantColumn1);

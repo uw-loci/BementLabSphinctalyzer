@@ -142,11 +142,13 @@ function sphinctalyzerOutput(objarray)
         'Value',1 ,...
         'Position',[value_start-0.3 h_start-0.585 value_width+0.30 value_height], ...
         'Callback',{@get_legend_location});
+
+
     %Button to change the channel names
     changeChannelNames = uicontrol('Parent',moviePlotOptions,...
         'Style','pushbutton','String','Change Channel Name', ...
         'Units','normalized', ...
-        'Position',[0.05 0.005 .90 .075],...
+        'Position',[0.05 0.0025 .90 .075],...
         'Callback',{@changeChannelNames_callback});
     defaultChannelNames = {'Channel1','Channel2','Channel3'}; %
 
@@ -456,39 +458,8 @@ function sphinctalyzerOutput(objarray)
         set(enterMicronsPerPixel,'UserData',obj.micronsPerPixel)
         set(enterTimePerFrame,'String',num2str(obj.timePerFrame))
         set(enterTimePerFrame,'UserData',obj.timePerFrame)
-        for i = 1:obj.nChannels
-            channelColor = obj.channelColors{i};
-            if isequal(channelColor, [1 0 0])
-                colorValue = 1;
-            elseif isequal(channelColor, [0 0.6 0])
-                colorValue = 2;
-            elseif isequal(channelColor, [0 0 1])
-                colorValue = 3;
-            elseif isequal(channelColor, [0 1 1])
-                colorValue = 4;
-            elseif isequal(channelColor, [1 0 1])
-                colorValue = 5;
-            elseif isequal(channelColor, [1 1 0])
-                colorValue = 6;
-            elseif isequal(channelColor, [0 0 0])
-                colorValue = 7;
-            elseif isequal(channelColor, [1 1 1])
-                colorValue = 8;
-            end
-            channelColorLabel(i) = uicontrol('Parent',moviePlotOptions, ...
-                'Style','text', ...
-                'String',strcat('channel',num2str(i)), ...
-                'FontSize',10, ...
-                'Units','normalized', ...
-                'Position',[0 .30-(i*0.1) .45 value_height]);
-            enterChannelColor(i) = uicontrol('Parent',moviePlotOptions, ...
-                'Style','popupmenu', ...
-                'String',{'red';'green';'blue';'cyan';'magenta';'yellow';'black';'white'}, ...
-                'Units','normalized', ...
-                'Position',[0.45 .315-(i*0.1) value_width+0.30 value_height], ...
-                'Value',colorValue, ...
-                'Callback', {@cc_button, i});
-        end
+        setChannelColor(obj.nChannels,obj.channelColors)
+
         switch obj.colormap
             case 'gray'
                 colorMapValue = 1;
@@ -552,6 +523,42 @@ function sphinctalyzerOutput(objarray)
         end 
         set(viewerSelectionTable,'Value',3) % enable the the first results
         viewer_selection(viewerSelectionTable)
+    end
+
+    function setChannelColor(nChannels,channelColors)
+        for i = 1:nChannels
+            channelColor = channelColors{i};
+            if isequal(channelColor, [1 0 0])
+                colorValue = 1;
+            elseif isequal(channelColor, [0 0.6 0])
+                colorValue = 2;
+            elseif isequal(channelColor, [0 0 1])
+                colorValue = 3;
+            elseif isequal(channelColor, [0 1 1])
+                colorValue = 4;
+            elseif isequal(channelColor, [1 0 1])
+                colorValue = 5;
+            elseif isequal(channelColor, [1 1 0])
+                colorValue = 6;
+            elseif isequal(channelColor, [0 0 0])
+                colorValue = 7;
+            elseif isequal(channelColor, [1 1 1])
+                colorValue = 8;
+            end
+            channelColorLabel(i) = uicontrol('Parent',moviePlotOptions, ...
+                'Style','text', ...
+                'String',strcat('Channel',num2str(i)), ...
+                'FontSize',10, ...
+                'Units','normalized', ...
+                'Position',[0 h_start-0.585-(i*value_height*1.075) .45 value_height]);
+            enterChannelColor(i) = uicontrol('Parent',moviePlotOptions, ...
+                'Style','popupmenu', ...
+                'String',{'red';'green';'blue';'cyan';'magenta';'yellow';'black';'white'}, ...
+                'Units','normalized', ...
+                'Position',[value_start-0.3 h_start-0.585-(i* value_height*1.025) value_width+0.30 value_height], ...
+                'Value',colorValue, ...
+                'Callback', {@cc_button, i});
+        end
     end
 
     function viewer_selection(hObject, event)
@@ -1499,41 +1506,8 @@ function sphinctalyzerOutput(objarray)
         set(enterTimePerFrame,'String',num2str(obj.timePerFrame));
         set(enterTimePerFrame,'UserData',obj.timePerFrame);
         legendValue = find(strcmp(enterLegendLocation.String,obj.legendLocation)==1);
-        set(enterLegendLocation,'Value',legendValue);        
-        for i = 1:obj.nChannels
-            channelColor = obj.channelColors{i};
-            if isequal(channelColor, [1 0 0])
-                colorValue = 1;
-            elseif isequal(channelColor, [0 0.6 0])
-                colorValue = 2;
-            elseif isequal(channelColor, [0 0 1])
-                colorValue = 3;
-            elseif isequal(channelColor, [0 1 1])
-                colorValue = 4;
-            elseif isequal(channelColor, [1 0 1])
-                colorValue = 5;
-            elseif isequal(channelColor, [1 1 0])
-                colorValue = 6;
-            elseif isequal(channelColor, [0 0 0])
-                colorValue = 7;
-            elseif isequal(channelColor, [1 1 1])
-                colorValue = 8;
-            end
-            channelColorLabel(i) = uicontrol('Parent',moviePlotOptions, ...
-                'Style','text', ...
-                'String',strcat('channel',num2str(i)), ...
-                'FontSize',10, ...
-                'Units','normalized', ...
-                'Position',[0 .30-(i*0.1) .45 .075]);
-            enterChannelColor(i) = uicontrol('Parent',moviePlotOptions, ...
-                'Style','popupmenu', ...
-                'String',{'red';'green';'blue';'cyan';'magenta';'yellow';'black';'white'}, ...
-                'Units','normalized', ...
-                'Position',[0.45 .315-(i*0.1) value_width+0.30 value_height], ...
-                'Value',colorValue, ...
-                'Callback', {@cc_button, i});
-
-        end
+        set(enterLegendLocation,'Value',legendValue);   
+        setChannelColor(obj.nChannels,obj.channelColors);
     end
     
 end

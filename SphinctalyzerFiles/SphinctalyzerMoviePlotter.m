@@ -181,7 +181,7 @@ for i= 1:size(Zr,1)
     ylim(gca,ylims);
     set(gca,'YTick',yticks)
     set(gca,'YTickLabel',yticks)
-    set(gca,'FontSize',24)
+    set(gca,'FontSize',16)
     set(gca,'FontName','Arial','FontWeight','bold')
     if MicronsPerPixel==1
     xlabel(sprintf('Distance (pixels) from wound center\nTime = %.1f %s',(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
@@ -190,7 +190,7 @@ for i= 1:size(Zr,1)
         set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*MicronsPerPixel)))
     end
     ylabel(ystring)
-    legend(ChannelStrings,'Location','NorthOutside','FontSize',24,'FontName','Arial');
+    legend(ChannelStrings,'Location','NorthOutside','FontSize',16,'FontName','Arial');
     %annotation(gcf,'textbox',...
     %[0.789 .826 .1125 .088],...
     %'String',{'Wound'},...

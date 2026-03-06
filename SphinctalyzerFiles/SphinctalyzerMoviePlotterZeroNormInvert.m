@@ -195,7 +195,7 @@ for i= 1:size(Zr,1)
     ylim(gca,ylims);
     set(gca,'YTick',yticks)
     set(gca,'YTickLabel',yticks)
-    set(gca,'FontSize',24)
+    set(gca,'FontSize',16)
     set(gca,'FontName','Arial','FontWeight','bold')
     set(gca,'Color', [0 0 0])
     set(gca, 'ZColor',[1 1 1])
@@ -208,7 +208,7 @@ for i= 1:size(Zr,1)
         set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*MicronsPerPixel)))
     end
     ylabel(ystring)
-    legend(ChannelStrings,'Location','NorthWest','FontSize',24,'FontName','Arial','EdgeColor',[1 1 1],'TextColor',[1 1 1]);
+    legend(ChannelStrings,'Location','NorthWest','FontSize',16,'FontName','Arial','EdgeColor',[1 1 1],'TextColor',[1 1 1]);
     %annotation(gcf,'textbox',...
     %[0.789 .826 .1125 .088],...
     %'String',{'Wound'},...

@@ -386,7 +386,7 @@ for i= 1:size(Zr,1)
         set(gca,'YTick',yMinStepMax(1):yMinStepMax(2):yMinStepMax(3))
         set(gca,'XTick',xmin:round(xMinStepMax(2)/micronsPerPixel):xmax)
         set(gca,'XTickLabel',xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
-        set(gca,'FontSize',24)
+        set(gca,'FontSize',16)
         set(gca,'FontName','Arial','FontWeight','bold')
         xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
@@ -394,14 +394,14 @@ for i= 1:size(Zr,1)
         ylim(gca,ylims);
         set(gca,'YTick',yticks)
         set(gca,'YTickLabel',yticks)
-        set(gca,'FontSize',24)
+        set(gca,'FontSize',16)
         set(gca,'FontName','Arial','FontWeight','bold')
         xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
         if micronsPerPixel ~= 1
             set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
         end
     end
-    lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',24,'FontName','Arial');
+    lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',16,'FontName','Arial');
     set(gcf1, 'Color', 'w')
     set(gca, 'Color', 'w')
     ylabel(ystring)

@@ -1047,7 +1047,7 @@ function sphinctalyzerOutput(objarray)
         axesNames = obj.axesNames;
         switch usr_input
             case 1
-                axesNames{2} = 'Normalized Fluorescence Value';
+                axesNames{2} = getDefaultYAxisTitle();
                 obj.yMinStepMax = [-0.1 0.1 1.1];
             case 2
                 axesNames{2} = 'Fold Over Background';
@@ -1056,7 +1056,7 @@ function sphinctalyzerOutput(objarray)
                 axesNames{2} = 'Fluorescence Value';
                 obj.yMinStepMax = [0 500 4100];
             otherwise
-                axesNames{2} = 'Normalized Fluorescence Value';
+                axesNames{2} = getDefaultYAxisTitle();
                 obj.yMinStepMax = [-0.1 0.1 1.1];
         end
         obj.axesNames = axesNames;

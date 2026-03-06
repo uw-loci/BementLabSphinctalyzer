@@ -30,6 +30,7 @@ function sphinctalyzerInitializerGUI
     if ~isempty(openningWindows)
         delete(openningWindows)
     end
+    
     objarray = [];
      % initialize GUI parameters for the first image
     currentObj = 1;
@@ -687,7 +688,7 @@ function sphinctalyzerInitializerGUI
         % create an object array of length fileNames, with default values
         if loadParameters == 0
             imgarray(1:length(imageNames)) = Image(0,1,0,3,1,1,3,0,8,0,0, ...
-                'gray',6,{'Distance (microns) from wound center','Normalized Fluorescence Value'}, ...
+                'gray',6,{'Distance (microns) from wound center',getDefaultYAxisTitle()}, ...
                 [-30 10 0],[-0.2 0.2 1.2],1,0.192,imagePath,0,0, ...
                 {[1 0 0],[0 1 1],[0 0 1]},0,'NorthWest',3,batchDirectory, {}, [1 2]);
         else
@@ -1380,7 +1381,7 @@ function sphinctalyzerInitializerGUI
         obj.normalization = usr_input;
         switch usr_input
             case 1
-                axesNames{2} = 'Normalized Fluorescence Value';
+                axesNames{2} = getDefaultYAxisTitle();
                 obj.yMinStepMax = [-0.1 0.1 1.1];
             case 2
                 axesNames{2} = 'Fold Over Background';
@@ -1389,7 +1390,7 @@ function sphinctalyzerInitializerGUI
                 axesNames{2} = 'Fluorescence Value';
                 obj.yMinStepMax = [0 500 4100];
             otherwise
-                axesNames{2} = 'Normalized Fluorescence Value';
+                axesNames{2} = getDefaultYAxisTitle();
                 obj.yMinStepMax = [-0.1 .1 1.1];
         end
         obj.axesNames = axesNames;

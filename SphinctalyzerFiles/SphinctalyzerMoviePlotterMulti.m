@@ -148,7 +148,7 @@ else
     xmin=-150; % minimum x axis, in pixels
     xmax=0;% maximum x axis, in pixels
     ColorMat={[1 0 0],[0 .6 0],[0 0 1]}; %These are the color strings for each channel
-    yAxisTitle = 'Normalized Fluorescence Value';
+    yAxisTitle = getDefaultYAxisTitle();
     if micronsPerPixel == 1
         xAxisTitle = 'Distance (pixels) from wound center';
     else
@@ -158,13 +158,13 @@ else
     normalization=1;  %Choose 1 for each color normalized to itself, 2 for percent change, 3 for no normalization, 4 for all frames norm to 100%
     switch normalization
         case 1
-            yAxisTitle = 'Normalized Fluorescence Value';
+            yAxisTitle = getDefaultYAxisTitle();
         case 2
             yAxisTitle = 'Fold over Background';
         case 3
             yAxisTitle = 'Fluorescence Value';
         case 4
-            yAxisTitle = 'Normalized Fluorescence Value';
+            yAxisTitle = getDefaultYAxisTitle();
     end
 end
 TypeString='Smooth'; %'Mean' 'Median' or 'Smooth'

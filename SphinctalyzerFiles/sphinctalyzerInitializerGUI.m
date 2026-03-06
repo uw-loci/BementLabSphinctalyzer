@@ -926,7 +926,7 @@ function sphinctalyzerInitializerGUI
         % initialize default values for parameter "moreOptions"
         % velocityStartStop = [1 2];
         moreOptions.velocityStartStop = [1 2];
-        moreOptions.peakSearchingRadius = 0;
+        moreOptions.peakSearchingRadius = getDefaultPeakSearchingRadius();
         moreOptions.closingCheckpoint = 0.75;
         moreOptions.runInBackgroundFlag = runInBackgroundFlag.Value;
 

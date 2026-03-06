@@ -15,7 +15,8 @@ function sphinctalyzerOutput(objarray)
     iTimepoint = 1;
     frameRate = 20;
     readFunction = {@bf_reader, @circle_reader, @movie_reader};
-    advancedOptions = struct('peakSearchingRadius',0,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333]);
+    defaultPeakSearchingRadius = getDefaultPeakSearchingRadius();
+    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333]);
     % display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
     guiCtrl = figure('Resize','on', ...
@@ -169,11 +170,11 @@ function sphinctalyzerOutput(objarray)
 
      enterSearchingRadius = uicontrol('Parent',peakVelocityOptions, ...
          'Style','edit', ...
-         'String','0', ...
+         'String',num2str(defaultPeakSearchingRadius), ...
          'Tooltip','in microns',...
          'Units','normalized',...
          'BackgroundColor','w', ...
-         'UserData',0, ...
+         'UserData',defaultPeakSearchingRadius, ...
          'Position',[value_start-0.1 h_start-0.085 value_width+0.105 value_height], ...
          'Callback',{@get_searchingRadius});
 
@@ -1232,7 +1233,7 @@ function sphinctalyzerOutput(objarray)
             return
         end
         % objarray(currentObj).peakSearchingRadius = usr_input;
-        eneterSearchingRadius.UserData = usr_input;
+        enterSearchingRadius.UserData = usr_input;
         advancedOptions.peakSearchingRadius = usr_input;
     end
     function get_velocityRangeC1(hObject,event)
@@ -1460,7 +1461,7 @@ function sphinctalyzerOutput(objarray)
                 obj.velocityStartStop = repmat(obj.velocityStartStop,obj.nChannels,1);
               end
               advancedOptions.velocityStartStop =obj.velocityStartStop;
-              advancedOptions.peakSearchingRadius = 0;
+              advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
               advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
         elseif size(movieOptions,1) == 15
             for iC = 1:obj.nChannels

@@ -1,5 +1,6 @@
 
 function [processingParameters, advancedOptions] = get_postParameters(matFilePath)
+defaultPeakSearchingRadius = getDefaultPeakSearchingRadius();
 %use the post-processing parameters in the results file to update mat
 %parameters and advancedOptions parameters
 % input:
@@ -34,7 +35,7 @@ if ~exist(fullfile(matFilePath,postParametersFileName),'file')
             obj.velocityStartStop = repmat(obj.velocityStartStop,obj.nChannels,1);
         end
         advancedOptions.velocityStartStop =obj.velocityStartStop;
-        advancedOptions.peakSearchingRadius = 0;
+        advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
         return
     end
@@ -64,7 +65,7 @@ try
             obj.velocityStartStop = repmat(obj.velocityStartStop,obj.nChannels,1);
         end
         advancedOptions.velocityStartStop =obj.velocityStartStop;
-        advancedOptions.peakSearchingRadius = 0;
+        advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
     elseif size(movieOptions,1) >= 15
         for iC = 1:obj.nChannels
@@ -93,7 +94,7 @@ catch exp_post
         obj.velocityStartStop = repmat(obj.velocityStartStop,obj.nChannels,1);
     end
     advancedOptions.velocityStartStop =obj.velocityStartStop;
-    advancedOptions.peakSearchingRadius = 0;
+    advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
     advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
 end
 

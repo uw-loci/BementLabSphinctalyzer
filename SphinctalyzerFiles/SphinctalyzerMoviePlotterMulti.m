@@ -7,11 +7,12 @@ function SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
     velocityStartStop,...
     moreOptions)
 
+defaultPeakSearchingRadius = getDefaultPeakSearchingRadius();
 if nargin == 13
     if size(velocityStartStop,1) == 1
         advancedOptions.velocityStartStop = repmat(velocityStartStop,3,1);
     end
-    advancedOptions.peakSearchingRadius = 0;
+    advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
     advancedOptions.closingCheckpoint = 0.75;
     advancedOptions.runInBackgoundFlag = 0;
 elseif nargin == 14

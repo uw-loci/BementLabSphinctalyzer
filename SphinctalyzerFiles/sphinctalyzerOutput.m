@@ -1536,5 +1536,180 @@ function sphinctalyzerOutput(objarray)
         set(enterLegendLocation,'Value',legendValue);   
         setChannelColor(obj.nChannels,obj.channelColors);
     end
-    
+
+    % ---- Data over time callbacks ----------------------------------------
+
+    function data_over_time_selection(hObject, ~)
+        if hObject.Value == 1  % "None" selected
+            if ~isempty(dataPlotFig) && isvalid(dataPlotFig)
+                close(dataPlotFig);
+            end
+            dataPlotFig = [];
+            set(saveDataPlotButton, 'Enable', 'off');
+        else
+            show_data_over_time_plot();
+            set(saveDataPlotButton, 'Enable', 'on');
+        end
+    end
+
+    function show_data_over_time_plot()
+        obj = objarray(currentObj);
+        dropVal = dataOverTimeDropdown.Value;
+        nCh = obj.nChannels;
+
+        % Map dropdown value to data source and axis labels
+        switch dropVal
+            case 2  % Peak Locations
+                rawSheet   = xlsSheets{2};
+                yLabelStr  = 'Peak Location (\mum from wound center)';
+                xLabelStr  = 'Time (s) After Zone Appearance';
+                useVelRange = true;
+                computeDiff = false;
+            case 3  % Instantaneous Velocity
+                rawSheet   = xlsSheets{2};
+                yLabelStr  = 'Instantaneous Velocity (\mum/s)';
+                xLabelStr  = 'Time (s) After Zone Appearance';
+                useVelRange = true;
+                computeDiff = true;
+            case 4  % Halfwidths
+                rawSheet   = xlsSheets{3};
+                yLabelStr  = 'Half-width (\mum)';
+                xLabelStr  = 'Time (s) After Zone Appearance';
+                useVelRange = true;
+                computeDiff = false;
+            case 5  % AUCs
+                rawSheet   = xlsSheets{4};
+                yLabelStr  = 'AUC (\mum^2)';
+                xLabelStr  = 'Time (s) After Zone Appearance';
+                useVelRange = true;
+                computeDiff = false;
+            case 6  % Percent Above Background
+                rawSheet   = xlsSheets{5};
+                yLabelStr  = '% Above Background';
+                xLabelStr  = 'Time (s)';
+                useVelRange = false;
+                computeDiff = false;
+            otherwise
+                return
+        end
+
+        % Create or reuse floating figure
+        if isempty(dataPlotFig) || ~isvalid(dataPlotFig)
+            dataPlotFig = figure('Name', 'Data over time', 'NumberTitle', 'off', ...
+                'Units', 'normalized', 'Position', [0.1 0.25 0.40 0.30]);
+        else
+            figure(dataPlotFig);
+            clf(dataPlotFig);
+        end
+
+        ax1 = axes('Parent', dataPlotFig);
+        hold(ax1, 'on');
+
+        ch1FrameStart = NaN;
+        ch1nPts       = NaN;
+
+        for ch = 1:nCh
+            if size(rawSheet, 1) < ch, continue; end
+
+            if useVelRange && size(advancedOptions.velocityStartStop, 1) >= ch
+                vStart = advancedOptions.velocityStartStop(ch, 1);
+                vEnd   = advancedOptions.velocityStartStop(ch, 2);
+                % clamp to available columns
+                vStart = max(1, vStart);
+                vEnd   = min(size(rawSheet, 2), vEnd);
+                channelData = rawSheet(ch, vStart:vEnd);
+                frameStart  = vStart;
+            else
+                % Percent Above Background: use all non-NaN data
+                channelRow  = rawSheet(ch, :);
+                channelData = channelRow(~isnan(channelRow));
+                frameStart  = 1;
+            end
+
+            if computeDiff
+                yData = diff(channelData) / obj.timePerFrame;
+            else
+                yData = channelData;
+            end
+
+            nPts = length(yData);
+            if nPts == 0, continue; end
+
+            xSec = (0:(nPts-1)) * obj.timePerFrame;
+
+            % Record channel-1 info for the top frame-number axis
+            if ch == 1
+                ch1nPts       = nPts;
+                ch1FrameStart = frameStart;
+            end
+
+            if ch <= length(obj.channelNames)
+                chName = obj.channelNames{ch};
+            else
+                chName = sprintf('Channel %d', ch);
+            end
+
+            plot(ax1, xSec, yData, ...
+                'Color', obj.channelColors{ch}, ...
+                'DisplayName', chName, ...
+                'LineWidth', 1.5);
+        end
+
+        hold(ax1, 'off');
+        xlabel(ax1, xLabelStr, 'FontWeight', 'bold');
+        ylabel(ax1, yLabelStr, 'FontWeight', 'bold');
+        lgd = legend(ax1, 'Location', obj.legendLocation);
+        lgd.Box = 'off';
+        box(ax1, 'off');
+        if ~isempty(ax1.XLim)
+            ax1.XLim(1) = 0;
+        end
+
+        % Top x-axis: frame numbers corresponding to channel 1's data range
+        if ~isnan(ch1FrameStart) && ~isnan(ch1nPts) && ch1nPts > 1
+            ch1FrameEnd = ch1FrameStart + ch1nPts - 1;
+            % Render ax1 first so Position is accurate, then shrink from top
+            % to leave room for the secondary x-axis label
+            drawnow;
+            axPos = ax1.Position;
+            axPos(4) = axPos(4) - 0.07;   % reduce height to free top margin
+            ax1.Position = axPos;
+            % Map ax1's actual rendered XLim (seconds) to frame numbers
+            ax2XLimStart = ch1FrameStart + ax1.XLim(1) / obj.timePerFrame;
+            ax2XLimEnd   = ch1FrameStart + ax1.XLim(2) / obj.timePerFrame;
+            ax2 = axes('Parent', dataPlotFig, ...
+                'Units', 'normalized', ...
+                'Position', axPos, ...
+                'XAxisLocation', 'top', ...
+                'YAxisLocation', 'right', ...
+                'Color', 'none', ...
+                'YTick', [], ...
+                'YColor', 'none', ...
+                'HitTest', 'off', ...
+                'PickableParts', 'none');
+            ax2.XLim = [ax2XLimStart, ax2XLimEnd];
+            xlabel(ax2, 'Frame', 'FontWeight', 'bold');
+            % Explicitly restrict zoom/pan to ax1 only (toolbar tools use
+            % their own hit-testing, HitTest alone is not enough)
+            hZoom = zoom(dataPlotFig);
+            setAllowAxesZoom(hZoom, ax2, false);
+            setAllowAxesZoom(hZoom, ax1, true);
+            hPan = pan(dataPlotFig);
+            setAllowAxesPan(hPan, ax2, false);
+            setAllowAxesPan(hPan, ax1, true);
+            % Return focus to ax1 so it is the target for toolbar interactions
+            axes(ax1);
+            % Keep ax2 (frames) in sync with ax1 (seconds) during zoom/pan
+            tpf = obj.timePerFrame;
+            addlistener(ax1, 'XLim', 'PostSet', @(~,~) set(ax2, ...
+                'XLim', ch1FrameStart + ax1.XLim ./ tpf));
+        end
+    end
+
+    function refresh_data_plot()
+        if isempty(dataPlotFig) || ~isvalid(dataPlotFig), return; end
+        if dataOverTimeDropdown.Value == 1, return; end
+        show_data_over_time_plot();
+    end
+
 end

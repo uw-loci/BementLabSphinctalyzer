@@ -1432,6 +1432,7 @@ function sphinctalyzerOutput(objarray)
         [ParentFolderPath] = fileparts(obj.filePath);
         [ParentFolderPath] = fileparts(ParentFolderPath);
         rangeStart = 'C2';
+        currentExcelSavename = excelSavename;  % keep save name in sync
         try
             xlsSheets = cell(1,6);
             xlsSheets{1} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename),'Sheet', 'Peak Intensity','Range',rangeStart))';
@@ -1440,6 +1441,7 @@ function sphinctalyzerOutput(objarray)
             xlsSheets{4} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart))';
             xlsSheets{5} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart))';
             xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
+            refresh_data_plot();  % redraw plot with newly loaded sheet data
         catch exp_xlsread
             suggestonSTR = sprintf(['The results reading didnot go through \n' ...
                 '    This file is probably created by an earlier version. \n' ...

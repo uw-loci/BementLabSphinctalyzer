@@ -19,6 +19,7 @@ function sphinctalyzerOutput(objarray)
     advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333]);
     dataPlotFig = [];    % handle for the floating 'Data over time' figure
     currentExcelSavename = 'Results_1.xlsx';  % tracks which Results file is active
+    xlsChannelNames = {};  % channel names read from the active Excel results file
     % display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
     guiCtrl = figure('Resize','on', ...
@@ -442,7 +443,6 @@ function sphinctalyzerOutput(objarray)
          % excelSavename = strcat('Results','_',num2str(movieIndex),'.xlsx');
          excelSavename = 'Results_1.xlsx';
          update_xlssheet(excelSavename);
-        % rangeStart = 'C2';
         % xlsSheets = cell(1,5);
         % xlsSheets{1} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'),'Sheet', 'Peak Intensity','Range',rangeStart);
         % xlsSheets{2} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Peak Locations','Range',rangeStart);
@@ -631,6 +631,15 @@ function sphinctalyzerOutput(objarray)
             update_xlssheet(excelSavename);
             %update the movie options
             update_movieOptions(excelSavename);
+            % Close data plot and reset controls to default on results switch
+            if ~isempty(dataPlotFig) && isvalid(dataPlotFig)
+                close(dataPlotFig);
+            end
+            dataPlotFig = [];
+            set(dataOverTimeDropdown,  'Value',   1);
+            set(saveDataPlotButton,    'Enable', 'off');
+            set(showFrameAxisCheckbox, 'Enable', 'off');
+            set(showFrameAxisCheckbox, 'Value',   1);
             
         end
         axis image equal
@@ -1441,7 +1450,22 @@ function sphinctalyzerOutput(objarray)
             xlsSheets{4} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart))';
             xlsSheets{5} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart))';
             xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
-            refresh_data_plot();  % redraw plot with newly loaded sheet data
+            % Read channel names from row 1 of the Excel sheet (columns C, D, E... = ch1, ch2, ch3...)
+            % These names match what was used when the movie/results were generated.
+            nCh = obj.nChannels;
+            endColLetter = char('A' + 1 + nCh);  % C=nCh1, D=nCh2, E=nCh3
+            rawHeader = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), ...
+                'Sheet', 'Peak Locations', 'Range', ['C1:' endColLetter '1']);
+            xlsChannelNames = cell(1, nCh);
+            for iCh = 1:nCh
+                if iCh <= numel(rawHeader) && (ischar(rawHeader{iCh}) || isstring(rawHeader{iCh}))
+                    xlsChannelNames{iCh} = char(rawHeader{iCh});
+                else
+                    xlsChannelNames{iCh} = sprintf('Channel %d', iCh);
+                end
+            end
+            % refresh_data_plot() is called by the caller after update_movieOptions
+            % so that advancedOptions and channel metadata are up to date first
         catch exp_xlsread
             suggestonSTR = sprintf(['The results reading didnot go through \n' ...
                 '    This file is probably created by an earlier version. \n' ...
@@ -1606,13 +1630,16 @@ function sphinctalyzerOutput(objarray)
                 return
         end
 
-        % Create or reuse floating figure
+        % Reuse the existing figure window if open; otherwise create it.
+        % Delete all children (axes + their listeners) for a clean redraw.
         if isempty(dataPlotFig) || ~isvalid(dataPlotFig)
+            screenSize     = get(0, 'ScreenSize');          % [1 1 width_px height_px]
+            figWidthNorm   = 0.25;
+            figHeightNorm  = figWidthNorm * (3/4) * (screenSize(3) / screenSize(4));
             dataPlotFig = figure('Name', 'Data over time', 'NumberTitle', 'off', ...
-                'Units', 'normalized', 'Position', [0.1 0.25 0.40 0.30]);
+                'Units', 'normalized', 'Position', [0.01 0.25 figWidthNorm figHeightNorm]);
         else
-            figure(dataPlotFig);
-            clf(dataPlotFig);
+            delete(dataPlotFig.Children);  % removes axes and orphaned listeners
         end
 
         ax1 = axes('Parent', dataPlotFig);
@@ -1656,7 +1683,9 @@ function sphinctalyzerOutput(objarray)
                 ch1FrameStart = frameStart;
             end
 
-            if ch <= length(obj.channelNames)
+            if ch <= numel(xlsChannelNames) && ~isempty(xlsChannelNames{ch})
+                chName = xlsChannelNames{ch};
+            elseif ch <= length(obj.channelNames)
                 chName = obj.channelNames{ch};
             else
                 chName = sprintf('Channel %d', ch);

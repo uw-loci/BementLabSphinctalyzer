@@ -30,7 +30,8 @@ function sphinctalyzerOutput(objarray)
         'Visible','on',...
         'MenuBar','none', ...
         'name', 'Sphinctalyzer: Results', ...
-        'NumberTitle','off');
+        'NumberTitle','off', ...
+        'CloseRequestFcn', @results_window_close_callback);
     
     % line scan movie options
     movieVelocityOptions = uipanel('Parent',guiCtrl, ...
@@ -1647,7 +1648,8 @@ function sphinctalyzerOutput(objarray)
             figWidthNorm   = 0.25;
             figHeightNorm  = figWidthNorm * (3/4) * (screenSize(3) / screenSize(4));
             dataPlotFig = figure('Name', 'Data over time', 'NumberTitle', 'off', ...
-                'Units', 'normalized', 'Position', [0.01 0.25 figWidthNorm figHeightNorm]);
+                'Units', 'normalized', 'Position', [0.01 0.25 figWidthNorm figHeightNorm], ...
+                'CloseRequestFcn', @data_plot_close_callback);
         else
             delete(dataPlotFig.Children);  % removes axes and orphaned listeners
         end
@@ -1789,6 +1791,27 @@ function sphinctalyzerOutput(objarray)
         if isempty(dataPlotFig) || ~isvalid(dataPlotFig), return; end
         if dataOverTimeDropdown.Value == 1, return; end
         show_data_over_time_plot();
+    end
+
+    function data_plot_close_callback(~, ~)
+        % Called when the user closes the 'Data over time' figure window.
+        % Reset the dropdown to "None" and disable the related controls,
+        % then delete the figure.
+        delete(dataPlotFig);
+        dataPlotFig = [];
+        set(dataOverTimeDropdown,  'Value',   1);
+        set(saveDataPlotButton,    'Enable', 'off');
+        set(showFrameAxisCheckbox, 'Enable', 'off');
+    end
+
+    function results_window_close_callback(~, ~)
+        % Called when the user closes the main 'Sphinctalyzer: Results' window.
+        % Close any open data plot first, then delete the main GUI.
+        if ~isempty(dataPlotFig) && isvalid(dataPlotFig)
+            delete(dataPlotFig);
+            dataPlotFig = [];
+        end
+        delete(guiCtrl);
     end
 
     function save_data_plot_callback(~, ~)

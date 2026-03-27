@@ -20,6 +20,7 @@ function sphinctalyzerOutput(objarray)
     dataPlotFig = [];    % handle for the floating 'Data over time' figure
     currentExcelSavename = 'Results_1.xlsx';  % tracks which Results file is active
     xlsChannelNames = {};  % channel names read from the active Excel results file
+    xlsFrameNums    = [];  % frame numbers read from column B of the active Excel results file
     % display GUI
     defaultBackground = get(0,'defaultUicontrolBackgroundColor');
     guiCtrl = figure('Resize','on', ...
@@ -1440,22 +1441,31 @@ function sphinctalyzerOutput(objarray)
         obj = objarray(currentObj);
         [ParentFolderPath] = fileparts(obj.filePath);
         [ParentFolderPath] = fileparts(ParentFolderPath);
-        rangeStart = 'C2';
         currentExcelSavename = excelSavename;  % keep save name in sync
         try
+            xlsPath = fullfile(ParentFolderPath,'sphincRedo',excelSavename);
+            % Read each data sheet starting from column B (not C) so that column B
+            % (the explicitly-written frame-number column, 1..frameInrangeMax) acts as
+            % an anchor.  readmatrix auto-detects the used range; if we start from C2,
+            % it skips leading empty rows (frames before the analysis window begin),
+            % producing a rawSheet that is shorter than xlsFrameNums.  Starting from B2
+            % forces the full rectangle to be read, including NaN-padded leading rows.
+            %   rawFull columns: 1 = frame numbers  2..end = channel data (+instant cols)
+            sheetNames = {'Peak Intensity','Peak Locations','Halfwidths','AUCs','Percent Above Background'};
             xlsSheets = cell(1,6);
-            xlsSheets{1} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename),'Sheet', 'Peak Intensity','Range',rangeStart))';
-            xlsSheets{2} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Peak Locations','Range',rangeStart))';
-            xlsSheets{3} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Halfwidths','Range',rangeStart))';
-            xlsSheets{4} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','AUCs','Range',rangeStart))';
-            xlsSheets{5} = (readmatrix(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Percent Above Background','Range',rangeStart))';
-            xlsSheets{6} = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), 'Sheet','Closing Velocity and Location','Range','B2');
-            % Read channel names from row 1 of the Excel sheet (columns C, D, E... = ch1, ch2, ch3...)
-            % These names match what was used when the movie/results were generated.
+            rawFull = [];
+            for iS = 1:5
+                rawFull = readmatrix(xlsPath, 'Sheet', sheetNames{iS}, 'Range', 'B2');
+                xlsSheets{iS} = rawFull(:, 2:end)';   % nCh (+ instant cols) x nFrames
+            end
+            % xlsFrameNums is the frame-number column (col B) — identical across all sheets
+            rawFN = rawFull(:, 1);
+            xlsFrameNums = rawFN(~isnan(rawFN))';   % row vector [1, 2, ..., frameInrangeMax]
+            xlsSheets{6} = readcell(xlsPath, 'Sheet','Closing Velocity and Location','Range','B2');
+            % Channel names from row 1, columns C onwards
             nCh = obj.nChannels;
-            endColLetter = char('A' + 1 + nCh);  % C=nCh1, D=nCh2, E=nCh3
-            rawHeader = readcell(fullfile(ParentFolderPath,'sphincRedo',excelSavename), ...
-                'Sheet', 'Peak Locations', 'Range', ['C1:' endColLetter '1']);
+            endColLetter = char('A' + 1 + nCh);  % nCh=1→C, nCh=2→D, nCh=3→E
+            rawHeader = readcell(xlsPath, 'Sheet', 'Peak Locations', 'Range', ['C1:' endColLetter '1']);
             xlsChannelNames = cell(1, nCh);
             for iCh = 1:nCh
                 if iCh <= numel(rawHeader) && (ischar(rawHeader{iCh}) || isstring(rawHeader{iCh}))
@@ -1646,41 +1656,67 @@ function sphinctalyzerOutput(objarray)
         hold(ax1, 'on');
 
         ch1FrameStart = NaN;
-        ch1nPts       = NaN;
+        ch1FrameEnd   = NaN;
+        % Safety fallback: if frame numbers weren't loaded from Excel, derive from sheet size
+        if isempty(xlsFrameNums)
+            xlsFrameNums = 1:size(rawSheet, 2);
+        end
 
         for ch = 1:nCh
             if size(rawSheet, 1) < ch, continue; end
 
+            % --- Determine the analysis frame range for this channel ---
             if useVelRange && size(advancedOptions.velocityStartStop, 1) >= ch
-                vStart = advancedOptions.velocityStartStop(ch, 1);
-                vEnd   = advancedOptions.velocityStartStop(ch, 2);
-                % clamp to available columns
-                vStart = max(1, vStart);
-                vEnd   = min(size(rawSheet, 2), vEnd);
-                channelData = rawSheet(ch, vStart:vEnd);
-                frameStart  = vStart;
+                vS = advancedOptions.velocityStartStop(ch, 1);
+                vE = advancedOptions.velocityStartStop(ch, 2);
+                % velocityStartStop holds absolute frame numbers; look them up in
+                % xlsFrameNums to get the corresponding column indices in rawSheet.
+                % rawSheet and xlsFrameNums are now always the same length because
+                % update_xlssheet reads both from the same 'B2' range.
+                colS = find(xlsFrameNums >= vS, 1, 'first');
+                colE = find(xlsFrameNums <= vE, 1, 'last');
+                if isempty(colS) || isempty(colE) || colS > colE, continue; end
+                frameSlice = xlsFrameNums(colS:colE);
+                dataSlice  = rawSheet(ch, colS:colE);
+                frameStart = xlsFrameNums(colS);
+                frameEnd   = xlsFrameNums(colE);
             else
-                % Percent Above Background: use all non-NaN data
-                channelRow  = rawSheet(ch, :);
-                channelData = channelRow(~isnan(channelRow));
-                frameStart  = 1;
+                % Percent Above Background: span first to last analyzed frame.
+                % rawSheet columns are now guaranteed to align 1-to-1 with xlsFrameNums.
+                nCols = min(size(rawSheet, 2), numel(xlsFrameNums));
+                chanRow  = rawSheet(ch, 1:nCols);
+                allValid = find(~isnan(chanRow));
+                if isempty(allValid), continue; end
+                frameSlice = xlsFrameNums(allValid(1):allValid(end));
+                dataSlice  = chanRow(allValid(1):allValid(end));
+                frameStart = xlsFrameNums(allValid(1));
+                frameEnd   = xlsFrameNums(allValid(end));
             end
+
+            % --- Build x positions for every frame in the slice, keeping NaN values
+            % intact in yData.  MATLAB's plot() automatically breaks the line at NaN
+            % positions, so unanalyzed frames within the range appear as visible gaps
+            % rather than being silently bridged by a straight line segment. ---
+            fNums = double(frameSlice);   % contiguous integer frame numbers
 
             if computeDiff
-                yData = diff(channelData) / obj.timePerFrame;
+                % diff() propagates NaN naturally: if either flanking frame is NaN
+                % the velocity at that interval is also NaN (rendered as a gap).
+                yData = diff(dataSlice) / obj.timePerFrame;
+                xSec  = ((fNums(1:end-1) + fNums(2:end)) / 2 - frameStart) ...
+                        * obj.timePerFrame;
             else
-                yData = channelData;
+                yData = dataSlice;
+                xSec  = (fNums - frameStart) * obj.timePerFrame;
             end
 
-            nPts = length(yData);
-            if nPts == 0, continue; end
+            % Skip channels that are entirely empty within the requested range
+            if numel(yData) == 0 || all(isnan(yData)), continue; end
 
-            xSec = (0:(nPts-1)) * obj.timePerFrame;
-
-            % Record channel-1 info for the top frame-number axis
+            % Record channel-1 limits for the top frame-number axis (ax2)
             if ch == 1
-                ch1nPts       = nPts;
                 ch1FrameStart = frameStart;
+                ch1FrameEnd   = frameEnd;
             end
 
             if ch <= numel(xlsChannelNames) && ~isempty(xlsChannelNames{ch})
@@ -1703,13 +1739,14 @@ function sphinctalyzerOutput(objarray)
         lgd = legend(ax1, 'Location', obj.legendLocation);
         lgd.Box = 'off';
         box(ax1, 'off');
-        if ~isempty(ax1.XLim)
-            ax1.XLim(1) = 0;
+        % Explicitly span the full defined analysis range so all frames are visible
+        % even when leading or trailing frames in the range have no data.
+        if ~isnan(ch1FrameStart) && ~isnan(ch1FrameEnd) && ch1FrameEnd > ch1FrameStart
+            ax1.XLim = [0, (ch1FrameEnd - ch1FrameStart) * obj.timePerFrame];
         end
 
         % Top x-axis: frame numbers corresponding to channel 1's data range
-        if showFrameAxisCheckbox.Value && ~isnan(ch1FrameStart) && ~isnan(ch1nPts) && ch1nPts > 1
-            ch1FrameEnd = ch1FrameStart + ch1nPts - 1;
+        if showFrameAxisCheckbox.Value && ~isnan(ch1FrameStart) && ~isnan(ch1FrameEnd) && ch1FrameEnd > ch1FrameStart
             % Render ax1 first so Position is accurate, then shrink from top
             % to leave room for the secondary x-axis label
             drawnow;

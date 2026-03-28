@@ -924,6 +924,7 @@ function sphinctalyzerInitializerGUI
         % Run sphinctalyerinitalizer on all images
         % disable the GUI parameters during the process
         set(handlesArray,'Enable','off')
+        setappdata(0, 'sphinctalyzerCancelled', false);
         % obj.batchDirectory = '/Users/ympro/Desktop/BementLabSphinctalyzer/test_datasets/Sphincdata/Output_07-Dec-2023_08-50-00';
         % initialize default values for parameter "moreOptions"
         % velocityStartStop = [1 2];
@@ -988,6 +989,11 @@ function sphinctalyzerInitializerGUI
                     obj.detection, ...
                     obj.step,...
                     runInBackgroundFlag.Value)
+
+                if getappdata(0, 'sphinctalyzerCancelled')
+                    disp('Analysis cancelled by user.')
+                    break
+                end
 
                 SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...
                     obj.channelColors, ...
@@ -1060,12 +1066,16 @@ function sphinctalyzerInitializerGUI
         end
         if ~isempty(skippedobjIndex2)
             skip_handling(skippedobjIndex2)
-        else
+        elseif ~getappdata(0, 'sphinctalyzerCancelled')
             disp('All images on the list have been succesfully sphinctalyzed.')
-            
         end
 
     % run output data gui
+        if getappdata(0, 'sphinctalyzerCancelled')
+            disp('Analysis was cancelled. Results window will not be opened.')
+            set(handlesArray,'Enable','on')
+            return
+        end
         if ~isempty(objarray) 
             sphinctalyzerOutput(objarray)
         else

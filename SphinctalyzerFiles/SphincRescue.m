@@ -35,6 +35,9 @@ for i=1:size(validnames,1)
         else
             SphinctalyzerInitialized(validnames(i).name,path)
         end
+        if getappdata(0, 'sphinctalyzerCancelled')
+            return
+        end
     end
 end
 %check for subdirectories
@@ -44,4 +47,7 @@ tf = ismember( {allnames.name}, {'.', '..'});
 allnames(tf) = [];  %remove current and parent directory.
 for i=1:size(allnames,1)
     OutlinerFolderLoader(fullfile(path,allnames(i).name),speed,loadMulti,shape,detection,step, guiInput,runInBackgroundFlag);
+    if getappdata(0, 'sphinctalyzerCancelled')
+        return
+    end
 end

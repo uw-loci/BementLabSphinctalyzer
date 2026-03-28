@@ -45,22 +45,30 @@ try
         if max(RefCheckMatrix)==0
             waitincrement=length(RefCheckMatrix).*(length(Range)+1);
             waitposition=0;
-            if backgroundFlag == 1
-                h = waitbar(0,'Sphinctalyzing...','Visible','off','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
-            else
-                h = waitbar(0,'Sphinctalyzing...','Visible','on','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
-            end
+            figW = 360; figH = 74; scSz = get(0,'ScreenSize');
+            h = figure('Name','Sphinctalyzing...','NumberTitle','off', ...
+                'MenuBar','none','ToolBar','none','Resize','off', ...
+                'Units','pixels','Position',[scSz(3)/2-figW/2, scSz(4)/2-figH/2, figW, figH]);
+            if backgroundFlag == 1, set(h,'Visible','off'); end
+            hAx2 = axes('Parent',h,'Units','pixels', ...
+                'Position',[10, 44, figW-20, 24], ...
+                'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','on');
+            hBar = patch(hAx2,[0 0 0 0],[0 0 1 1],[0.2 0.5 0.9]);
+            uicontrol(h,'Style','pushbutton','String','Abort', ...
+                'Units','pixels','Position',[figW-115, 8, 105, 30], ...
+                'Callback','setappdata(gcbf,''canceling'',1)');
             setappdata(h,'canceling',0);
+            drawnow;
+            userCancelled = false;
             for i=1:size(RefCheckMatrix,1)
                 RefFrame=DisplayFrameMatrix(i);
                 SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])) = CircleScanLivewire(SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'Data'])),...
                     SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'Data'])), UserDrawnBounds(i).BWMaskOut, 1, DetectionMethod, Step,SmoothNo);
                 [SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'XDistances'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'MeanIntensities'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'IntensityStDev'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'PointsPerGroup'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'MedianIntensities'])),SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'SmoothIntensities']))]=CircleScanOutlineAvg(SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([InputCells{i,1},'Data'])));
                 waitposition=waitposition+1;
-                waitbar(waitposition/waitincrement)
+                set(hBar,'XData',[0, waitposition/waitincrement, waitposition/waitincrement, 0]); drawnow;
                 if getappdata(h,'canceling')
-                    save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
-                    delete(h);
+                    userCancelled = true;
                     break
                 end
                 for j=RefFrame+1:max(Range)
@@ -69,25 +77,30 @@ try
                         SphinctalyzerOutputs(j-1).(matlab.lang.makeValidName([InputCells{i,1},'Data'])), SphinctalyzerOutputs(j-1).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])), 0, DetectionMethod, Step,SmoothNo);
                     [SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'XDistances'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'MeanIntensities'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'IntensityStDev'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'PointsPerGroup'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'MedianIntensities'])),SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'SmoothIntensities']))]=CircleScanOutlineAvg(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'Data'])));
                     waitposition=waitposition+1;
-                    waitbar(waitposition/waitincrement)
+                    set(hBar,'XData',[0, waitposition/waitincrement, waitposition/waitincrement, 0]); drawnow;
                     if getappdata(h,'canceling')
-                        save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
-                        delete(h);
+                        userCancelled = true;
                         break
                     end
                 end
+                if userCancelled, break; end
                 for j=RefFrame:-1:min(Range)
                     SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])) = CircleScanLivewire(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'Data'])),...
                         SphinctalyzerOutputs(j+1).(matlab.lang.makeValidName([InputCells{i,1},'Data'])), SphinctalyzerOutputs(j+1).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])), 0, DetectionMethod, Step,SmoothNo);
                     [SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'XDistances'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'MeanIntensities'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'IntensityStDev'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'PointsPerGroup'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'MedianIntensities'])),SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'SmoothIntensities']))]=CircleScanOutlineAvg(SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'Outline'])), SphinctalyzerOutputs(j).(matlab.lang.makeValidName([InputCells{i,1},'Data'])));
                     waitposition=waitposition+1;
-                    waitbar(waitposition/waitincrement)
+                    set(hBar,'XData',[0, waitposition/waitincrement, waitposition/waitincrement, 0]); drawnow;
                     if getappdata(h,'canceling')
-                        save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
-                        delete(h);
+                        userCancelled = true;
                         break
                     end
                 end
+            end
+            if userCancelled
+                save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
+                delete(h);
+                setappdata(0, 'sphinctalyzerCancelled', true);
+                return
             end
         else
             RefChannel=find(RefCheckMatrix==max(RefCheckMatrix));
@@ -96,12 +109,20 @@ try
             NonRefName=InputCells(~logical(RefCheckMatrix),1);waitincrement=length(RefCheckMatrix).*length(Range);
             waitincrement=length(Range);
             waitposition=0;
-            if backgroundFlag == 1
-                h = waitbar(0,'Sphinctalyzing...','Visible','off','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
-            else
-                h = waitbar(0,'Sphinctalyzing...','Visible','on','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
-            end
+            figW = 360; figH = 74; scSz = get(0,'ScreenSize');
+            h = figure('Name','Sphinctalyzing...','NumberTitle','off', ...
+                'MenuBar','none','ToolBar','none','Resize','off', ...
+                'Units','pixels','Position',[scSz(3)/2-figW/2, scSz(4)/2-figH/2, figW, figH]);
+            if backgroundFlag == 1, set(h,'Visible','off'); end
+            hAx2 = axes('Parent',h,'Units','pixels', ...
+                'Position',[10, 44, figW-20, 24], ...
+                'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','on');
+            hBar = patch(hAx2,[0 0 0 0],[0 0 1 1],[0.2 0.5 0.9]);
+            uicontrol(h,'Style','pushbutton','String','Abort', ...
+                'Units','pixels','Position',[figW-115, 8, 105, 30], ...
+                'Callback','setappdata(gcbf,''canceling'',1)');
             setappdata(h,'canceling',0);
+            drawnow;
             SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Outline'])) = CircleScanLivewire(SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Data'])),...
                 SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Data'])), UserDrawnBounds(RefChannel).BWMaskOut, 1, DetectionMethod, Step,SmoothNo);
             [SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'XDistances'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'MeanIntensities'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'IntensityStDev'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'PointsPerGroup'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'MedianIntensities'])),SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'SmoothIntensities']))]=CircleScanOutlineAvg(SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Outline'])), SphinctalyzerOutputs(RefFrame).(matlab.lang.makeValidName([RefName,'Data'])));
@@ -111,10 +132,11 @@ try
                 end
             end
             waitposition=waitposition+1;
-            waitbar(waitposition / waitincrement)
+            set(hBar,'XData',[0, waitposition/waitincrement, waitposition/waitincrement, 0]); drawnow;
             if getappdata(h,'canceling')
                 save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
                 delete(h);
+                setappdata(0, 'sphinctalyzerCancelled', true);
                 return
             end
             for k=RefFrame+1:max(Range)
@@ -127,11 +149,12 @@ try
                     end
                 end
                 waitposition=waitposition+1;
-                waitbar(waitposition / waitincrement)
+                set(hBar,'XData',[0, waitposition/waitincrement, waitposition/waitincrement, 0]); drawnow;
                 if getappdata(h,'canceling')
                     save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
                     delete(h);
-                    break
+                    setappdata(0, 'sphinctalyzerCancelled', true);
+                    return
                 end
             end
             for k=RefFrame-1:-1:min(Range)
@@ -144,11 +167,12 @@ try
                     end
                 end
                 waitposition=waitposition+1;
-                waitbar(waitposition / waitincrement)
+                set(hBar,'XData',[0, waitposition/waitincrement, waitposition/waitincrement, 0]); drawnow;
                 if getappdata(h,'canceling')
                     save(SaveFileName, 'SphinctalyzerOutputs','InputCells','UserDrawnBounds');
                     delete(h);
-                    break
+                    setappdata(0, 'sphinctalyzerCancelled', true);
+                    return
                 end
             end
         end

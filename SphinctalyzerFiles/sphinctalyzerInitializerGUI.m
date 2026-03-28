@@ -39,7 +39,11 @@ function sphinctalyzerInitializerGUI
     parameterFileName = '';
     parameterFilePath = pwd;
     imageName = '';
-    imagePath = pwd;
+    if ispref('Sphinctalyzer','lastImagePath') && isfolder(getpref('Sphinctalyzer','lastImagePath'))
+        imagePath = getpref('Sphinctalyzer','lastImagePath');
+    else
+        imagePath = pwd;
+    end
     outputPath = pwd;
 
 
@@ -474,6 +478,7 @@ function sphinctalyzerInitializerGUI
             % User selected only one file
             imageName = imageName_get;
             imagePath = imagePath_get;
+            setpref('Sphinctalyzer','lastImagePath',imagePath);
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));
@@ -484,6 +489,7 @@ function sphinctalyzerInitializerGUI
             % User selected multiple files
             imageName = imageName_get;
             imagePath = imagePath_get;
+            setpref('Sphinctalyzer','lastImagePath',imagePath);
             currDate = strrep(datestr(datetime), ' ', '_');
             currDate = strrep(currDate,':','-');
             outputDirectory = fullfile(imagePath,'Sphincdata',sprintf('Output_%s',currDate));

@@ -31,7 +31,7 @@
 ## Usage
 <ul>
   <li>To run the GUI, simply open the sphinctalyzerInitializerGUI.m file in the SphinctalyzerFiles folder and run it. In the GUI interface, follow the manual below to process one or multiple images.</li>
-  <li>Alternatively, the individual scripts can be run, following [the link to the manual(https://docs.google.com/document/d/1uKmW1dC0txRcns8DQJE83nbw5Co0auBl/edit?usp=sharing&ouid=103571466126565909459&rtpof=true&sd=true)</li>
+  <li>Alternatively, the individual scripts can be run, following [the link to the manual](https://docs.google.com/document/d/1uKmW1dC0txRcns8DQJE83nbw5Co0auBl/edit?usp=sharing&ouid=103571466126565909459&rtpof=true&sd=true)</li>
 </ul>
 
 

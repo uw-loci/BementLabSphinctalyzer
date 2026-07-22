@@ -30,17 +30,17 @@
 
 ## Usage
 <ul>
-  <li>To run the GUI, simply open the fileOpenerGUI.m file in the SphinctalyzerFiles folder and run it. In the GUI interface, follow the manual below to process one or multiple images.</li>
+  <li>To run the GUI, simply open the sphinctalyzerInitializerGUI.m file in the SphinctalyzerFiles folder and run it. In the GUI interface, follow the manual below to process one or multiple images.</li>
   <li>Alternatively, The individual scripts can be run, following this manual: https://docs.google.com/document/d/1uKmW1dC0txRcns8DQJE83nbw5Co0auBl/edit?usp=sharing&ouid=112831865674885079233&rtpof=true&sd=true </li>
 </ul>
 
 
 # Installation of the standalone APP
-The lastest standaloen version (v0.2.4-Beta3) for MAC(intel) can be downloaded from [the release page](https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.4-Beta3).  Follow the instructions there to install and launch this standalone app.
+The lastest standaloen version (v0.2.8-Beta2) for MAC(intel) can be downloaded from [the release page](https://github.com/uw-loci/BementLabSphinctalyzer/releases/tag/v0.2.8).  Follow the manual there to install and launch this standalone app.
 
 # GUI Manual
 
-The general workflow for processing image(s) in the Sphinctalyzer tool is listed blow. We are still working on a [more detailed manual](https://docs.google.com/document/d/1_yNp7QNPn4qA1M7k3XayiUlr-asGTp4RkXmGyK4ycMc/edit?usp=sharing).
+The general workflow for processing image(s) in the Sphinctalyzer tool is listed blow. We are still working on a [more detailed manual](https://docs.google.com/document/d/1HpSfCLoYQDokeb5a44ElrpeCNgRjTkTBXIt11EEFtHs/edit?usp=sharing).
 <ol>
   <li>Click the "Open File(s)" button and select the desired image(s) in your file browser.</li>
   <li>If an user wants to use customized parameters for the analysis/post-processing of one or more images, before importing any images in step 1, click the "Load Parameters" button to load a previously saved "parameters.csv" file.</li>  

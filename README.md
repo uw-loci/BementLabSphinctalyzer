@@ -19,7 +19,7 @@
 ## Setup Instructions
 <ol>
   <li>Download the repository onto your computer.</li>
-  <li>Open MATLAB and navigate into the SphinctalyzerFiles folder in the repository.</li>
+  <li>Open MATLAB and navigate into the <code>src</code> folder in the repository (it contains the Sphinctalyzer source code).</li>
   <li>Compile the three mex files by typing the following three commands into the MATLAB command window, one at a time:<ol>
     <li><code>mex dijkstra.c</code></li>
     <li><code>mex Radjacency.c</code></li>
@@ -30,7 +30,7 @@
 
 ## Usage
 <ul>
-  <li>To run the GUI, simply open the sphinctalyzerInitializerGUI.m file in the SphinctalyzerFiles folder and run it. In the GUI interface, follow the manual below to process one or multiple images.</li>
+  <li>To run the GUI, simply open the sphinctalyzerInitializerGUI.m file in the <code>src</code> folder and run it. In the GUI interface, follow the manual below to process one or multiple images.</li>
   <li>Alternatively, the individual scripts can be run, following [the link to the manual](https://docs.google.com/document/d/1uKmW1dC0txRcns8DQJE83nbw5Co0auBl/edit?usp=sharing&ouid=103571466126565909459&rtpof=true&sd=true).</li>
 </ul>
 

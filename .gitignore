@@ -4,3 +4,5 @@ Sphincdata/*
 SphinctalyzerFiles/*.asv
 *.mexw64
 test_datasets/Sphincdata/
+# Ignore macOS Finder metadata files
+.DS_Store

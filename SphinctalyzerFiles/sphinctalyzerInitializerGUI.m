@@ -1019,6 +1019,7 @@ function sphinctalyzerInitializerGUI
                 % set movie path for the movie
                 ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
                 validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+                validnames(strncmp({validnames.name}, '._', 2)) = [];  % remove macOS "._" metadata files
                 for j=1:size(validnames,1)
                     obj.moviePaths = [obj.moviePaths; fullfile(validnames(j).folder,validnames(j).name)];
                 end

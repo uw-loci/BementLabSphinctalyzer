@@ -546,6 +546,7 @@ function sphinctalyzerOutput(objarray)
         % attribute
         ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
         validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+        validnames(strncmp({validnames.name}, '._', 2)) = [];  % remove macOS "._" metadata files
         if isempty(validnames)
             fprintf('No results movie is found in %s \n',ParentFolderPath)
             return

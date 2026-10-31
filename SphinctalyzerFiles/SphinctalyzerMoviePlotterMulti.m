@@ -77,6 +77,7 @@ function LineNo=OutlinerFolderLoader(path, ...
 %Run Program on any applicable files in path
 if ~isempty(findstr(path, 'sphincRedo'))
 validnames=dir(fullfile(path, '*.mat'));
+validnames(strncmp({validnames.name}, '._', 2)) = [];  %remove macOS "._" metadata files (e.g. on FAT/exFAT drives)
     LineNo=2;
     for i=1:size(validnames,1)
         CurrentName=validnames(i).name;
@@ -95,8 +96,8 @@ end
 %check for subdirectories
 allnames=dir(path);
 allnames(~[allnames.isdir]) = [];  %remove non-directories
-tf = ismember( {allnames.name}, {'.', '..'});
-allnames(tf) = [];  %remove current and parent directory.
+tf = ismember( {allnames.name}, {'.', '..'}) | strncmp({allnames.name}, '._', 2);
+allnames(tf) = [];  %remove current and parent directory, and macOS "._" entries.
 for i=1:size(allnames,1)
     OutlinerFolderLoader(fullfile(path,allnames(i).name), ...
         channelColors,axesNames,darkBackgroundFlag,guiInput,secondsPerFrame,normalization,legendLocation, micronsPerPixel, ...

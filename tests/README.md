@@ -10,7 +10,8 @@ table(results)
 | Test | What it checks |
 |---|---|
 | `testPositiveXMinStepMax` | Legacy negative x axis ranges (e.g. `[-30 10 0]`) are converted to positive distances from wound center (`[0 10 30]`); positive ranges are unchanged. |
-| `testLegacyPostProcessing` | A folder analyzed by an earlier version can still be post-processed with `createNewMovie_post`. Peak locations come out as positive distances (−1 × the earlier values), all other results (peak intensity, half-widths, AUCs, closing velocity and checkpoint frames) are unchanged, the saved x axis is converted, and the movie has all frames. Takes about 30 s and opens a figure window while the movie is written. |
+| `testRingAreaFromOutline` | On a synthetic circular outline of radius R, the area enclosed by the circle scan contour at the peak is the filled outline area for a peak on the outline, ≈ π(R±k)² for a peak k pixels outside/inside, and never grows as the peak moves inward. |
+| `testLegacyPostProcessing` | A folder analyzed by an earlier version can still be post-processed with `createNewMovie_post`. Peak locations come out as positive distances (−1 × the earlier values), all other results (peak intensity, half-widths, AUCs, closing velocity and checkpoint frames) are unchanged, the saved x axis is converted, and the movie has all frames. The new "Ring Area" sheet is filled wherever a peak was found, and the closing check basis is saved. A second run with the closing check basis set to `area` changes only the checkpoint rows, which are labeled `(area)`. Takes about 45 s and opens a figure window while the movies are written. |
 
 ## Fixtures
 

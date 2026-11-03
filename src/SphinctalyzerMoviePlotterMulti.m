@@ -537,48 +537,42 @@ catch
 end
 
 for b = 1:nChannels
+    velocityStart = velocityStartStop_channel(b,1);
+    velocityEnd = velocityStartStop_channel(b,2);
+    closingVelocityLocation_value(1,b) = velocityStart;
+    closingVelocityLocation_value(2,b) = velocityEnd;
     % peak locations are positive distances that shrink as the wound closes, so closing velocity is (start - end)
-    woundClosingVelocity = ((peakLocations(b, velocityStartStop_channel(b,1)) - peakLocations(b, velocityStartStop_channel(b,2))) /((velocityStartStop_channel(b,2) - velocityStartStop_channel(b,1)) * timePerFrame)); %* obj.micronsPerPixel;
-    closingVelocityLocation_value(1,b) = velocityStartStop_channel(b,1);
-    closingVelocityLocation_value(2,b) = velocityStartStop_channel(b,2);
+    if velocityStart >= 1 && velocityEnd > velocityStart && velocityEnd <= size(peakLocations,2)
+        woundClosingVelocity = ((peakLocations(b, velocityStart) - peakLocations(b, velocityEnd)) /((velocityEnd - velocityStart) * timePerFrame)); %* obj.micronsPerPixel;
+    else
+        woundClosingVelocity = nan;
+        fprintf('Channel %d: velocity range [%d %d] is not valid, closing velocity is not calculated \n', b, velocityStart, velocityEnd)
+    end
     closingVelocityLocation_value(3,b) = woundClosingVelocity;
 end
 % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
-% of the peak location (or ring area) at velocity start
-location_checkpoint_values = closing_checkpoint_values;
-location_checkpoint_strings = closing_checkpoint_strings;
-
-try
-    for b = 1:nChannels
-        location_start = velocityStartStop_channel(b,1);
-        location_end = velocityStartStop_channel(b,2);
-        peakLocation_start = checkpointMeasure(b, location_start);  % distance to the center, or ring area
-        locations_inRange = checkpointMeasure(b, location_start:location_end);
-        averageDistance = abs((checkpointMeasure(b,location_start)-checkpointMeasure(b,location_end))/(location_end-location_start));
-        %peakLocation_end = peakLocations(b, obj.velocityStartStop_channel(b,2));
-        for cp = 1:length(location_checkpoint_values)
-            location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
-            distances2checkpoint = abs(locations_inRange - location_checkpoint);
-            minimum_distance = min(distances2checkpoint);
-            if  minimum_distance> averageDistance
-                nearestFrame_value = nan;
-                fprintf(['Channel %d: No frame found near to the %s (%3.2f %s) of closing start.\n ' ...
-                    '  Minimum distance( %3.2f %s) is bigger than the averarge change between adjacent frames(%3.2f %s) \n'],...
-                    b, location_checkpoint_strings{cp}, location_checkpoint, checkpointUnit, minimum_distance, checkpointUnit, averageDistance, checkpointUnit)
-            else
-                nearestFrame_index = find(distances2checkpoint== minimum_distance);
-                nearestFrame_value = location_start+nearestFrame_index-1;
-                fprintf(['Channel %d: nearest frame around %s (%3.2f) of closing start (%3.2f) is:%d. \n ' ...
-                    '  The distance between this frame and this closing point is :%3.2f %s,\n    equal or smaller than' ...
-                    ' the average change between adjacent frames %3.2f %s \n'],...
-                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,minimum_distance,checkpointUnit,averageDistance,checkpointUnit);
-            end
-            closingVelocityLocation_value(cp+3,b) = nearestFrame_value;
+% of the peak location (or ring area) at velocity start; each channel is
+% searched separately so a problem in one channel does not affect the others
+for b = 1:nChannels
+    try
+        [checkpointFrames, checkpointStatus] = closingCheckpointFrames(checkpointMeasure(b,:), ...
+            velocityStartStop_channel(b,1), velocityStartStop_channel(b,2), closing_checkpoint_values);
+        if ~isempty(checkpointStatus)
+            fprintf('Channel %d: closing checkpoints are not calculated, %s \n', b, checkpointStatus)
+            continue
         end
+        for cp = 1:numel(checkpointFrames)
+            if isnan(checkpointFrames(cp))
+                fprintf('Channel %d: no frame found near the %s (%3.2f %s) \n', ...
+                    b, closing_checkpoint_strings{cp}, closing_checkpoint_values(cp)*checkpointMeasure(b,velocityStartStop_channel(b,1)), checkpointUnit)
+            else
+                fprintf('Channel %d: %s is frame %d \n', b, closing_checkpoint_strings{cp}, checkpointFrames(cp))
+            end
+        end
+        closingVelocityLocation_value(4:end,b) = checkpointFrames; % rows stay NaN if the range is not valid
+    catch closingLocationEXP
+        fprintf('Channel %d: closing checkpoints are not found, error message: %s \n', b, closingLocationEXP.message)
     end
-catch closingLocationEXP
-    fprintf('%s closing location of channel %d is not found, \n error message:%s \n',...
-        closing_checkpoint_strings{cp},b, closingLocationEXP.message)
 end
 
 %save results to the excel file

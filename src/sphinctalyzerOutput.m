@@ -1315,6 +1315,11 @@ function sphinctalyzerOutput(objarray)
             set(enterVelocityRangeC1,'String',num2str(get(enterVelocityRangeC1,'UserData')))
             return
         end
+        if usr_input(2) <= usr_input(1)
+            errordlg('The velocity end frame must be after the start frame.')
+            set(enterVelocityRangeC1,'String',num2str(get(enterVelocityRangeC1,'UserData')))
+            return
+        end
         % objarray(currentObj).velocityRange_C1 = usr_input;
         enterVelocityRangeC1.UserData = usr_input;
         advancedOptions.velocityStartStop(1,:) = usr_input; 
@@ -1330,6 +1335,11 @@ function sphinctalyzerOutput(objarray)
         usr_input = str2num(usr_input);
         if usr_input(1) < 1 || usr_input(2) < 1
             errordlg('Please enter a positive number pair.')
+            set(enterVelocityRangeC2,'String',num2str(get(enterVelocityRangeC2,'UserData')))
+            return
+        end
+        if usr_input(2) <= usr_input(1)
+            errordlg('The velocity end frame must be after the start frame.')
             set(enterVelocityRangeC2,'String',num2str(get(enterVelocityRangeC2,'UserData')))
             return
         end
@@ -1349,6 +1359,11 @@ function sphinctalyzerOutput(objarray)
         usr_input = str2num(usr_input);
         if usr_input(1) < 1 || usr_input(2) < 1
             errordlg('Please enter a positive number pair.')
+            set(enterVelocityRangeC3,'String',num2str(get(enterVelocityRangeC3,'UserData')))
+            return
+        end
+        if usr_input(2) <= usr_input(1)
+            errordlg('The velocity end frame must be after the start frame.')
             set(enterVelocityRangeC3,'String',num2str(get(enterVelocityRangeC3,'UserData')))
             return
         end

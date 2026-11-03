@@ -123,3 +123,55 @@ The unused movie plotters (`SphinctalyzerMoviePlotter.m`, `SphinctalyzerMoviePlo
   earlier ones.
 - Run `runtests('tests')` before committing changes to post-processing. Regenerate
   `legacy_sub1_expected.mat` only when the peak calculation is changed on purpose.
+
+## Ring area and area-based closing check (issue #18, 2026-11-02)
+
+### Request
+[Issue #18](https://github.com/uw-loci/BementLabSphinctalyzer/issues/18): add a wound area measurement based on the
+protein ring to the output, and an option to find the frame at some percent wound closure from that area instead of
+from the peak position.
+
+### What the area measures
+The circle scan (`CircleScanOutlineAvg.m`) bins intensities by each pixel's signed distance to the wound outline
+(positive inside, negative outside). The peak position found by `IntensityIntegrator.m` is a value on that distance
+axis, so it defines a contour that follows the outline shape at the peak. The ring area is the number of pixels inside
+that contour × `micronsPerPixel`². It is computed by the new `RingAreaFromOutline.m`, which builds the distance map the
+same way as `CircleScanOutlineAvg.m`. The outline is the one the scan was made on: the channel's own outline when the
+reference channel is `Self`, otherwise the reference channel's outline.
+
+For a round wound the area is close to π × (peak location)²; on `test-peak-location-exp049a.tif` the two agree within
+1% for channel 2 and 4–7% for channel 1, whose outline is less circular.
+
+### Changes
+- `SphinctalyzerMoviePlotterMulti.m`:
+  - new "Ring Area" sheet in `Results_N.xlsx` (µm², or pixel² when `micronsPerPixel == 1`), laid out like the other
+    sheets, with the frame index in column B, channels from column C and `_Instant` change columns
+  - new option `advancedOptions.closingCheckBasis`: `position` (default, unchanged output) or `area`. With `area`, the
+    checkpoint frames are found on the ring area instead of the peak location, using the same search, and labeled
+    e.g. `frame at 66.7% open (area)`. Closing velocity stays position-based.
+  - the "parameters" sheet now has 17 rows: row 16 `channelNames`, row 17 `closing check basis`
+- `save_post_parameters.m` / `get_postParameters.m`: save and read row 17. `closingCheckBasisOption.m` turns the
+  stored value into `area` or `position`; empty or missing values (files from earlier versions) give `position`.
+- `sphinctalyzerOutput.m` (post-processing GUI):
+  - "Check Basis" popup ({Peak position, Ring area}) under "Closing Check", restored from the results file
+  - "Ring Area" in the data-over-time dropdown; results without the sheet show a message to write the movie again
+  - `update_movieOptions` now reads the advanced options for any parameters sheet with 15 or more rows (it required
+    exactly 15, so 16- and 17-row sheets were skipped)
+
+### Notes
+- Area fractions are not radius fractions: area ∝ r², so 50% of the starting area is reached at about 70.7% of the
+  starting radius. Area-based checkpoints are therefore reached earlier than position-based ones with the same
+  fractions (on exp049a channel 1: 66.7% at frame 20 by area vs. frame 25 by position).
+- The checkpoint search keeps its existing behavior, including a single `try` around all channels: if one channel
+  fails, the remaining channels' checkpoints stay empty. This is unchanged for the position basis.
+- The image data panel in the post-processing window does not show the ring area.
+
+### Testing
+- `tests/testRingAreaFromOutline.m`: synthetic circular outline (areas within 2% of π(R±k)²).
+- `tests/testLegacyPostProcessing.m`: the existing checks still pass with the default basis, which shows its output is
+  unchanged; added checks for the Ring Area sheet, the saved basis, and a second run with the `area` basis.
+- Real data (`Output_02-Feb-2025_15-30-02/data_test-peak-location-exp049a.tif`, on copies): both bases run, and
+  results other than the checkpoint rows are identical.
+- Post-processing GUI, driven through its control callbacks in R2023b: the basis is restored from the results file,
+  the Ring Area plot is drawn, and switching the basis updates the option. Not tested by hand: the layout of the new
+  popup on screen, and the message for results files without a "Ring Area" sheet.

@@ -22,6 +22,10 @@ elseif nargin == 14
         advancedOptions.runInBackgroundFlag = 0;  % default is don't run in the background, unless it is explicily set.
     end
 end
+if ~exist('advancedOptions','var') || ~isfield(advancedOptions,'closingCheckBasis')
+    advancedOptions.closingCheckBasis = 'position';  % 'position' (peak location) or 'area' (ring area)
+end
+advancedOptions.closingCheckBasis = closingCheckBasisOption(advancedOptions.closingCheckBasis);
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -302,6 +306,7 @@ Peaks=nan(channelsNo,frameInrangeMax);
 Halfwidths=nan(channelsNo,frameInrangeMax);
 AUCs=nan(channelsNo,frameInrangeMax);
 PeakLocs=nan(channelsNo,frameInrangeMax);
+RingAreas=nan(channelsNo,frameInrangeMax); % area enclosed by the circle scan contour at the peak
 searchingRadiusInMicron = advancedOptions.peakSearchingRadius; 
 %convert to pixels
 searchingRadiusInPixels = round(searchingRadiusInMicron/micronsPerPixel);
@@ -321,6 +326,13 @@ for i=1:size(ChannelStrings,1)
         PeakLocs(i,j)=(Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts']))-PeakLocation)*micronsPerPixel; % positive distance from wound center
        % else
        % end
+        % use the outline the circle scan was made on
+        if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
+            scanOutline = SphinctalyzerOutputs(j).(matlab.lang.makeValidName([ChannelStrings{i},'Outline']));
+        else
+            scanOutline = SphinctalyzerOutputs(j).(matlab.lang.makeValidName([SphinctalyzerOutputs(1).RefChannel{:},'Outline']));
+        end
+        RingAreas(i,j)=RingAreaFromOutline(scanOutline, PeakLocation)*micronsPerPixel^2;
 
         catch peakError
             fprintf("peak location calculation error: %s \n", peakError.message)
@@ -329,7 +341,8 @@ for i=1:size(ChannelStrings,1)
             Halfwidths(i,j) = nan;
             AUCs(i,j) = nan;
             PeakLocs(i,j) = nan;
-            fprintf('peak location, half width, AUCs,  are set to NaN for frame %d of Channel %d \n', j,i)
+            RingAreas(i,j) = nan;
+            fprintf('peak location, half width, AUCs, ring area are set to NaN for frame %d of Channel %d \n', j,i)
         end
         zprimegrid(j-min(Range)+1, :)=interp1(XVals,Intensities,xprime);
     end
@@ -437,8 +450,8 @@ close(writerObj);
 % movefile([savename,'.avi'],savepath);
 close(gcf1)
 %save parameters to the excel file
-parameters_post = cell(15,4); % add searchingRadius and closingCheckpoint
-parameters_post{1,1} = 'Channel Colors'; 
+parameters_post = cell(17,4); % add searchingRadius, closingCheckpoint, channelNames and closingCheckBasis
+parameters_post{1,1} = 'Channel Colors';
 nColors = length(channelColors);
 for i = 1:nColors
     parameters_post{1,i+1} = mat2str(channelColors{i});
@@ -472,6 +485,11 @@ else
 end
 parameters_post{14,1} = 'peak searching radius';parameters_post{14,2} = advancedOptions.peakSearchingRadius;
 parameters_post{15,1} = 'closing check point';parameters_post{15,2} = mat2str(advancedOptions.closingCheckpoint);
+parameters_post{16,1} = 'channelNames';
+for i = 1:size(ChannelStrings,1)
+    parameters_post{16,i+1} = ChannelStrings{i};
+end
+parameters_post{17,1} = 'closing check basis';parameters_post{17,2} = advancedOptions.closingCheckBasis;
 writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range','A1');
 
 %% add a sheet of "Closing Velocity and Location" 
@@ -483,8 +501,18 @@ timePerFrame = secondsPerFrame;
 % closing_checkpoint_strings = {'2/3' '1/2' '1/3'};
 closing_checkpoint_values = advancedOptions.closingCheckpoint;
 closing_checkpoint_strings = cell(size(closing_checkpoint_values,2),1);
+% closing check based on the peak location (default) or on the ring area
+if strcmp(advancedOptions.closingCheckBasis,'area')
+    checkpointMeasure = RingAreas;
+    checkpointUnit = 'um^2';
+    checkpointLabelSuffix = ' (area)';
+else
+    checkpointMeasure = peakLocations;
+    checkpointUnit = 'um';
+    checkpointLabelSuffix = '';
+end
 for iCP = 1:size(closing_checkpoint_values,2)
-    closing_checkpoint_strings{iCP,1} = sprintf('frame at %3.1f%% open',closing_checkpoint_values(1,iCP)*100);
+    closing_checkpoint_strings{iCP,1} = sprintf('frame at %3.1f%% open%s',closing_checkpoint_values(1,iCP)*100,checkpointLabelSuffix);
 end
 
 nChannels = size(InputCells,1);
@@ -516,7 +544,7 @@ for b = 1:nChannels
     closingVelocityLocation_value(3,b) = woundClosingVelocity;
 end
 % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
-% of peak location value
+% of the peak location (or ring area) at velocity start
 location_checkpoint_values = closing_checkpoint_values;
 location_checkpoint_strings = closing_checkpoint_strings;
 
@@ -524,9 +552,9 @@ try
     for b = 1:nChannels
         location_start = velocityStartStop_channel(b,1);
         location_end = velocityStartStop_channel(b,2);
-        peakLocation_start = peakLocations(b, location_start);  % distance to the center
-        locations_inRange = peakLocations(b, location_start:location_end);
-        averageDistance = abs((peakLocations(b,location_start)-peakLocations(b,location_end))/(location_end-location_start));
+        peakLocation_start = checkpointMeasure(b, location_start);  % distance to the center, or ring area
+        locations_inRange = checkpointMeasure(b, location_start:location_end);
+        averageDistance = abs((checkpointMeasure(b,location_start)-checkpointMeasure(b,location_end))/(location_end-location_start));
         %peakLocation_end = peakLocations(b, obj.velocityStartStop_channel(b,2));
         for cp = 1:length(location_checkpoint_values)
             location_checkpoint = location_checkpoint_values(cp)*peakLocation_start;
@@ -534,16 +562,16 @@ try
             minimum_distance = min(distances2checkpoint);
             if  minimum_distance> averageDistance
                 nearestFrame_value = nan;
-                fprintf(['Channel %d: No frame found near to the %s (%3.2f um) of closing start location.\n ' ...
-                    '  Minimum distance( %3.2f um) is bigger than the averarge distance between adjacent frames(%3.2f um) \n'],...
-                    b, location_checkpoint_strings{cp}, location_checkpoint, minimum_distance,averageDistance)
+                fprintf(['Channel %d: No frame found near to the %s (%3.2f %s) of closing start.\n ' ...
+                    '  Minimum distance( %3.2f %s) is bigger than the averarge change between adjacent frames(%3.2f %s) \n'],...
+                    b, location_checkpoint_strings{cp}, location_checkpoint, checkpointUnit, minimum_distance, checkpointUnit, averageDistance, checkpointUnit)
             else
                 nearestFrame_index = find(distances2checkpoint== minimum_distance);
                 nearestFrame_value = location_start+nearestFrame_index-1;
-                fprintf(['Channel %d: nearest frame around %s (%3.2f) of closing start location (%3.2f) is:%d. \n ' ...
-                    '  The distance between this frame and this closing location is :%3.2f um,\n    equal or smaller than' ...
-                    ' the average distance between adjacent frames %3.2f um \n'],...
-                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,minimum_distance,averageDistance);
+                fprintf(['Channel %d: nearest frame around %s (%3.2f) of closing start (%3.2f) is:%d. \n ' ...
+                    '  The distance between this frame and this closing point is :%3.2f %s,\n    equal or smaller than' ...
+                    ' the average change between adjacent frames %3.2f %s \n'],...
+                    b, location_checkpoint_strings{cp},location_checkpoint,peakLocation_start,nearestFrame_value,minimum_distance,checkpointUnit,averageDistance,checkpointUnit);
             end
             closingVelocityLocation_value(cp+3,b) = nearestFrame_value;
         end
@@ -564,6 +592,7 @@ writematrix(PeakLocs',[savepath, excelSavename],'Sheet','Peak Locations','Range'
 writematrix(Halfwidths',[savepath, excelSavename],'Sheet','Halfwidths','Range','C2');%['C' num2str(LineNo)]);
 writematrix(AUCs',[savepath, excelSavename],'Sheet','AUCs','Range','C2');%['C' num2str(LineNo)]);
 writematrix(Peaks'*100,[savepath, excelSavename],'Sheet','Percent Above Background','Range','C2');%['C' num2str(LineNo)]);
+writematrix(RingAreas',[savepath, excelSavename],'Sheet','Ring Area','Range','C2');
 writematrix(closingVelocityLocation_value,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo)]);
 % add instantaneous calculations
 instantPeaksValues = diff(PeaksValues'); 
@@ -577,6 +606,8 @@ instantHalfwidths = diff(Halfwidths');
 instantHalfwidths = [nan(1,nChannels);instantHalfwidths];
 instantAUCs = diff(AUCs'); 
 instantAUCs = [nan(1,nChannels); instantAUCs];
+instantRingAreas = diff(RingAreas');
+instantRingAreas = [nan(1,nChannels); instantRingAreas];
 instantColumn1= strcat(char(2+nChannels+1+'A'-1),'2'); 
 
 writematrix(instantPeaksValues,[savepath, excelSavename],'Sheet','Peak Intensity','Range',instantColumn1);
@@ -584,6 +615,7 @@ writematrix([instantPeakLocs instantVelocity],[savepath, excelSavename],'Sheet',
 writematrix(instantHalfwidths,[savepath, excelSavename],'Sheet','Halfwidths','Range',instantColumn1);
 writematrix(instantAUCs,[savepath, excelSavename],'Sheet','AUCs','Range',instantColumn1);
 writematrix(instantPeaks*100,[savepath, excelSavename],'Sheet','Percent Above Background','Range',instantColumn1);
+writematrix(instantRingAreas,[savepath, excelSavename],'Sheet','Ring Area','Range',instantColumn1);
 
 % add frame index in the first row of the output folder
 frameIndexes = 1:length(Peaks);
@@ -592,6 +624,7 @@ writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Peak Locations','Ra
 writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Halfwidths','Range','B2');%['C' num2str(LineNo-1)]);
 writematrix(frameIndexes',[savepath, excelSavename],'Sheet','AUCs','Range','B2');%['C' num2str(LineNo-1)]);
 writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Percent Above Background','Range','B2');%['C' num2str(LineNo-1)]);
+writematrix(frameIndexes',[savepath, excelSavename],'Sheet','Ring Area','Range','B2');
 
 % %% Normalization Calculation
 % if normalization == 1
@@ -743,6 +776,7 @@ writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Perce
 writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','AUCs','Range','C1');%['C' num2str(LineNo)]);
 writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Halfwidths','Range','C1');%['C' num2str(LineNo)]);
 writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Peak Intensity','Range','C1');%['C' num2str(LineNo)]);
+writecell([ChannelStrings' instantStr1],[savepath, excelSavename],'Sheet','Ring Area','Range','C1');
 writecell([ChannelStrings' instantStr1 instantStr2],[savepath, excelSavename],'Sheet','Peak Locations','Range','C1');%['C' num2str(LineNo)]);
 writecell(ChannelStrings',[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['C' num2str(LineNo-1)]);
 writecell(closingVelocityLocation_label,[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range',['B' num2str(LineNo)]);
@@ -754,6 +788,7 @@ writecell(frameLabel,[savepath, excelSavename],'Sheet','AUCs','Range','B1');%['B
 writecell(frameLabel,[savepath, excelSavename],'Sheet','Halfwidths','Range','B1');%['B' num2str(LineNo-1)]);
 writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Intensity','Range','B1');%['B' num2str(LineNo-1)]);
 writecell(frameLabel,[savepath, excelSavename],'Sheet','Peak Locations','Range','B1');%['B' num2str(LineNo-1)]);
+writecell(frameLabel,[savepath, excelSavename],'Sheet','Ring Area','Range','B1');
 
 
 savenamecrop=savename(1:findstr(savename,'scan_movie')-2); % extract the image name
@@ -762,6 +797,7 @@ writecell({savenamecrop},[savepath, excelSavename],'Sheet','AUCs','Range','A1');
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Halfwidths','Range','A1');%['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Intensity','Range','A1');%['A' num2str(LineNo)]);
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Peak Locations','Range','A1');%['A' num2str(LineNo)]);
+writecell({savenamecrop},[savepath, excelSavename],'Sheet','Ring Area','Range','A1');
 writecell({savenamecrop},[savepath, excelSavename],'Sheet','Closing Velocity and Location','Range','A1');%['A' num2str(LineNo)]);
 
 fprintf('Created output results file: %s \n', fullfile([savepath, excelSavename]));

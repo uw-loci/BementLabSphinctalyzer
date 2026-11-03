@@ -16,7 +16,7 @@ function sphinctalyzerOutput(objarray)
     frameRate = 20;
     readFunction = {@bf_reader, @circle_reader, @movie_reader};
     defaultPeakSearchingRadius = getDefaultPeakSearchingRadius();
-    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333]);
+    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333],'closingCheckBasis','position');
     dataPlotFig = [];    % handle for the floating 'Data over time' figure
     currentExcelSavename = 'Results_1.xlsx';  % tracks which Results file is active
     xlsChannelNames = {};  % channel names read from the active Excel results file
@@ -257,7 +257,26 @@ function sphinctalyzerOutput(objarray)
         'Position',[value_start-0.2 h_start-0.685 value_width+0.205 value_height], ...
         'Tooltip','wound opening fraction : 1: fully open at velocity start; 0: fully closed at wound center',...
         'Enable','on',...
-        'Callback',{@get_closingCheckpoint});  
+        'Callback',{@get_closingCheckpoint});
+
+         closingCheckBasisLabel = uicontrol('Parent',peakVelocityOptions, ...
+        'Style','text', ...
+        'String','Check Basis', ...
+        'FontSize',fontsize_option1, ...
+        'HorizontalAlignment','right',...
+        'Units','normalized', ...
+        'Position',[text_start h_start-0.8 text_width-0.175 value_height]);
+
+         selectClosingCheckBasis = uicontrol('Parent',peakVelocityOptions, ...
+        'Style','popupmenu', ...
+        'String',{'Peak position','Ring area'}, ...
+        'Units','normalized',...
+        'Value',1,...
+        'Position',[value_start-0.2 h_start-0.785 value_width+0.205 value_height], ...
+        'Tooltip',sprintf(['Peak position: frame where the peak location is the given fraction of its value at velocity start\n' ...
+            'Ring area: frame where the ring area is the given fraction of the area at velocity start']),...
+        'Enable','on',...
+        'Callback',{@get_closingCheckBasis});
 
          %create three buttons write one, save Post-parameters, and write
          %all
@@ -321,7 +340,7 @@ function sphinctalyzerOutput(objarray)
     % data over time measurement dropdown
     dataOverTimeDropdown = uicontrol('Parent',viewOptionsPanel, ...
         'Style','popupmenu', ...
-        'String',{'None','Peak Locations','Instantaneous Velocity','Halfwidths','AUCs','Percent Above Background'}, ...
+        'String',{'None','Peak Locations','Instantaneous Velocity','Halfwidths','AUCs','Percent Above Background','Ring Area'}, ...
         'Units','normalized', ...
         'Position',[0.05 0.62 0.9 0.10], ...
         'Callback',{@data_over_time_selection});
@@ -1352,6 +1371,12 @@ function sphinctalyzerOutput(objarray)
         fprintf('Check point for wound closing %s added \n',num2str(usr_input,'% 4.3f'));
     end
 
+    function get_closingCheckBasis(hObject,event)
+        closingCheckBases = {'position','area'};
+        advancedOptions.closingCheckBasis = closingCheckBases{get(hObject,'Value')};
+        fprintf('Closing check is based on the %s \n',advancedOptions.closingCheckBasis);
+    end
+
     function channel_changed(hObject, event)
         iChannel = hObject.Value;
         obj = objarray(currentObj);
@@ -1464,6 +1489,12 @@ function sphinctalyzerOutput(objarray)
             rawFN = rawFull(:, 1);
             xlsFrameNums = rawFN(~isnan(rawFN))';   % row vector [1, 2, ..., frameInrangeMax]
             xlsSheets{6} = readcell(xlsPath, 'Sheet','Closing Velocity and Location','Range','B2');
+            % Ring Area sheet is not in results created by earlier versions
+            xlsSheets{7} = [];
+            if any(strcmp(sheetnames(xlsPath),'Ring Area'))
+                rawRingArea = readmatrix(xlsPath, 'Sheet', 'Ring Area', 'Range', 'B2');
+                xlsSheets{7} = rawRingArea(:, 2:end)';
+            end
             % Channel names from row 1, columns C onwards
             nCh = obj.nChannels;
             endColLetter = char('A' + 1 + nCh);  % nCh=1→C, nCh=2→D, nCh=3→E
@@ -1536,7 +1567,8 @@ function sphinctalyzerOutput(objarray)
               advancedOptions.velocityStartStop =obj.velocityStartStop;
               advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
               advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
-        elseif size(movieOptions,1) == 15
+              advancedOptions.closingCheckBasis = 'position';
+        elseif size(movieOptions,1) >= 15
             for iC = 1:obj.nChannels
                 advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
             end
@@ -1547,6 +1579,11 @@ function sphinctalyzerOutput(objarray)
                 advancedOptions.closingCheckpoint = movieOptions{15,2};
             end
             fprintf('number of closing checkpoint(s) is %d \n', size(advancedOptions.closingCheckpoint,2))
+            if size(movieOptions,1) >= 17
+                advancedOptions.closingCheckBasis = closingCheckBasisOption(movieOptions{17,2});
+            else
+                advancedOptions.closingCheckBasis = 'position'; % results from earlier versions
+            end
 
         end
         if obj.nChannels == 1
@@ -1570,6 +1607,7 @@ function sphinctalyzerOutput(objarray)
             'UserData',advancedOptions.peakSearchingRadius);
         set(enterClosingCheckpoint,'String',num2str(advancedOptions.closingCheckpoint,' %4.3f'),...
             'UserData',advancedOptions.closingCheckpoint);
+        set(selectClosingCheckBasis,'Value',1+strcmp(advancedOptions.closingCheckBasis,'area'));
 
         objarray(currentObj) = obj;
         set(darkBackground, 'Value', obj.darkBackground);
@@ -1637,6 +1675,18 @@ function sphinctalyzerOutput(objarray)
                 yLabelStr  = '% Above Background';
                 xLabelStr  = 'Time (s)';
                 useVelRange = false;
+                computeDiff = false;
+            case 7  % Ring Area
+                if numel(xlsSheets) < 7 || isempty(xlsSheets{7})
+                    msgbox(['No ring area in this results file. It was probably created by an earlier version; ' ...
+                        'write the movie again to add the ring area.'],'Ring Area')
+                    set(dataOverTimeDropdown,'Value',1);
+                    return
+                end
+                rawSheet   = xlsSheets{7};
+                yLabelStr  = 'Ring Area (\mum^2)';
+                xLabelStr  = 'Time (s) After Zone Appearance';
+                useVelRange = true;
                 computeDiff = false;
             otherwise
                 return
@@ -1819,7 +1869,7 @@ function sphinctalyzerOutput(objarray)
         if isempty(dataPlotFig) || ~isvalid(dataPlotFig)
             warndlg('No data plot is currently open.'); return;
         end
-        measureNames = {'Peak_Locations', 'Instantaneous_Velocity', 'Halfwidths', 'AUCs', 'Percent_Above_Background'};
+        measureNames = {'Peak_Locations', 'Instantaneous_Velocity', 'Halfwidths', 'AUCs', 'Percent_Above_Background', 'Ring_Area'};
         measureName  = measureNames{dataOverTimeDropdown.Value - 1};
         obj = objarray(currentObj);
         [ParentFolderPath] = fileparts(obj.filePath);

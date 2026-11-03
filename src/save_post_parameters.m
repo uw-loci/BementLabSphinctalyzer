@@ -12,7 +12,7 @@ foldermarkerIndex = strfind(moviePath,'sphincRedo');
 postPath = moviePath(1:foldermarkerIndex-1);
 savePath = postPath;
 excelSavename = 'parameters_post.xlsx';
-parameters_post = cell(15,4); % add searchingRadius and closingCheckpoint
+parameters_post = cell(17,4); % add searchingRadius, closingCheckpoint, channelNames and closingCheckBasis
 
 if saveCommonFlag ~= 1
     parameters_post{1,1} = 'Channel Colors';
@@ -58,6 +58,7 @@ if saveCommonFlag ~= 1
     for i = 1:nChannels
         parameters_post{16,i+1} = obj.channelNames{i};
     end
+    parameters_post{17,1} = 'closing check basis'; parameters_post{17,2} = closingCheckBasisOption(advancedOptions.closingCheckBasis);
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 else  % save common parameters
@@ -118,6 +119,7 @@ else  % save common parameters
     for i = 1:nChannels
         parameters_post{16,i+1} = obj.channelNames{i};
     end
+    parameters_post{17,1} = 'closing check basis'; parameters_post{17,2} = closingCheckBasisOption(advancedOptions.closingCheckBasis);
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 

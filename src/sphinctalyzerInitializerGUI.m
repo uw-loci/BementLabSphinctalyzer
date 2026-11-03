@@ -937,6 +937,7 @@ function sphinctalyzerInitializerGUI
         moreOptions.velocityStartStop = [1 2];
         moreOptions.peakSearchingRadius = getDefaultPeakSearchingRadius();
         moreOptions.closingCheckpoint = 0.75;
+        moreOptions.closingCheckBasis = 'position';
         moreOptions.runInBackgroundFlag = runInBackgroundFlag.Value;
 
         skippedobjIndex1 = [];

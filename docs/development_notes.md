@@ -162,8 +162,8 @@ For a round wound the area is close to π × (peak location)²; on `test-peak-lo
 - Area fractions are not radius fractions: area ∝ r², so 50% of the starting area is reached at about 70.7% of the
   starting radius. Area-based checkpoints are therefore reached earlier than position-based ones with the same
   fractions (on exp049a channel 1: 66.7% at frame 20 by area vs. frame 25 by position).
-- The checkpoint search keeps its existing behavior, including a single `try` around all channels: if one channel
-  fails, the remaining channels' checkpoints stay empty. This is unchanged for the position basis.
+- The checkpoint search kept its existing behavior here, including a single `try` around all channels. This was
+  changed afterwards; see "Closing checkpoints searched per channel" below.
 - The image data panel in the post-processing window does not show the ring area.
 
 ### Testing
@@ -175,3 +175,43 @@ For a round wound the area is close to π × (peak location)²; on `test-peak-lo
 - Post-processing GUI, driven through its control callbacks in R2023b: the basis is restored from the results file,
   the Ring Area plot is drawn, and switching the basis updates the option. Not tested by hand: the layout of the new
   popup on screen, and the message for results files without a "Ring Area" sheet.
+
+## Closing checkpoints searched per channel (2026-11-03)
+
+### Problem
+The search for the "frame at X% open" checkpoints in `SphinctalyzerMoviePlotterMulti.m` ran inside one `try` around
+all channels. An error in one channel was printed and every remaining channel's checkpoints were left empty. Errors
+came from:
+- a velocity range whose end frame is not after its start frame. The d1 test dataset
+  (`Output_24-Jul-2025_16-00-23/data_sphintest_-2channlel.tif`) was saved with `[20 5]`; the frame range is empty
+  and the assignment fails. The velocity-range boxes only checked for two positive numbers, so such ranges could be
+  saved.
+- a range outside the analyzed frames (index error)
+- no peak (NaN) at the start frame: the target is NaN and `find` returns nothing
+- two frames equally close to the target: `find` returns two frames. More likely with the ring area basis, whose
+  values are whole pixel counts and can repeat.
+
+A quieter problem: with no peak at the end frame, the tolerance (average change per frame) was NaN, so `min > NaN`
+was false and a frame was accepted however far it was from the target.
+
+### Fix
+- New `closingCheckpointFrames.m` searches one channel. If the range is not valid (not whole numbers, end not after
+  start, outside the analyzed frames, or no peak at the start or end frame) all checkpoints are NaN and the returned
+  status says why. Otherwise the search is the same as before; frames without a peak inside the range are skipped,
+  and on a tie the earliest frame is used (logged).
+- `SphinctalyzerMoviePlotterMulti.m` calls it once per channel, each in its own `try`, for both the position and the
+  area basis. Closing velocity is left empty when the range is not valid.
+- `sphinctalyzerOutput.m`: the velocity-range boxes (C1-C3) reject a range whose end is not after its start.
+
+### Impact on existing results
+A read-only scan of 89 `Results_*.xlsx` files in `test_datasets/Sphincdata` (178 channels; 130 files with an older
+layout were skipped) found no channel whose checkpoint frames change. The only invalid ranges were d1's two channels,
+which are empty before and after; they now log e.g. "velocity end frame (5) is not after start frame (20)".
+
+### Testing
+- `tests/testClosingCheckpointFrames.m`: normal search (same frames as the previous search), checkpoint beyond the
+  range, reversed and equal ranges, range outside the frames, no peak at start or end, a frame without a peak
+  inside the range, and ties.
+- d1, d2 and d4 post-processed again: all Results sheets identical to the previous output.
+- Post-processing GUI, driven through the control callbacks: `20 5` and `12 12` are refused with an error dialog
+  and the previous range is restored; `12 28` is accepted.

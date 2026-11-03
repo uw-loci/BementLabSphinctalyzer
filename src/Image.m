@@ -76,7 +76,7 @@ classdef Image
                     obj.colormap = colormap;
                     obj.timePerFrame = timePerFrame;
                     obj.axesNames = axesNames;
-                    obj.xMinStepMax = xMinStepMax;
+                    obj.xMinStepMax = positiveXMinStepMax(xMinStepMax); % convert legacy negative x axis
                     obj.yMinStepMax = yMinStepMax;
                     obj.normalization = normalization;
                     obj.micronsPerPixel = micronsPerPixel;

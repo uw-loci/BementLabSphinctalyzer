@@ -1526,7 +1526,7 @@ function sphinctalyzerOutput(objarray)
             obj.channelColors{iC} = str2num(movieOptions{1,iC+1});
         end
         obj.axesNames = movieOptions(2,2:3);
-        obj.xMinStepMax = str2num(movieOptions{8,2});
+        obj.xMinStepMax = positiveXMinStepMax(str2num(movieOptions{8,2}));
         obj.yMinStepMax = str2num(movieOptions{9,2});
         velocityRanges = {enterVelocityRangeC1 enterVelocityRangeC2 enterVelocityRangeC3};
         if size(movieOptions,1) == 13

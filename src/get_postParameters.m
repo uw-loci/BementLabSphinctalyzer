@@ -18,6 +18,7 @@ parameterFilePath = matFilePath;
 parameterFileName = matFileName;
 load(fullfile(parameterFilePath,parameterFileName),"parameters");
 obj = parameters;
+obj.xMinStepMax = positiveXMinStepMax(obj.xMinStepMax); % convert legacy negative x axis
 
 resultsFilePath = fullfile(matFilePath,'sphincRedo'); % resultsFilePath: path to the Results_1.xlsx file
 if ~exist(fullfile(matFilePath,postParametersFileName),'file')
@@ -53,7 +54,7 @@ try
         obj.channelColors{iC} = str2num(movieOptions{1,iC+1});
     end
     obj.axesNames = movieOptions(2,2:3);
-    obj.xMinStepMax = str2num(movieOptions{8,2});
+    obj.xMinStepMax = positiveXMinStepMax(str2num(movieOptions{8,2}));
     obj.yMinStepMax = str2num(movieOptions{9,2});
     if size(movieOptions,1) == 12
         movieOptions{13,1} = 'velocityStartStop';

@@ -133,6 +133,7 @@ SelectChannels=0; %0 to use all channels, 1 to use only select channels
 ChannelsOn=[ 1 2 ]; %Channels listed will be used
 
 if guiInput == 1
+    xMinStepMax = positiveXMinStepMax(xMinStepMax); % x axis is the positive distance from wound center
     if micronsPerPixel == 1
         xmin = xMinStepMax(1);
         xstep = xMinStepMax(2);
@@ -146,8 +147,8 @@ if guiInput == 1
     xAxisTitle = axesNames{1};
     TimePerFrame = secondsPerFrame; %This is the time between frames during imaging (second/frame)
 else
-    xmin=-150; % minimum x axis, in pixels
-    xmax=0;% maximum x axis, in pixels
+    xmin=0; % minimum x axis (distance from wound center), in pixels
+    xmax=150;% maximum x axis (distance from wound center), in pixels
     ColorMat={[1 0 0],[0 .6 0],[0 0 1]}; %These are the color strings for each channel
     yAxisTitle = getDefaultYAxisTitle();
     if micronsPerPixel == 1
@@ -317,7 +318,7 @@ for i=1:size(ChannelStrings,1)
         Halfwidths(i,j)=HalfWidth*micronsPerPixel;
         AUCs(i,j)=PeakAUC*micronsPerPixel;
       %  if strcmp(SphinctalyzerOutputs(1).RefChannel{:},'Self')
-        PeakLocs(i,j)=(PeakLocation-Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts'])))*micronsPerPixel;
+        PeakLocs(i,j)=(Shifts(j).(matlab.lang.makeValidName([ChannelStrings{i},'Shifts']))-PeakLocation)*micronsPerPixel; % positive distance from wound center
        % else
        % end
 
@@ -338,7 +339,7 @@ for i=1:size(ChannelStrings,1)
     for k=1:length(y)
         XVals=xprime-ShiftInterp(k);
         Intensities=Z2r(k,:);
-        Zr(k, :)=interp1(XVals,Intensities,x);
+        Zr(k, :)=interp1(XVals,Intensities,-x); % x is the distance from wound center, XVals is negative outward
     end
     % if normalization is 2 (Fold over background), add 1 to the output 
     if normalization == 2
@@ -387,11 +388,13 @@ for i= 1:size(Zr,1)
         set(gca,'YTick',yMinStepMax(1):yMinStepMax(2):yMinStepMax(3))
         set(gca,'XTick',xmin:round(xMinStepMax(2)/micronsPerPixel):xmax)
         set(gca,'XTickLabel',xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
+        set(gca,'XDir','reverse') % keep wound center (0) on the right, as in previous versions
         set(gca,'FontSize',16)
         set(gca,'FontName','Arial','FontWeight','bold')
         xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
-        xlim(gca,[-150 0]);
+        xlim(gca,[xmin xmax]);
+        set(gca,'XDir','reverse') % keep wound center (0) on the right, as in previous versions
         ylim(gca,ylims);
         set(gca,'YTick',yticks)
         set(gca,'YTickLabel',yticks)
@@ -506,7 +509,8 @@ catch
 end
 
 for b = 1:nChannels
-    woundClosingVelocity = ((peakLocations(b, velocityStartStop_channel(b,2)) - peakLocations(b, velocityStartStop_channel(b,1))) / ((velocityStartStop_channel(b,2) - velocityStartStop_channel(b,1)) * timePerFrame)); %* obj.micronsPerPixel;
+    % peak locations are positive distances that shrink as the wound closes, so closing velocity is (start - end)
+    woundClosingVelocity = ((peakLocations(b, velocityStartStop_channel(b,1)) - peakLocations(b, velocityStartStop_channel(b,2))) /((velocityStartStop_channel(b,2) - velocityStartStop_channel(b,1)) * timePerFrame)); %* obj.micronsPerPixel;
     closingVelocityLocation_value(1,b) = velocityStartStop_channel(b,1);
     closingVelocityLocation_value(2,b) = velocityStartStop_channel(b,2);
     closingVelocityLocation_value(3,b) = woundClosingVelocity;

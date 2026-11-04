@@ -71,7 +71,7 @@ for i = 1:BFcontrol.nChannels
     for j = 1:6
         if j == 6
             peakLocationsSheet = xlsSheets{2};
-            table(i, j) = (peakLocationsSheet(i + 1, BFcontrol.start) - peakLocationsSheet(i + 1, BFcontrol.end)) / ((BFcontrol.start - BFcontrol.end) * timePerFrame);
+            table(i, j) = (peakLocationsSheet(i + 1, BFcontrol.start) - peakLocationsSheet(i + 1, BFcontrol.end)) / ((BFcontrol.end - BFcontrol.start) * timePerFrame);
         else
             sheet = xlsSheets{j};
             table(i, j) = sheet(i + 1, BFcontrol.start);

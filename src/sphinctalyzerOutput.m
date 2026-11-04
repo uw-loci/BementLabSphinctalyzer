@@ -16,7 +16,7 @@ function sphinctalyzerOutput(objarray)
     frameRate = 20;
     readFunction = {@bf_reader, @circle_reader, @movie_reader};
     defaultPeakSearchingRadius = getDefaultPeakSearchingRadius();
-    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333]);
+    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333],'closingCheckBasis','position');
     dataPlotFig = [];    % handle for the floating 'Data over time' figure
     currentExcelSavename = 'Results_1.xlsx';  % tracks which Results file is active
     xlsChannelNames = {};  % channel names read from the active Excel results file
@@ -51,14 +51,14 @@ function sphinctalyzerOutput(objarray)
         'FontSize',10, ...
         'Units','normalized', ...
         'Position',[0.15 0.9 .70 .075], ...
-        'Callback',{@change_x_axis});   
+        'Callback',@(h,e) runCallback(@change_x_axis,'Edit X Axis',h,e));   
     changeYAxis = uicontrol('Parent',moviePlotOptions, ...
         'Style','pushbutton', ...
         'String','Edit Y Axis', ...
         'FontSize',10, ...
         'Units','normalized', ...
         'Position',[0.15 0.8 .70 .075], ...
-        'Callback',{@change_y_axis});
+        'Callback',@(h,e) runCallback(@change_y_axis,'Edit Y Axis',h,e));
     % darkBackgroundLabel = uicontrol('Parent',moviePlotOptions, ...
     %     'Style','text', ...
     %     'String','Dark Background', ...
@@ -74,7 +74,7 @@ function sphinctalyzerOutput(objarray)
         'FontSize',10, ...
         'Position', [.25 .70 .75 .075], ...
         'Value', 0, ...
-        'Callback', {@darkBackgroundCbx});  
+        'Callback',@(h,e) runCallback(@darkBackgroundCbx,'Dark Background',h,e));  
     % parameters for controls
     h_start = 0.9;
     h_distance = 0.1;
@@ -100,7 +100,7 @@ function sphinctalyzerOutput(objarray)
         'UserData',1, ...
         'Units','normalized', ...
         'Position',[value_start h_start-0.285 value_width value_height], ...
-        'Callback',{@get_textbox_normalization});
+        'Callback',@(h,e) runCallback(@get_textbox_normalization,'Normalization',h,e));
     micronsPerPixelLabel = uicontrol('Parent',moviePlotOptions, ...
         'Style','text', ...
         'String','Microns Per Pixel', ...
@@ -116,7 +116,7 @@ function sphinctalyzerOutput(objarray)
         'UserData',1, ...
         'Units','normalized', ...
         'Position',[value_start h_start-0.385 value_width value_height], ...
-        'Callback',{@get_textbox_micronsPerPixel});
+        'Callback',@(h,e) runCallback(@get_textbox_micronsPerPixel,'Microns per Pixel',h,e));
     timePerFrameLabel = uicontrol('Parent',moviePlotOptions, ...
         'Style','text', ...
         'String','Time Per Frame', ...
@@ -133,7 +133,7 @@ function sphinctalyzerOutput(objarray)
         'UserData',getappdata(guiCtrl,'timePerFrame'),'Units', ...
         'normalized', ...
         'Position',[value_start h_start-0.485 value_width value_height], ...
-        'Callback',{@get_timePerFrame});
+        'Callback',@(h,e) runCallback(@get_timePerFrame,'Time per Frame',h,e));
     legendLocationLabel = uicontrol('Parent',moviePlotOptions, ...
         'Style','text', ...
         'String','Legend Loc', ...
@@ -147,7 +147,7 @@ function sphinctalyzerOutput(objarray)
         'units','normalized', ...
         'Value',1 ,...
         'Position',[value_start-0.3 h_start-0.585 value_width+0.30 value_height], ...
-        'Callback',{@get_legend_location});
+        'Callback',@(h,e) runCallback(@get_legend_location,'Legend Location',h,e));
 
 
     %Button to change the channel names
@@ -155,7 +155,7 @@ function sphinctalyzerOutput(objarray)
         'Style','pushbutton','String','Change Channel Name', ...
         'Units','normalized', ...
         'Position',[0.05 0.0025 .90 .075],...
-        'Callback',{@changeChannelNames_callback});
+        'Callback',@(h,e) runCallback(@changeChannelNames_callback,'Edit Channel Names',h,e));
     defaultChannelNames = {'Channel1','Channel2','Channel3'}; %
 
 % peak dection options
@@ -181,7 +181,7 @@ function sphinctalyzerOutput(objarray)
          'BackgroundColor','w', ...
          'UserData',defaultPeakSearchingRadius, ...
          'Position',[value_start-0.1 h_start-0.085 value_width+0.105 value_height], ...
-         'Callback',{@get_searchingRadius});
+         'Callback',@(h,e) runCallback(@get_searchingRadius,'Searching Radius',h,e));
 
          
          velocityRangeC1Label = uicontrol('Parent',peakVelocityOptions, ...
@@ -200,7 +200,7 @@ function sphinctalyzerOutput(objarray)
         'UserData',[1 2],...
         'Position',[value_start-0.1 h_start-0.285 value_width+0.105 value_height], ...
         'Tooltip','velocity start and end for channel-1, seperated by space',...
-        'Callback',{@get_velocityRangeC1});  
+        'Callback',@(h,e) runCallback(@get_velocityRangeC1,'Velocity Range',h,e));  
 
          velocityRangeC2Label = uicontrol('Parent',peakVelocityOptions, ...
         'Style','text', ...
@@ -219,7 +219,7 @@ function sphinctalyzerOutput(objarray)
         'Position',[value_start-0.1 h_start-0.385 value_width+0.105 value_height], ...
         'Tooltip','velocity start and end for channel-2, seperated by space',...
         'Enable','off',...
-        'Callback',{@get_velocityRangeC2});  
+        'Callback',@(h,e) runCallback(@get_velocityRangeC2,'Velocity Range',h,e));  
 
         velocityRangeC3Label = uicontrol('Parent',peakVelocityOptions, ...
         'Style','text', ...
@@ -238,7 +238,7 @@ function sphinctalyzerOutput(objarray)
         'Position',[value_start-0.1 h_start-0.485 value_width+0.105 value_height], ...
         'Tooltip','velocity start and end for channel-3, seperated by space',...
         'Enable','off',...
-        'Callback',{@get_velocityRangeC3});  
+        'Callback',@(h,e) runCallback(@get_velocityRangeC3,'Velocity Range',h,e));  
 
          closingCheckpointLabel = uicontrol('Parent',peakVelocityOptions, ...
         'Style','text', ...
@@ -257,7 +257,26 @@ function sphinctalyzerOutput(objarray)
         'Position',[value_start-0.2 h_start-0.685 value_width+0.205 value_height], ...
         'Tooltip','wound opening fraction : 1: fully open at velocity start; 0: fully closed at wound center',...
         'Enable','on',...
-        'Callback',{@get_closingCheckpoint});  
+        'Callback',@(h,e) runCallback(@get_closingCheckpoint,'Closing Check',h,e));
+
+         closingCheckBasisLabel = uicontrol('Parent',peakVelocityOptions, ...
+        'Style','text', ...
+        'String','Check Basis', ...
+        'FontSize',fontsize_option1, ...
+        'HorizontalAlignment','right',...
+        'Units','normalized', ...
+        'Position',[text_start h_start-0.8 text_width-0.175 value_height]);
+
+         selectClosingCheckBasis = uicontrol('Parent',peakVelocityOptions, ...
+        'Style','popupmenu', ...
+        'String',{'Peak position','Ring area'}, ...
+        'Units','normalized',...
+        'Value',1,...
+        'Position',[value_start-0.2 h_start-0.785 value_width+0.205 value_height], ...
+        'Tooltip',sprintf(['Peak position: frame where the peak location is the given fraction of its value at velocity start\n' ...
+            'Ring area: frame where the ring area is the given fraction of the area at velocity start']),...
+        'Enable','on',...
+        'Callback',@(h,e) runCallback(@get_closingCheckBasis,'Check Basis',h,e));
 
          %create three buttons write one, save Post-parameters, and write
          %all
@@ -271,7 +290,7 @@ function sphinctalyzerOutput(objarray)
              'Units', 'Normalized', ...
              'Tooltip','Post-Process the current selected movie to write a movie with current parameters',...
              'Position',[gap2Edge 0.01 buttonWidth 0.075], ...
-             'Callback',{@write_movie});
+             'Callback',@(h,e) runCallback(@write_movie,'Write Movie',h,e));
          %save current parameters button
          saveParametersButton = uicontrol('Parent',movieVelocityOptions, ...
              'Style','pushbutton', ...
@@ -279,7 +298,7 @@ function sphinctalyzerOutput(objarray)
              'Units', 'Normalized', ...
              'Tooltip','Save the current post-processing parameters to the parameters_post.xlsx file',...
              'Position',[gap2Edge+buttonWidth+buttonGap 0.01 buttonWidth 0.075], ...
-             'Callback',{@save_postParameters});
+             'Callback',@(h,e) runCallback(@save_postParameters,'Save Post-Processing Parameters',h,e));
          %write movie button
          writeMovieButton = uicontrol('Parent',movieVelocityOptions, ...
              'Style','pushbutton', ...
@@ -287,7 +306,7 @@ function sphinctalyzerOutput(objarray)
              'Units', 'Normalized', ...
              'Tooltip','Post-Process all movies in the image list and save results into the Results_1 files',...
              'Position',[gap2Edge+2*buttonWidth+2*buttonGap 0.01 buttonWidth 0.075], ...
-             'Callback',{@write_movies});
+             'Callback',@(h,e) runCallback(@write_movies,'Write All Movies',h,e));
  
     %view options panel
     viewOptionsPanel = uipanel('Parent',guiCtrl, ...
@@ -300,7 +319,7 @@ function sphinctalyzerOutput(objarray)
         'String',{'Default Colormap' 'MATLAB Color: JET' 'MATLAB Color: Gray' 'MATLAB Color: hsv' 'MATLAB Color: Hot' 'MATLAB Color: Cool'}, ...
         'Units','normalized', ...
         'Position',[0.15 0.83 0.7 0.12], ...
-        'Callback',{@change_color_map});
+        'Callback',@(h,e) runCallback(@change_color_map,'Colormap',h,e));
     % data over time label | frame-axis checkbox | save button (all one row)
     % y = 0.72 = top of dropdown, so this row sits flush above it
     uicontrol('Parent',viewOptionsPanel, ...
@@ -317,14 +336,14 @@ function sphinctalyzerOutput(objarray)
         'Enable','off', ...
         'Units','normalized', ...
         'Position',[0.27 0.72 0.38 0.09], ...
-        'Callback',{@(~,~) refresh_data_plot()});
+        'Callback',@(h,e) runCallback(@(~,~) refresh_data_plot(),'Data over Time',h,e));
     % data over time measurement dropdown
     dataOverTimeDropdown = uicontrol('Parent',viewOptionsPanel, ...
         'Style','popupmenu', ...
-        'String',{'None','Peak Locations','Instantaneous Velocity','Halfwidths','AUCs','Percent Above Background'}, ...
+        'String',{'None','Peak Locations','Instantaneous Velocity','Halfwidths','AUCs','Percent Above Background','Ring Area'}, ...
         'Units','normalized', ...
         'Position',[0.05 0.62 0.9 0.10], ...
-        'Callback',{@data_over_time_selection});
+        'Callback',@(h,e) runCallback(@data_over_time_selection,'Data over Time',h,e));
     % save data plot button (enabled only when a plot is active)
     saveDataPlotButton = uicontrol('Parent',viewOptionsPanel, ...
         'Style','pushbutton', ...
@@ -333,13 +352,13 @@ function sphinctalyzerOutput(objarray)
         'Position',[0.65 0.72 0.30 0.09], ...
         'Enable','off', ...
         'Tooltip','Save the current data-over-time plot as a TIFF in the same folder as Results_*.xlsx', ...
-        'Callback',{@save_data_plot_callback});
+        'Callback',@(h,e) runCallback(@save_data_plot_callback,'Save Data Plot',h,e));
     viewerSelectionTable = uicontrol('Parent',viewOptionsPanel, ...
         'Style','listbox', ...
         'String',{'Image Timepoints', 'scan movietalyzerResults_1'}, ...
         'Units','normalized', ...
         'Position',[0.05 0.05 0.9 0.54], ...
-        'Callback',{@viewer_selection});
+        'Callback',@(h,e) runCallback(@viewer_selection,'Viewer',h,e));
 
     % stack previewer 
     imagePanel = uipanel('Parent',guiCtrl, ...
@@ -354,7 +373,7 @@ function sphinctalyzerOutput(objarray)
         'String','▶', ...
         'Units','normalized', ...
         'Position',[0.375 0.95 0.05 0.05],...
-        'Callback',{@play}); 
+        'Callback',@(h,e) runCallback(@play,'Play',h,e)); 
     labelTitle = uicontrol('Parent',guiCtrl, ...
         'Style','text', ...
         'String','Current Frame: 1/50', ...
@@ -374,7 +393,7 @@ function sphinctalyzerOutput(objarray)
         'Style','pushbutton','String','Change Frame Rate', ...
         'Units','normalized', ...
         'Position',[0.822 0.95 0.134 0.05],...
-        'Callback',{@change_frame_rate});
+        'Callback',@(h,e) runCallback(@change_frame_rate,'Frame Rate',h,e));
 
     sliderTimepoint = uicontrol('Parent',imagePanel, ...
         'Style','slide', ...
@@ -384,10 +403,10 @@ function sphinctalyzerOutput(objarray)
         'val',1, ...
         'SliderStep', [1 1]/(50-1), ...
         'Enable','on');
-    addlistener(sliderTimepoint,'ContinuousValueChange',@(hObject, event) update_image_timepoint(hObject, event));
+    addlistener(sliderTimepoint,'ContinuousValueChange',@(h,e) runCallback(@update_image_timepoint,'Frame Slider',h,e));
     imageSliderDataPanel = uitable('Parent',guiCtrl, ...
     'ColumnName',{'channel1','channel2','channel3'}, ...
-    'RowName', {'Peak Intens', 'Peak Locs', 'Halfwidths', 'AUCs', '% Abv Backg', 'Closing Vel','2/3 frame loc'},...
+    'RowName', {'Peak Intens', 'Peak Locs', 'Halfwidths', 'AUCs', '% Abv Backg', 'Ring Area', 'Closing Vel','2/3 frame loc'},...
     'Units','normalized', ...
     'Position',[0.3525 0.02 0.35 .275]);
     
@@ -402,7 +421,7 @@ function sphinctalyzerOutput(objarray)
         'String',{'1'}, ...
         'Units','normalized', ...
         'Position',[0.05 0.1 0.9 0.8], ...
-        'Callback',{@image_queue_selection});
+        'Callback',@(h,e) runCallback(@image_queue_selection,'Image Queue',h,e));
 
     update_parameters(1)
 
@@ -453,7 +472,7 @@ function sphinctalyzerOutput(objarray)
         % xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Percent Above Background','Range',rangeStart);
         
         for m = 1:3
-            for n = 1:7
+            for n = 1:8
                 imageSliderDataPanel.Data{n, m} = ' ';
             end
         end
@@ -546,6 +565,7 @@ function sphinctalyzerOutput(objarray)
         % attribute
         ParentFolderPath = fullfile(ParentFolderPath,'sphincRedo');
         validnames=dir(fullfile(ParentFolderPath, '*.avi'));
+        validnames(strncmp({validnames.name}, '._', 2)) = [];  % remove macOS "._" metadata files
         if isempty(validnames)
             fprintf('No results movie is found in %s \n',ParentFolderPath)
             return
@@ -595,7 +615,7 @@ function sphinctalyzerOutput(objarray)
                 'Units','normalized', ...
                 'Position',[value_start-0.3 h_start-0.585-(i* value_height*1.025) value_width+0.30 value_height], ...
                 'Value',colorValue, ...
-                'Callback', {@cc_button, i});
+                'Callback',@(h,e) runCallback(@cc_button,'Channel Color',h,e,i));
         end
     end
 
@@ -717,7 +737,7 @@ function sphinctalyzerOutput(objarray)
             'String','▐▐', ...
             'Units','normalized', ...
             'Position',[0.425 0.95 0.05 0.05],...
-            'Callback',{@pause_callback});
+            'Callback',@(h,e) runCallback(@pause_callback,'Pause',h,e));
         pauseS = false;
         while iTimepoint < max
             currentFrame = iTimepoint;
@@ -779,14 +799,14 @@ function sphinctalyzerOutput(objarray)
             'FontSize',10, ...
             'Units','normalized', ...
             'Position',[0.05 0.1 .4 .2], ...
-            'Callback',{@create_new_movie});
+            'Callback',@(h,e) runCallback(@create_new_movie,'Write Movie',h,e));
         overwriteExistingButton = uicontrol('Parent',writeMovieGUI, ...
             'Style','pushbutton', ...
             'String','Overwrite Existing', ...
             'FontSize',10, ...
             'Units','normalized', ...
             'Position',[0.55 0.1 .4 .2], ...
-            'Callback',{@overwrite_existing_movie});
+            'Callback',@(h,e) runCallback(@overwrite_existing_movie,'Write Movie',h,e));
         
         function create_new_movie(hObject, event)
             delete(writeMovieGUI)
@@ -833,6 +853,7 @@ function sphinctalyzerOutput(objarray)
             update_xlssheet(excelSavename);
             update_image_data_panel(iTimepoint)
             set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
+            show_movie_written(obj.moviePaths{end}, fullfile(ParentFolderPath,'sphincRedo',excelSavename))
         end
 
         function overwrite_existing_movie(hObject, event)
@@ -877,12 +898,12 @@ function sphinctalyzerOutput(objarray)
             'FontSize',10, ...
             'Units','normalized', ...
             'Position',[0.15 0.05 .7 .1], ...
-            'Callback',{@overwrite});
+            'Callback',@(h,e) runCallback(@overwrite,'Write Movie',h,e));
 
             function overwrite(hObject, event)
                 movieName = get(get(hsr,'SelectedObject'),'String');
                 delete(overwriteMovieGUI)
-                movieIndex = movieName(end);
+                movieIndex = movieName(find(movieName == '_', 1, 'last')+1:end); % e.g. '12' for ..._12
                 obj = objarray(currentObj);
                 [ParentFolderPath] = fileparts(obj.filePath);
                 [ParentFolderPath] = fileparts(ParentFolderPath);
@@ -919,8 +940,16 @@ function sphinctalyzerOutput(objarray)
                 update_xlssheet(excelSavename);
                 update_image_data_panel(iTimepoint)
                 set(labelTitle, 'String', sprintf('Current Frame = %d/%d', iTimepoint + obj.timepointStart - 1, obj.nTimepoints))
+                show_movie_written(obj.moviePaths{str2double(movieIndex)}, fullfile(ParentFolderPath,'sphincRedo',excelSavename))
             end
         end
+    end
+
+    function show_movie_written(moviePath, resultsPath)
+        [~, movieName, movieExt] = fileparts(moviePath);
+        [~, resultsName, resultsExt] = fileparts(resultsPath);
+        msgbox(sprintf('Movie written: %s%s\nResults written: %s%s\n\nFolder: %s', ...
+            movieName, movieExt, resultsName, resultsExt, fileparts(resultsPath)), 'Write Movie')
     end
 
     function write_movies(~,~)
@@ -933,23 +962,46 @@ function sphinctalyzerOutput(objarray)
             processedPaths{imageIndex} = postPath;
         end
         % update previously processed images
-        answerPost = questdlg('Overwirte the Resluts_1 using pararmeters saved in parameters_post.xlsx file or Results_1.xlsx file?', ...
-            'Verify post-processing movie creatation', ...
+        answerPost = questdlg('Overwrite Results_1 for all movies using the parameters saved in parameters_post.xlsx or Results_1.xlsx?', ...
+            'Verify post-processing movie creation', ...
             'YES','NO','YES');
         % Handle response
         switch answerPost
             case 'YES'
                 disp('Loading post-processing parameters saved in Results_1.xlsx file or default parameters for creating new movies...')
                 % PathtoParameters = fullfile(parameterFilePath,parameterFileName);
-
+                % each movie is written separately so one failure does not stop the others
+                written = {};
+                failed = {};
+                progress = waitbar(0, 'Writing movies...', 'Name', 'Write All Movies');
                 for j = 1:length(processedPaths)
+                    % name the movie by its output and data folders, e.g. Output_<date>/data_<image>
+                    [outputFolderPath, movieFolder, movieFolderExt] = fileparts(fileparts(processedPaths{j}));
+                    [~, outputFolder] = fileparts(outputFolderPath);
+                    movieFolder = [outputFolder '/' movieFolder movieFolderExt];
+                    if isvalid(progress)
+                        waitbar((j-1)/length(processedPaths), progress, sprintf('Movie %d of %d: %s', j, length(processedPaths), movieFolder));
+                    end
                     %create new results for each movie using loaded parameters
                     fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
-                    if exist(fullfile(processedPaths{j},'sphincRedo','results_1.xlsx'),'file') ~=2 % if first file does not exit
-                        disp('create the first results file using the previous saved parameters')
-                        createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                    try
+                        if exist(fullfile(processedPaths{j},'sphincRedo','Results_1.xlsx'),'file') ~=2 % if first file does not exit
+                            disp('create the first results file using the previous saved parameters')
+                            createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                        end
+                        createNewMovie_post(processedPaths{j});
+                        written{end+1} = movieFolder; %#ok<AGROW>
+                    catch movieError
+                        fprintf(2, 'Write All Movies, %s: %s \n', movieFolder, getReport(movieError, 'extended', 'hyperlinks', 'off'));
+                        failed{end+1} = sprintf('%s: %s', movieFolder, movieError.message); %#ok<AGROW>
                     end
-                    createNewMovie_post(processedPaths{j});
+                end
+                if isvalid(progress), delete(progress); end
+                summary = {sprintf('Movies written: %d of %d', numel(written), length(processedPaths))};
+                if isempty(failed)
+                    msgbox(summary, 'Write All Movies')
+                else
+                    errordlg([summary, {''}, {'Not written:'}, failed], 'Write All Movies')
                 end
 
             case 'NO'
@@ -971,6 +1023,9 @@ function sphinctalyzerOutput(objarray)
                 obj_current = objarray(currentObj);
                 moviePath = obj_current.moviePaths{1};
                 save_post_parameters(obj_current,advancedOptions,saveCommonFlag, moviePath);
+                postPath = moviePath(1:strfind(moviePath,'sphincRedo')-1);
+                msgbox(sprintf('Post-processing parameters saved to:\n%s', fullfile(postPath,'parameters_post.xlsx')), ...
+                    'Save Post-Processing Parameters')
             case 'Save common parameters for all'
                 disp('Common post-processing parameters will be updated for all movies')
                 % specify the common parameters
@@ -992,10 +1047,21 @@ function sphinctalyzerOutput(objarray)
                 % 16: Channel Names
                 saveCommonFlag = 1;
                 obj_current = objarray(currentObj);
+                renameProblems = {};
                 for objID = 1:length(objarray)
                     obj = objarray(objID);
                     moviePath = obj.moviePaths{1};
-                    save_post_parameters(obj_current,advancedOptions,saveCommonFlag,moviePath);
+                    renameMessage = save_post_parameters(obj_current,advancedOptions,saveCommonFlag,moviePath);
+                    if ~isempty(renameMessage)
+                        renameProblems{end+1} = sprintf('%s: %s', obj.imageName, renameMessage); %#ok<AGROW>
+                    end
+                end
+                if ~isempty(renameProblems)
+                    errordlg([{sprintf('Post-processing parameters saved for %d movies.', length(objarray))}, {''}, ...
+                        {'Channel names were not changed in the results of:'}, renameProblems], 'Save Common Parameters')
+                else
+                    msgbox(sprintf('Post-processing parameters saved for %d movies (parameters_post.xlsx in each results folder).', ...
+                        length(objarray)), 'Save Common Parameters')
                 end
         end
 
@@ -1005,6 +1071,18 @@ function sphinctalyzerOutput(objarray)
     end
     
     %% Callbacks
+    function runCallback(callbackFcn, dialogTitle, varargin)
+        % run a control's callback and show any error in a dialog: the
+        % standalone app has no command window. The full report is still
+        % written to the console (visible when the app is started from Terminal).
+        try
+            callbackFcn(varargin{:});
+        catch callbackError
+            fprintf(2, '%s: %s \n', dialogTitle, getReport(callbackError, 'extended', 'hyperlinks', 'off'));
+            errordlg(sprintf('%s did not complete.\n\nError: %s', dialogTitle, callbackError.message), dialogTitle)
+        end
+    end
+
     function change_x_axis(hObject, event)
         obj = objarray(currentObj);
         prompts = {'Enter x-axis title:','Enter minimum x value:','Enter x step value:', 'Enter maximum x value:'};
@@ -1169,62 +1247,55 @@ function sphinctalyzerOutput(objarray)
     end
 % call back fuction to changeChannelNames
     function changeChannelNames_callback(~, ~)
-        % prompt the user for new channel name
-        obj = objarray(currentObj);
-        nChannels = obj.nChannels;
-         % get the saved channle names from the results .mat file 
-        ParentFolderPath = fileparts(obj.filePath);
-        [ParentFolderPath] = fileparts(ParentFolderPath);
-        pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
-        SphincOutputs_load = load(pathToResults,'InputCells');
-        cellArray = SphincOutputs_load.InputCells;
-        % cellArray = SphincOutputs_load.InputCells;
-        oldChannelNames = cellArray(:,1);
-        %channel name change dialog window 
-        prompts = cell(obj.nChannels, 1);
-        for i = 1:length(prompts)
-            prompts{i} = "Enter name of channel " + i + ":";
-        end
-        dims = [1 35];
-        definput = cell(nChannels, 1);
-        if nChannels == 1
-            definput = {cellArray{1, 1}};
-        elseif nChannels == 2
-            definput = {cellArray{1, 1}, cellArray{2, 1}};
-        elseif nChannels == 3
-            definput = {cellArray{1, 1}, cellArray{2, 1}, cellArray{3, 1}};
-        end
-        dlgtitle = 'Edit Channel Names';
-        answer = inputdlg(prompts,dlgtitle,dims,definput);
-        unique_channels = unique(answer);
-        if numel(unique_channels) < numel(answer)
-            msgbox('Do not accept identical channel names. Channel name change failed')
-            return
-        end
-        if ~isempty(answer)
-            % update the channel name
-            for iC = 1:nChannels
-                if ~isempty(answer{iC})
-                    obj.cellArray{iC, 1} = answer{iC};
-                    obj.channelNames{iC} = answer{iC};
-                else
-                    fprintf('Name of Channel %d is not entered.Channel %d name NOT changed \n', iC, iC)
+        % errors are shown in a dialog: the standalone app has no command window
+        try
+            obj = objarray(currentObj);
+            % get the saved channel names from the results .mat file
+            ParentFolderPath = fileparts(obj.filePath);
+            [ParentFolderPath] = fileparts(ParentFolderPath);
+            pathToResults = fullfile(ParentFolderPath,'sphincRedo','sphinctalyzerResults.mat');
+            SphincOutputs_load = load(pathToResults,'InputCells');
+            oldChannelNames = SphincOutputs_load.InputCells(:,1);
+            %channel name change dialog window
+            prompts = cell(numel(oldChannelNames), 1);
+            for i = 1:length(prompts)
+                prompts{i} = "Enter name of channel " + i + ":";
+            end
+            dims = [1 35];
+            answer = inputdlg(prompts,'Edit Channel Names',dims,oldChannelNames');
+            if isempty(answer)
+                disp('Channel name NOT changed ')
+                return
+            end
+            % keep the current name where nothing was entered
+            newChannelNames = answer(:);
+            for iC = 1:numel(newChannelNames)
+                if isempty(strtrim(newChannelNames{iC}))
+                    newChannelNames{iC} = oldChannelNames{iC};
                 end
             end
-        else
-            disp('Channel name NOT changed ')
-        end
-        newChannelNames = obj.cellArray(:,1);
-        %find the current channel names in the .mat file
-        SphinctalyzerOutputs_update = updateChannelNamesInResultsMatFile(obj,oldChannelNames,newChannelNames);
-        if ~isempty(SphinctalyzerOutputs_update)
-            SphinctalyzerOutputs = SphinctalyzerOutputs_update;
-            objarray(currentObj) = obj; 
-        else
-            disp('Channel name is not changed, results mat file is not changed')
+            [SphinctalyzerOutputs_update, renameMessage] = updateChannelNamesInResultsMatFile(obj,oldChannelNames,newChannelNames);
+            if isempty(SphinctalyzerOutputs_update)
+                if strcmp(renameMessage,'Channel names are unchanged.')
+                    msgbox(renameMessage,'Edit Channel Names')
+                else
+                    errordlg(sprintf('Channel names were not changed. %s', renameMessage),'Edit Channel Names')
+                end
+                return
+            end
+            % the results file is updated, update the names in the GUI
+            for iC = 1:numel(newChannelNames)
+                obj.cellArray{iC, 1} = newChannelNames{iC};
+                obj.channelNames{iC} = newChannelNames{iC};
+            end
+            objarray(currentObj) = obj;
+            msgbox(sprintf(['%s\n\nWrite the movie again to update the Results file ' ...
+                'and the movie with the new names.'], renameMessage),'Edit Channel Names')
+        catch renameError
+            errordlg(sprintf('Channel names were not changed. Error: %s', renameError.message),'Edit Channel Names')
         end
     end
-    
+
     function cc_button(hObject, event, channelNumber)
         obj = objarray(currentObj);
         colors = {[1 0 0],[0 0.6 0],[0 0 1],[0 1 1],[1 0 1],[1 1 0],[0 0 0],[1 1 1]};
@@ -1295,6 +1366,11 @@ function sphinctalyzerOutput(objarray)
             set(enterVelocityRangeC1,'String',num2str(get(enterVelocityRangeC1,'UserData')))
             return
         end
+        if usr_input(2) <= usr_input(1)
+            errordlg('The velocity end frame must be after the start frame.')
+            set(enterVelocityRangeC1,'String',num2str(get(enterVelocityRangeC1,'UserData')))
+            return
+        end
         % objarray(currentObj).velocityRange_C1 = usr_input;
         enterVelocityRangeC1.UserData = usr_input;
         advancedOptions.velocityStartStop(1,:) = usr_input; 
@@ -1310,6 +1386,11 @@ function sphinctalyzerOutput(objarray)
         usr_input = str2num(usr_input);
         if usr_input(1) < 1 || usr_input(2) < 1
             errordlg('Please enter a positive number pair.')
+            set(enterVelocityRangeC2,'String',num2str(get(enterVelocityRangeC2,'UserData')))
+            return
+        end
+        if usr_input(2) <= usr_input(1)
+            errordlg('The velocity end frame must be after the start frame.')
             set(enterVelocityRangeC2,'String',num2str(get(enterVelocityRangeC2,'UserData')))
             return
         end
@@ -1332,6 +1413,11 @@ function sphinctalyzerOutput(objarray)
             set(enterVelocityRangeC3,'String',num2str(get(enterVelocityRangeC3,'UserData')))
             return
         end
+        if usr_input(2) <= usr_input(1)
+            errordlg('The velocity end frame must be after the start frame.')
+            set(enterVelocityRangeC3,'String',num2str(get(enterVelocityRangeC3,'UserData')))
+            return
+        end
         % objarray(currentObj).velocityRange_C1 = usr_input;
         enterVelocityRangeC3.UserData = usr_input;
         advancedOptions.velocityStartStop(3,:) = usr_input;
@@ -1349,6 +1435,12 @@ function sphinctalyzerOutput(objarray)
         enterClosingCheckpoint.UserData = usr_input;
         advancedOptions.closingCheckpoint = usr_input;
         fprintf('Check point for wound closing %s added \n',num2str(usr_input,'% 4.3f'));
+    end
+
+    function get_closingCheckBasis(hObject,event)
+        closingCheckBases = {'position','area'};
+        advancedOptions.closingCheckBasis = closingCheckBases{get(hObject,'Value')};
+        fprintf('Closing check is based on the %s \n',advancedOptions.closingCheckBasis);
     end
 
     function channel_changed(hObject, event)
@@ -1398,40 +1490,59 @@ function sphinctalyzerOutput(objarray)
         obj = objarray(currentObj);
         %initialize the imageSliderDataPanel
         imageSliderDataPanel.Data=[];
-        imageSliderDataPanel.RowName= imageSliderDataPanel.RowName(1:6); % only keep the first 6 row names
+        imageSliderDataPanel.RowName= imageSliderDataPanel.RowName(1:7); % only keep the first 7 row names
+        % the slider position counts from the first analyzed frame; the sheets
+        % have one column per frame, numbered in xlsFrameNums
+        currentFrame = obj.timepointStart + currentTimepoint - 1;
+        frameColumn = find(xlsFrameNums == currentFrame, 1);
+        % rows 1-5: Peak Intensity, Peak Locations, Halfwidths, AUCs,
+        % Percent Above Background (xlsSheets 1-5); row 6: Ring Area (xlsSheets 7)
+        sheetIndexes = [1 2 3 4 5 7];
         for m = 1:obj.nChannels
-            for n = 1:5
-                sheet = xlsSheets{n}; % 
+            for n = 1:numel(sheetIndexes)
+                if isempty(frameColumn) || numel(xlsSheets) < sheetIndexes(n) || isempty(xlsSheets{sheetIndexes(n)})
+                    imageSliderDataPanel.Data{n, m} = 'N/A'; % e.g. no Ring Area in results from earlier versions
+                    continue
+                end
+                sheet = xlsSheets{sheetIndexes(n)};
                 try
-                    % imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
-                    imageSliderDataPanel.Data{n, m} = sheet(m, currentTimepoint); % each sheet only contains the measurments from velocity start through end 
+                    imageSliderDataPanel.Data{n, m} = sheet(m, frameColumn);
                 catch exp1
-                    fprintf(' %s \n %s is empty \n',exp1.message,imageSliderDataPanel.RowName{n})
-                    imageSliderDataPanel.Data{n, m} = [];
+                    fprintf(' %s \n %s of frame %d is empty \n',exp1.message,imageSliderDataPanel.RowName{n},currentFrame)
+                    imageSliderDataPanel.Data{n, m} = 'N/A';
                 end
             end
         end
 
-        % calculate wound closing velocity
+        % closing velocity, checkpoint frames and the actual open fraction at
+        % each checkpoint frame (rows found by their labels)
         closingVelocityLocation = xlsSheets{6};
-        % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
-        % of closing location
+        rowLabels = closingVelocityLocation(:,1);
+        isLabel = cellfun(@(x) ischar(x) || isstring(x), rowLabels);
+        checkpointRows = find(isLabel & startsWith(string(rowLabels),'frame at'));
+        fractionRows = find(isLabel & startsWith(string(rowLabels),'actual open fraction'));
         for b = 1:obj.nChannels
             woundClosingVelocity = closingVelocityLocation{3,b+1}; %* obj.micronsPerPixel;
             if ismissing(woundClosingVelocity)
                 woundClosingVelocity = 'N/A';
             end
-            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
-            checkpoint_num = size(closingVelocityLocation,1)-3;
-            for cp = 1:checkpoint_num
-                closingVelocityLocation_load = closingVelocityLocation{3+cp,b+1};
-
-                if ismissing(closingVelocityLocation_load)
-                    closingVelocityLocation_load = 'N/A';
+            imageSliderDataPanel.Data{7, b} = woundClosingVelocity;
+            for cp = 1:numel(checkpointRows)
+                checkpointFrame = closingVelocityLocation{checkpointRows(cp),b+1};
+                if ismissing(checkpointFrame)
+                    checkpointCell = 'N/A';
+                elseif numel(fractionRows) >= cp && ~ismissing(closingVelocityLocation{fractionRows(cp),b+1})
+                    checkpointCell = sprintf('%d (%.1f%%)', checkpointFrame, 100*closingVelocityLocation{fractionRows(cp),b+1});
+                else
+                    checkpointCell = checkpointFrame; % results from earlier versions have no actual fractions
                 end
-                imageSliderDataPanel.Data{6+cp, b} = closingVelocityLocation_load;
+                imageSliderDataPanel.Data{7+cp, b} = checkpointCell;
                 if b == 1
-                     imageSliderDataPanel.RowName{6+cp} = strrep(closingVelocityLocation{3+cp,1},'closing position','close');
+                    checkpointLabel = strrep(char(rowLabels{checkpointRows(cp)}),'closing position','close');
+                    if ~endsWith(checkpointLabel,{'(position)','(area)'})
+                        checkpointLabel = [checkpointLabel ' (position)']; % earlier versions only used the peak position
+                    end
+                    imageSliderDataPanel.RowName{7+cp} = checkpointLabel;
                 end
             end
         end
@@ -1463,6 +1574,12 @@ function sphinctalyzerOutput(objarray)
             rawFN = rawFull(:, 1);
             xlsFrameNums = rawFN(~isnan(rawFN))';   % row vector [1, 2, ..., frameInrangeMax]
             xlsSheets{6} = readcell(xlsPath, 'Sheet','Closing Velocity and Location','Range','B2');
+            % Ring Area sheet is not in results created by earlier versions
+            xlsSheets{7} = [];
+            if any(strcmp(sheetnames(xlsPath),'Ring Area'))
+                rawRingArea = readmatrix(xlsPath, 'Sheet', 'Ring Area', 'Range', 'B2');
+                xlsSheets{7} = rawRingArea(:, 2:end)';
+            end
             % Channel names from row 1, columns C onwards
             nCh = obj.nChannels;
             endColLetter = char('A' + 1 + nCh);  % nCh=1→C, nCh=2→D, nCh=3→E
@@ -1525,7 +1642,7 @@ function sphinctalyzerOutput(objarray)
             obj.channelColors{iC} = str2num(movieOptions{1,iC+1});
         end
         obj.axesNames = movieOptions(2,2:3);
-        obj.xMinStepMax = str2num(movieOptions{8,2});
+        obj.xMinStepMax = positiveXMinStepMax(str2num(movieOptions{8,2}));
         obj.yMinStepMax = str2num(movieOptions{9,2});
         velocityRanges = {enterVelocityRangeC1 enterVelocityRangeC2 enterVelocityRangeC3};
         if size(movieOptions,1) == 13
@@ -1535,7 +1652,8 @@ function sphinctalyzerOutput(objarray)
               advancedOptions.velocityStartStop =obj.velocityStartStop;
               advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
               advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
-        elseif size(movieOptions,1) == 15
+              advancedOptions.closingCheckBasis = 'position';
+        elseif size(movieOptions,1) >= 15
             for iC = 1:obj.nChannels
                 advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
             end
@@ -1546,6 +1664,11 @@ function sphinctalyzerOutput(objarray)
                 advancedOptions.closingCheckpoint = movieOptions{15,2};
             end
             fprintf('number of closing checkpoint(s) is %d \n', size(advancedOptions.closingCheckpoint,2))
+            if size(movieOptions,1) >= 17
+                advancedOptions.closingCheckBasis = closingCheckBasisOption(movieOptions{17,2});
+            else
+                advancedOptions.closingCheckBasis = 'position'; % results from earlier versions
+            end
 
         end
         if obj.nChannels == 1
@@ -1569,6 +1692,7 @@ function sphinctalyzerOutput(objarray)
             'UserData',advancedOptions.peakSearchingRadius);
         set(enterClosingCheckpoint,'String',num2str(advancedOptions.closingCheckpoint,' %4.3f'),...
             'UserData',advancedOptions.closingCheckpoint);
+        set(selectClosingCheckBasis,'Value',1+strcmp(advancedOptions.closingCheckBasis,'area'));
 
         objarray(currentObj) = obj;
         set(darkBackground, 'Value', obj.darkBackground);
@@ -1636,6 +1760,18 @@ function sphinctalyzerOutput(objarray)
                 yLabelStr  = '% Above Background';
                 xLabelStr  = 'Time (s)';
                 useVelRange = false;
+                computeDiff = false;
+            case 7  % Ring Area
+                if numel(xlsSheets) < 7 || isempty(xlsSheets{7})
+                    msgbox(['No ring area in this results file. It was probably created by an earlier version; ' ...
+                        'write the movie again to add the ring area.'],'Ring Area')
+                    set(dataOverTimeDropdown,'Value',1);
+                    return
+                end
+                rawSheet   = xlsSheets{7};
+                yLabelStr  = 'Ring Area (\mum^2)';
+                xLabelStr  = 'Time (s) After Zone Appearance';
+                useVelRange = true;
                 computeDiff = false;
             otherwise
                 return
@@ -1818,7 +1954,7 @@ function sphinctalyzerOutput(objarray)
         if isempty(dataPlotFig) || ~isvalid(dataPlotFig)
             warndlg('No data plot is currently open.'); return;
         end
-        measureNames = {'Peak_Locations', 'Instantaneous_Velocity', 'Halfwidths', 'AUCs', 'Percent_Above_Background'};
+        measureNames = {'Peak_Locations', 'Instantaneous_Velocity', 'Halfwidths', 'AUCs', 'Percent_Above_Background', 'Ring_Area'};
         measureName  = measureNames{dataOverTimeDropdown.Value - 1};
         obj = objarray(currentObj);
         [ParentFolderPath] = fileparts(obj.filePath);

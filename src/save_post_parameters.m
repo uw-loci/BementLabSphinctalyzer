@@ -1,10 +1,13 @@
-function save_post_parameters(obj,advancedOptions,saveCommonFlag,moviePath)
+function renameMessage = save_post_parameters(obj,advancedOptions,saveCommonFlag,moviePath)
 %save post-processing parameters to an excel file
 %input:
 % obj: Image instance, include all the parameters for intitial analysis
 % advancedOptions: parameters for peak,velocity,and closing calculation
 % saveCommonFlag: 1: update all parameters; 2: only update specified common
 % moviePath: path the results movie
+%output:
+% renameMessage: why the channel names in the results .mat file could not
+% be changed ('' if they were changed or did not need changing)
 % parameters
 %save
 %moviePath = obj.moviePaths{1};
@@ -12,7 +15,8 @@ foldermarkerIndex = strfind(moviePath,'sphincRedo');
 postPath = moviePath(1:foldermarkerIndex-1);
 savePath = postPath;
 excelSavename = 'parameters_post.xlsx';
-parameters_post = cell(15,4); % add searchingRadius and closingCheckpoint
+renameMessage = '';
+parameters_post = cell(17,4); % add searchingRadius, closingCheckpoint, channelNames and closingCheckBasis
 
 if saveCommonFlag ~= 1
     parameters_post{1,1} = 'Channel Colors';
@@ -58,6 +62,7 @@ if saveCommonFlag ~= 1
     for i = 1:nChannels
         parameters_post{16,i+1} = obj.channelNames{i};
     end
+    parameters_post{17,1} = 'closing check basis'; parameters_post{17,2} = closingCheckBasisOption(advancedOptions.closingCheckBasis);
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 else  % save common parameters
@@ -110,14 +115,18 @@ else  % save common parameters
     % update the results file
      oldChannelNames = (processingParametersLoad.channelNames)'; %row -> col
      newChannelNames = obj.channelNames;
-    if strcmp(oldChannelNames,newChannelNames)~= 1
-        updateChannelNamesInResultsMatFile(processingParametersLoad,oldChannelNames,newChannelNames);
+    if ~isequal(cellstr(oldChannelNames(:)), cellstr(newChannelNames(:)))
+        [renamedOutputs, message] = updateChannelNamesInResultsMatFile(processingParametersLoad,oldChannelNames,newChannelNames);
+        if isempty(renamedOutputs) && ~strcmp(message,'Channel names are unchanged.')
+            renameMessage = message;
+        end
     end
     parameters_post{16,1} = 'channelNames';
     nChannels = obj.nChannels;
     for i = 1:nChannels
         parameters_post{16,i+1} = obj.channelNames{i};
     end
+    parameters_post{17,1} = 'closing check basis'; parameters_post{17,2} = closingCheckBasisOption(advancedOptions.closingCheckBasis);
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 

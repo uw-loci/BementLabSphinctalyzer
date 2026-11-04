@@ -18,6 +18,7 @@ parameterFilePath = matFilePath;
 parameterFileName = matFileName;
 load(fullfile(parameterFilePath,parameterFileName),"parameters");
 obj = parameters;
+obj.xMinStepMax = positiveXMinStepMax(obj.xMinStepMax); % convert legacy negative x axis
 
 resultsFilePath = fullfile(matFilePath,'sphincRedo'); % resultsFilePath: path to the Results_1.xlsx file
 if ~exist(fullfile(matFilePath,postParametersFileName),'file')
@@ -37,6 +38,7 @@ if ~exist(fullfile(matFilePath,postParametersFileName),'file')
         advancedOptions.velocityStartStop =obj.velocityStartStop;
         advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
+        advancedOptions.closingCheckBasis = 'position';
         return
     end
 end
@@ -53,7 +55,7 @@ try
         obj.channelColors{iC} = str2num(movieOptions{1,iC+1});
     end
     obj.axesNames = movieOptions(2,2:3);
-    obj.xMinStepMax = str2num(movieOptions{8,2});
+    obj.xMinStepMax = positiveXMinStepMax(str2num(movieOptions{8,2}));
     obj.yMinStepMax = str2num(movieOptions{9,2});
     if size(movieOptions,1) == 12
         movieOptions{13,1} = 'velocityStartStop';
@@ -67,6 +69,7 @@ try
         advancedOptions.velocityStartStop =obj.velocityStartStop;
         advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
+        advancedOptions.closingCheckBasis = 'position';
     elseif size(movieOptions,1) >= 15
         for iC = 1:obj.nChannels
             advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
@@ -78,6 +81,11 @@ try
             advancedOptions.closingCheckpoint = movieOptions{15,2};
         end
         fprintf('number of closing checkpoint(s) is %d \n', size(advancedOptions.closingCheckpoint,2))
+        if size(movieOptions,1) >= 17
+            advancedOptions.closingCheckBasis = closingCheckBasisOption(movieOptions{17,2});
+        else
+            advancedOptions.closingCheckBasis = 'position';
+        end
         if size(movieOptions,1) == 16
             movieOptions{16,1} = 'channelNames';
             movieOptions{16,2} = obj.channelNames;
@@ -96,6 +104,7 @@ catch exp_post
     advancedOptions.velocityStartStop =obj.velocityStartStop;
     advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
     advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
+    advancedOptions.closingCheckBasis = 'position';
 end
 
 end

@@ -27,6 +27,7 @@ function OutlinerFolderLoader(path,speed,loadMulti,shape,detection,step, guiInpu
 
 %Run Program on any applicable files in path
 validnames=dir(fullfile(path, '*.mat'));
+validnames(strncmp({validnames.name}, '._', 2)) = [];  %remove macOS "._" metadata files (e.g. on FAT/exFAT drives)
 for i=1:size(validnames,1)
     CurrentName=validnames(i).name;
     if ~isempty(findstr(CurrentName,'sphinc'))
@@ -43,8 +44,8 @@ end
 %check for subdirectories
 allnames=dir(path);
 allnames(~[allnames.isdir]) = [];  %remove non-directories
-tf = ismember( {allnames.name}, {'.', '..'});
-allnames(tf) = [];  %remove current and parent directory.
+tf = ismember( {allnames.name}, {'.', '..'}) | strncmp({allnames.name}, '._', 2);
+allnames(tf) = [];  %remove current and parent directory, and macOS "._" entries.
 for i=1:size(allnames,1)
     OutlinerFolderLoader(fullfile(path,allnames(i).name),speed,loadMulti,shape,detection,step, guiInput,runInBackgroundFlag);
     if getappdata(0, 'sphinctalyzerCancelled')

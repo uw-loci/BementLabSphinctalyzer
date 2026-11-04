@@ -1,6 +1,8 @@
 # Ignore the Sphincdata folder and all of its contents
 Sphincdata/*
 # Ignore the GUI asv file
-SphinctalyzerFiles/*.asv
+src/*.asv
 *.mexw64
 test_datasets/Sphincdata/
+# Ignore macOS Finder metadata files
+.DS_Store

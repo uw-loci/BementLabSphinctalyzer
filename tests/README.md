@@ -1,0 +1,35 @@
+# Tests
+
+Run from the repository root in MATLAB R2023b:
+
+```matlab
+results = runtests('tests');
+table(results)
+```
+
+| Test | What it checks |
+|---|---|
+| `testPositiveXMinStepMax` | Legacy negative x axis ranges (e.g. `[-30 10 0]`) are converted to positive distances from wound center (`[0 10 30]`); positive ranges are unchanged. |
+| `testRingAreaFromOutline` | On a synthetic circular outline of radius R, the area enclosed by the circle scan contour at the peak is the filled outline area for a peak on the outline, ≈ π(R±k)² for a peak k pixels outside/inside, and never grows as the peak moves inward. |
+| `testClosingCheckpointFrames` | The closing checkpoint search for one channel: finds the same frames as the previous search on valid input, returns NaN with a reason for a reversed or equal velocity range, a range outside the frames, or no peak at the start or end frame, skips frames without a peak, uses the earliest frame on ties, and returns the actual open fraction (value at the frame ÷ value at start) for each frame found. |
+| `testUpdateChannelNames` | Renaming channels in the results .mat file on copies of the fixture: both channels, names with spaces, hyphens or leading digits, one channel, swapped names, current names with spaces, rejected names (file unchanged), unchanged names (file not rewritten), and post-processing after a rename. |
+| `testPostProcessingErrors` | The post-processing window, opened on temporary copies of the fixture and driven through its control callbacks: errors are shown in dialogs and the window keeps working (deleted movie, failed save), Write All continues past a broken movie and summarizes, Save confirms, and Overwrite Existing writes movie 12 rather than movie 2. Takes about 1.5 min and opens windows. |
+| `testAnalysisWindowErrors` | The main analysis window, driven through its control callbacks in a temporary folder: an unreadable image, a parameters `.csv` without its `.mat`, Update Parameters (confirmation, and a failed save naming the folder), and Sphinctalyze with every image skipped (summary dialog, buttons enabled). Opens windows. |
+| `testEndToEndAnalysis` | A complete analysis in the main window, as a user runs it: Load Parameters, Open Image(s), Sphinctalyze. It reuses the wound outline drawn by hand for `test_datasets/sphintest_-2channlel-sub1.tif`, so no drawing is needed, and compares every Results sheet, the closing sheet, the saved parameters and the movie with the analysis run by hand. If a prompt the test does not answer appears, the run is stopped after 3 min and the open windows are reported. Takes about 1 min. |
+| `testLegacyPostProcessing` | A folder analyzed by an earlier version can still be post-processed with `createNewMovie_post`. Peak locations come out as positive distances (−1 × the earlier values), all other results (peak intensity, half-widths, AUCs, closing velocity and checkpoint frames) are unchanged, the saved x axis is converted, and the movie has all frames. The new "Ring Area" sheet is filled wherever a peak was found, and the closing check basis is saved. Checkpoint labels end in `(position)` or `(area)`, and the actual open fraction rows match the Peak Locations / Ring Area sheets. A second run with the closing check basis set to `area` changes only the checkpoint rows. Takes about 45 s and opens a figure window while the movies are written. |
+
+## Fixtures
+
+- `fixtures/legacy_sub1/`: the analyzed folder `Output_19-Nov-2024_15-43-27/data_sphintest_-2channlel-sub1.tif` (from `test_datasets/sphintest_-2channlel-sub1.tif`), saved with `xMinStepMax = [-28.8 9.6 0]`. Only the files post-processing reads are kept: `parameters.mat`, `parameters_post.xlsx` and `sphincRedo/sphinctalyzerResults.mat`. The test works on a temporary copy, so the fixture is never modified.
+- `fixtures/legacy_sub1_expected.mat`: the `Results_1.xlsx` values produced on that folder by the code before the positive x axis change (commit `bda1fe0`), with negative peak locations. Only regenerate it if the peak calculation is intentionally changed.
+
+- `fixtures/e2e_sub1/`: the `parameters.csv`/`parameters.mat` and the hand-drawn outline (`SavedPath_..._ref_[CH1]_framePosition_[2].mat`) of a complete analysis of `test_datasets/sphintest_-2channlel-sub1.tif` run by hand on 2026-11-03.
+- `fixtures/e2e_sub1_expected.mat`: the results of that run, recorded with `fixtures/make_e2e_expected.m` (the comment at its top shows the call). Only regenerate it when the analysis results are meant to change.
+
+## Stubs
+
+- `stubs/uigetfile.m`: returns the `{fileName, filePath}` set with `setappdata(groot,'testUigetfile',{name, path})` instead of
+  opening a file dialog.
+- `stubs/questdlg.m`: returns the answer set with `setappdata(groot,'testQuestdlgAnswer',answer)` instead of waiting
+  for a click. It is put on the path only by tests that need it (`PathFixture`), so it never replaces MATLAB's
+  `questdlg` elsewhere.

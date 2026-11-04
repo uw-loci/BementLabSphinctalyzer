@@ -483,3 +483,17 @@ use light colors. Fixed by:
   dark mode: scroll bars, table text and the Check Basis choices are fixed.
 - black text on a white background set explicitly for the data table and list boxes in the post-processing window
   and the channel table and image list in the main window.
+
+## Mac launcher: app icon and Runtime search (2026-11-04)
+
+- **Icon:** in Finder, `Launch Sphinctalyzer.command` showed a shell-script icon. `build/set_launcher_icon.js`
+  (run by `buildStandalone.m` through `osascript`) gives it the app's icon (`membrane.icns`) and hides its `.command`
+  extension, so it shows as "Launch Sphinctalyzer". Both are kept in the zip made by `ditto --sequesterRsrc` and
+  restored when the zip is opened in Finder. Checked by zipping and unzipping a copy.
+- **Runtime search:** on another Intel Mac the launcher said "MATLAB Runtime R2023b (maci64) was not found" while
+  opening the app from Finder worked. The app's own launcher (`applauncher`) also looks for a MATLAB R2023b
+  installation (`/Applications/MATLAB_R2023b.app`) and a Runtime folder saved in its preferences; ours only looked in
+  `/Applications/MATLAB/MATLAB_Runtime`. The launcher now also checks `/Applications/MATLAB_R2023b.app` and
+  `~/Applications/MATLAB_R2023b.app`, and if it finds nothing it starts the app with `open`, i.e. with the app's own
+  launcher (no log in that case). Both paths were tried with stand-ins for the app; the rebuilt package then started
+  on the Mac that had shown the error.

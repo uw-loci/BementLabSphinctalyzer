@@ -21,7 +21,7 @@ The script:
 3. runs `mcc` with `src` and `bfmatlab` added where they are, into a new folder in `build/output`, with the startup
    message "Launching Sphinctalyzer v<version> <platform> standalone built on <date>..."
 4. on a Mac, sets the app to always use the light appearance (`NSRequiresAquaSystemAppearance` in its `Info.plist`;
-   below) and adds `Launch Sphinctalyzer.command` (below)
+   below) and adds `Launch Sphinctalyzer.command` with the app's icon (below)
 5. writes `build_info.txt` (version, platform, MATLAB version, commit, date, test result)
 6. zips the folder (on a Mac with `ditto`, which keeps the app bundle intact)
 
@@ -60,8 +60,12 @@ and list boxes also set black text on a white background in the code.
 ## Mac launcher: Launch Sphinctalyzer.command
 
 Generated from `launch_sphinctalyzer.command.template`. Double-clicking it opens Terminal and:
-- finds the MATLAB Runtime R2023b (`/Applications/MATLAB/MATLAB_Runtime/R2023b`, or the folder in `MCR_ROOT`);
-  if it is missing, shows the download link
+- finds the MATLAB Runtime R2023b (the folder in `MCR_ROOT`, `/Applications/MATLAB/MATLAB_Runtime/R2023b`), or
+  else a MATLAB R2023b installation (`/Applications/MATLAB_R2023b.app`, `~/Applications/MATLAB_R2023b.app`), which
+  can also run the app. If it finds neither, it starts the app with the app's own launcher (as opening the app from
+  Finder does), which also checks a Runtime folder saved in its preferences; the console output is then not logged,
+  and the download link is shown in case the app does not start. Before this fallback was added, the launcher said
+  "MATLAB Runtime R2023b (maci64) was not found" on a Mac where opening the app from Finder worked
 - checks the package matches the Mac (an M-series package does not run on Intel; an Intel package on an M-series Mac
   needs Rosetta)
 - deactivates an active conda environment (avoids library conflicts)
@@ -69,6 +73,10 @@ Generated from `launch_sphinctalyzer.command.template`. Double-clicking it opens
 - starts the app with `run_sphinctalyzerInitializerGUI.sh` and saves its console output to
   `~/Library/Logs/Sphinctalyzer/Sphinctalyzer_v<version>_<date_time>.log`; if the app stops with an error, the
   window stays open and shows where the log is (useful when reporting a problem)
+
+The build gives the launcher the app's icon and hides its `.command` extension in Finder (`set_launcher_icon.js`),
+so users see "Launch Sphinctalyzer" with the app icon instead of a shell-script icon. Both are stored in the zip
+(`ditto --sequesterRsrc`) and restored when the zip is opened in Finder; the file is still a Terminal script.
 
 The first time, macOS may block the downloaded `.command` file ("cannot be opened because it is from an unidentified
 developer"): right-click it, choose Open, and confirm. After that a double-click is enough.

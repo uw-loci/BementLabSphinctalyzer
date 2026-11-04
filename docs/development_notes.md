@@ -339,3 +339,52 @@ changed (`if strcmp(old,new) ~= 1` on cell arrays).
 ### For future reports from the standalone app
 The app's console output (including messages from `fprintf` and errors in callbacks) is visible when it is started
 from Terminal: `/Applications/<App name>.app/Contents/MacOS/<App name>`.
+
+## Problems shown in dialogs in the post-processing window (2026-11-03)
+
+### Problem
+The standalone app has no command window. In the post-processing window, anything reported with `disp`/`fprintf`,
+and any error inside a control's callback, was invisible: a failed movie, save or view just appeared to do nothing.
+
+### Changes
+- `sphinctalyzerOutput.m`: all 31 control callbacks and the frame-slider listener run through a nested
+  `runCallback(callbackFcn, title, ...)`, which runs the callback in `try/catch`, writes the full report to the
+  console (`getReport`), and shows `errordlg`: "<title> did not complete. Error: <message>". The callbacks' own input
+  checks and dialogs are unchanged.
+- Write One: a dialog names the movie and Results file written (create new and overwrite).
+- Write All: each movie is written in its own `try`, with a progress bar; one summary lists how many were written and
+  which failed (as `Output_<date>/data_<image>: reason`), so one failure no longer stops the rest.
+- Save Parameters: a dialog confirms where the parameters were saved (current movie or all movies).
+- "Post Process" in the main window (`sphinctalyzerInitializerGUI.m`): a folder without results shows a dialog
+  explaining which folder to choose; movie writing continues past failures and lists them; any other error while
+  opening the window is shown in a dialog. `postProcessingGUI`'s "PLEASE SELECT A VALID DATA FOLDER" error is now
+  visible this way.
+- `SphinctalyzerMoviePlotterMulti.m`: when called for one folder (from the GUI or `createNewMovie_post`) without a
+  results file in `sphincRedo`, it now stops with "No analysis results ... were found in <folder>". Before, it wrote
+  nothing and raised no error, so the movie counted as written.
+
+Bugs fixed on the way:
+- "Overwrite Existing" took the movie number from the last character of its name, so `..._12` overwrote movie 2.
+  It now uses the number after the last `_`.
+- Write All and the "Post Process" launcher checked for `results_1.xlsx`; on a case-sensitive disk the file
+  (`Results_1.xlsx`) was never found and movie 1 was written twice.
+- Typos in the Write All / Post Process questions ("Overwirte the Resluts_1 using pararmeters").
+
+### Testing
+- `tests/testPostProcessingErrors.m` opens the window on temporary copies of the legacy fixture (with the source image,
+  as an analysis folder) and drives it through the control callbacks; `questdlg` is replaced by a stub in
+  `tests/stubs`:
+  - a deleted movie: selecting it shows an error dialog, and the image view still works afterwards
+  - Save Parameters: confirmation naming `parameters_post.xlsx`; with a folder in place of that file, an error dialog
+  - Write All with two movies, one without its results file: "Movies written: 1 of 2", the failed one is named, and
+    the good movie's Results file is rewritten
+  - Overwrite Existing with 12 movies listed: choosing movie 12 writes `Results_12.xlsx` (not `Results_2.xlsx`), the
+    confirmation names it, and its peak locations equal `createNewMovie_post`'s
+- "Post Process" launcher with `uigetdir`/`questdlg` stubbed: a folder without results shows the dialog; a valid
+  folder opens the post-processing window.
+- Note: on macOS, MATLAB overwrites a file even when it is marked read-only, so a read-only `parameters_post.xlsx` does
+  not make the save fail.
+
+### Not changed
+- Other buttons in the main (analysis) window.
+- Validation messages of the settings fields, which already used `errordlg`.

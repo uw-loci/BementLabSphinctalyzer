@@ -280,3 +280,62 @@ Post-processing GUI on exp049a, driven through the control callbacks:
   frames 20, 23, 30 at 65.9%, 51.0%, 35.6%).
 - Post-processing GUI, driven through the control callbacks: new results show `20 (65.9%)`; results without fraction
   rows show `20`; older results show `frame at 66.7% open (position)`.
+
+## Channel renaming in post-processing (2026-11-03)
+
+### Problem
+Users of the standalone app (reported on Intel Macs) pressed "Change Channel Name" in the post-processing window,
+entered names, and nothing changed, with no message.
+
+### Cause
+Nothing in the code is platform-specific; the failures are only invisible in the standalone app, which has no command
+window. `updateChannelNamesInResultsMatFile.m` reported everything with `disp`/`fprintf`, and errors in a GUI callback
+are written only to the console in a compiled app.
+
+The rename itself worked only when every channel got a new name made of letters and digits. Per-channel fields in
+`sphinctalyzerResults.mat` are named `matlab.lang.makeValidName([channelName suffix])` (`Portain A` ->
+`PortainAOutline`, `mCh-wGBD` -> `mCh_wGBDOutline`, `488nm` -> `x488nmOutline`), but the rename replaced the raw names
+as text, added the new fields and removed the old ones:
+
+| Rename | Before the fix |
+|---|---|
+| New name with a space, hyphen or leading digit | error `Invalid field name: 'GFP actinFilename'` |
+| Rename only one channel | quit: a check aborted whenever an old field name equalled a new one, which an unchanged channel always does |
+| Swap two names | quit: sequential text replacement maps both to the same name |
+| Current names with spaces (`Portain A`) | quit: the text `Portain A` does not occur in `PortainAOutline` |
+
+After an early quit the window took the new names while the `.mat` file kept the old ones, so the next movie and
+Results used the old names. The "save common parameters for all" path also skipped the rename unless every name
+changed (`if strcmp(old,new) ~= 1` on cell arrays).
+
+### Fix
+- `updateChannelNamesInResultsMatFile.m` (rewritten), returns `[SphinctalyzerOutputs, message]`:
+  - the current names are always taken from `InputCells` in the `.mat` file
+  - new names are checked first: one per channel, none empty, all different, different after `makeValidName`
+    (`GFP-1` and `GFP_1`), not `Self`, and short enough for MATLAB field names. Unchanged names return without
+    rewriting the file.
+  - each field is assigned to the channel whose `makeValidName` prefix it starts with (longest prefix) followed by a
+    known suffix (`Filename`, `Data`, `Outline`, `XDistances`, `MeanIntensities`, `IntensityStDev`, `PointsPerGroup`,
+    `MedianIntensities`, `SmoothIntensities`, `cpX`, `cpY`), and a new struct is built with the new field names; other
+    fields are kept. `RefChannel` is set to the renamed reference channel by exact match (`Self` is kept).
+  - the backup `sphinctalyzerResults_bak.mat` is written as before; a failed save returns the error text
+- `sphinctalyzerOutput.m`, "Change Channel Name": Cancel does nothing; an empty entry keeps that channel's name; the
+  result is shown in a dialog (success with a reminder to write the movie again, or the reason it failed); the window
+  takes the new names only after the file is saved; any other error is shown with `errordlg`. The callback no longer
+  overwrites the window's outline data (`SphinctalyzerOutputs`) with the renamed results.
+- `save_post_parameters.m` returns the reason a rename failed; "save common parameters for all" renames whenever any
+  name differs and shows one summary of movies whose rename failed.
+
+### Testing
+- `tests/testUpdateChannelNames.m` on copies of the legacy fixture: both channels, spaces/hyphens/leading digits, one
+  channel, swapped names (the data follows the channel), current names with spaces, rejected names (file
+  byte-for-byte unchanged), unchanged names (file not rewritten), and post-processing after a rename (Results headers
+  show the new names, values unchanged).
+- Post-processing window, button driven through its callback with `inputdlg` replaced by a stub: Cancel, duplicate
+  names (error dialog, file unchanged), a rename with a space and a hyphen (success dialog, file updated), the same
+  names again ("unchanged"), and the outline view after the rename.
+- Not tested in a compiled app (no build setup in the repository).
+
+### For future reports from the standalone app
+The app's console output (including messages from `fprintf` and errors in callbacks) is visible when it is started
+from Terminal: `/Applications/<App name>.app/Contents/MacOS/<App name>`.

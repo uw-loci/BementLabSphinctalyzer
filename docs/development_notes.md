@@ -451,3 +451,35 @@ Fixtures (`tests/fixtures`):
 The scripted run reproduced the run by hand exactly (all sheets identical). If a future change adds a prompt the test
 does not answer, a timer stops the run after 3 minutes and the test fails with the names of the open windows (checked
 by answering "Draw New Path", which leaves the drawing window waiting).
+
+## Automated standalone build and Mac launcher (2026-11-04)
+
+Previously the app was built by moving `bfmatlab` into `src`, running `mcc` there with a hand-edited version and
+date, and moving the generated files out. Now:
+- `src/sphinctalyzerVersion.m` holds the version; the main window title and the build use it. The `mcc` command
+  history in `sphinctalyzerInitializerGUI.m` was replaced by a pointer to the build script.
+- `build/buildStandalone.m` checks MATLAB/Compiler/git, runs the tests, runs `mcc` with `src` and `bfmatlab` added
+  in place into `build/output/Sphinctalyzer_v<version>_<platform>2023b_<date>/`, adds the Mac launcher and
+  `build_info.txt`, and zips the folder (`ditto` on a Mac). `build/output/` is ignored by git.
+- `bfmatlab` does not have to be inside `src`: `bfCheckJavaPath.m` locates `bioformats_package.jar` relative to its
+  own file.
+- `Launch Sphinctalyzer.command` (from `build/launch_sphinctalyzer.command.template`) lets Mac users start the app
+  by double-clicking, instead of Show Package Contents -> applauncher. It is based on the earlier
+  `launch_sphinctalyzer_command` script (conda deactivation, run script with the Runtime folder) and adds the Runtime
+  check with a download link, a processor check, removing the download quarantine, and a log in
+  `~/Library/Logs/Sphinctalyzer`.
+
+Checked on an Intel Mac (R2023b, Runtime R2023b installed): the build ran the 53 tests and produced the folder and a
+57.5 MB zip; the app started through the launcher with the v0.3.0 startup message and wrote the log; a copy of the
+launcher that cannot find the Runtime shows the download link. See `build/README.md`.
+
+## Light appearance in macOS dark mode (2026-11-04)
+
+In the standalone app on a Mac in dark mode, the scroll bars of the list boxes and the data table were dark, the data
+table text was white, and the "Check Basis" choices were unreadable: those parts followed dark mode while the windows
+use light colors. Fixed by:
+- `build/buildStandalone.m`: adds `NSRequiresAquaSystemAppearance = true` to the app's `Info.plist`, so the app
+  always uses the light appearance (checked after adding; the build fails otherwise). Confirmed by hand on a Mac in
+  dark mode: scroll bars, table text and the Check Basis choices are fixed.
+- black text on a white background set explicitly for the data table and list boxes in the post-processing window
+  and the channel table and image list in the main window.

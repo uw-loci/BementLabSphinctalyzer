@@ -164,7 +164,8 @@ For a round wound the area is close to π × (peak location)²; on `test-peak-lo
   fractions (on exp049a channel 1: 66.7% at frame 20 by area vs. frame 25 by position).
 - The checkpoint search kept its existing behavior here, including a single `try` around all channels. This was
   changed afterwards; see "Closing checkpoints searched per channel" below.
-- The image data panel in the post-processing window does not show the ring area.
+- The image data panel in the post-processing window did not show the ring area at first; see "Ring area and
+  frame lookup in the image data table" below.
 
 ### Testing
 - `tests/testRingAreaFromOutline.m`: synthetic circular outline (areas within 2% of π(R±k)²).
@@ -215,3 +216,28 @@ which are empty before and after; they now log e.g. "velocity end frame (5) is n
 - d1, d2 and d4 post-processed again: all Results sheets identical to the previous output.
 - Post-processing GUI, driven through the control callbacks: `20 5` and `12 12` are refused with an error dialog
   and the previous range is restored; `12 28` is accepted.
+
+## Ring area and frame lookup in the image data table (2026-11-03)
+
+### Changes
+`sphinctalyzerOutput.m`, image data table next to the image:
+- New "Ring Area" row after "% Abv Backg", filled from the "Ring Area" sheet. Results from earlier versions have no
+  such sheet and show "N/A". "Closing Vel" and the checkpoint rows move down one row.
+- Values are now looked up by frame number. The table used the slider position as the sheet column
+  (`sheet(m, iTimepoint)`), but the slider counts from the first analyzed frame while the sheets (read from `B2`
+  since `fe9548d`) start at frame 1. Whenever an analysis did not start at frame 1, the table showed another frame's
+  values: on `test-peak-location-exp049a.tif` (frames 10-30) the title said frame 10 and the table showed frame 1
+  (all NaN). It now uses `timepointStart + slider position - 1` and the frame-index column (`xlsFrameNums`); a frame
+  not in the results shows "N/A". The Results files and the data-over-time plot were not affected.
+
+### Results files from before 18 Jul 2025
+Results written before `0af2809` ("Saving the measurements in columns") have frames across columns and channels in
+rows. The GUI reader has assumed frames down rows since March 2026, so for these files the table already showed values
+from the wrong cells; it now shows "N/A" for the measurements. Writing the movie again ("Write One") rewrites the
+Results file in the current layout.
+
+### Testing
+Post-processing GUI on exp049a, driven through the control callbacks:
+- new results: every row (peak intensity, location, half-width, AUC, % above background, ring area) equals frame 10
+  in `Results_1.xlsx`; closing velocity and the `(area)` checkpoint rows follow
+- results in the pre-July-2025 layout: the table loads, measurements show "N/A", closing velocity and checkpoints show

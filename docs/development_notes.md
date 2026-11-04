@@ -497,3 +497,20 @@ use light colors. Fixed by:
   `~/Applications/MATLAB_R2023b.app`, and if it finds nothing it starts the app with `open`, i.e. with the app's own
   launcher (no log in that case). Both paths were tried with stand-ins for the app; the rebuilt package then started
   on the Mac that had shown the error.
+
+## Default parameters files in the standalone package (2026-11-04)
+
+Users who want to change parameters before an analysis had to save a parameters file first (Update Parameters) or
+copy one from an earlier analysis. The package now has `parameters.csv` and `parameters.mat` next to the app, where
+"Load Parameters" opens when the app is started with the launcher.
+- `src/defaultImageParameters.m` holds the built-in defaults that were written out in `load_image` of
+  `sphinctalyzerInitializerGUI.m`; `load_image` now calls it, so the app and the shipped files share one set of values.
+- `src/writeDefaultParameters.m` writes the pair with those defaults, with `timepointStart`/`timepointEnd` = -1
+  (`load_image` then uses all frames of each image) and channel rows for up to three channels. `build/buildStandalone.m`
+  calls it for every platform.
+- `src/parameters.csv`/`.mat` in the repository are left from a test run (frames 22-26, `[0 9.6 28.8]`, Windows
+  paths) and are not shipped as defaults.
+
+`tests/testDefaultParameters.m` checks the written values and that loading the files gives the same settings as
+opening the image without a parameters file (all settings saved by Update Parameters, except the output folder name,
+which has the time in it).

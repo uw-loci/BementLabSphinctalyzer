@@ -22,13 +22,15 @@ The script:
    message "Launching Sphinctalyzer v<version> <platform> standalone built on <date>..."
 4. on a Mac, sets the app to always use the light appearance (`NSRequiresAquaSystemAppearance` in its `Info.plist`;
    below) and adds `Launch Sphinctalyzer.command` with the app's icon (below)
-5. writes `build_info.txt` (version, platform, MATLAB version, commit, date, test result)
+5. writes the default `parameters.csv` and `parameters.mat` (below) and `build_info.txt` (version, platform, MATLAB
+   version, commit, date, test result)
 6. zips the folder (on a Mac with `ditto`, which keeps the app bundle intact)
 
 Output, in `build/output` (not tracked by git):
 ```
 Sphinctalyzer_v0.3.0_MACintel2023b_20261104/
     Launch Sphinctalyzer.command      double-click to start (Mac)
+    parameters.csv, parameters.mat    default parameters for Load Parameters
     sphinctalyzerInitializerGUI.app
     run_sphinctalyzerInitializerGUI.sh
     build_info.txt, readme.txt, ...   (files from MATLAB Compiler)
@@ -48,6 +50,18 @@ itself, wherever the folder is inside the app.
   started by double-clicking).
 
 Users install the MATLAB Runtime R2023b for their platform (links in the release notes).
+
+## Default parameters files
+
+`parameters.csv` and `parameters.mat` in the package hold the app's built-in defaults (`src/defaultImageParameters.m`),
+written by `src/writeDefaultParameters.m`. Loading them with "Load Parameters" gives the same settings as opening
+images without a parameters file (`tests/testDefaultParameters.m`), except that the users can edit `parameters.csv`
+first. "Load Parameters" opens in the app's folder when the app is started with the launcher, and "Update Parameters"
+saves its files there too. `timepointStart` and `timepointEnd` are -1, meaning all frames of each image; the channel
+rows cover up to three channels.
+
+`src/parameters.csv` and `src/parameters.mat` in the repository are left over from a test run and are not these
+defaults.
 
 ## Mac dark mode
 

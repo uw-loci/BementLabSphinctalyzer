@@ -503,51 +503,58 @@ function sphinctalyzerInitializerGUI
     
 
     function post_process_callback(hObject, eventData)
+        % problems are shown in dialogs: the standalone app has no command window
         processedPaths = {};
         outputDir = uigetdir(outputPath,'Pick the output folder containing valid results folder(s) of one or more movies');
         if outputDir == 0
             disp('NO output folder is selected')
             return
-        else
+        end
+        try
             listAll = dir(fullfile(outputDir,'data*'));
-            if ~isempty(listAll)
-                listFolders = listAll([listAll(:).isdir]);
-                % listFolders =
-                % listFolders(~ismember({listFolders(:).name},{'.','..'}));
-                % remove '.' and '..'
-            else
-                error('No valid outputDir folder is found')
+            listFolders = listAll([listAll(:).isdir]);
+            for i = 1:length(listFolders)
+                selpath = fullfile(outputDir,listFolders(i).name);
+                if isfile(fullfile(selpath,'parameters.mat'))
+                    processedPaths{end + 1} = selpath; %#ok<AGROW>
+                else
+                    fprintf('NO parameters.mat file is found in %s \n', selpath)
+                end
             end
-
-        end
-
-        for i = 1:length(listFolders)
-            selpath = fullfile(outputDir,listFolders(i).name);
-            if isfile(fullfile(selpath,'parameters.mat'))
-                processedPaths{end + 1} = selpath;
-            else
-                fprintf('NO parameters.mat file is found in %s \n', selpath)
+            if isempty(processedPaths)
+                errordlg(sprintf(['No analysis results were found in:\n%s\n\n' ...
+                    'Choose an output folder (Output_<date>) that contains data_<image> folders with a parameters.mat file.'], ...
+                    outputDir), 'Post-Process')
+                return
             end
-        end
-        if ~isempty(processedPaths)
             % update previously processed images
-            answerPost = questdlg('Overwrite Results_1 using pararmeters saved in parameters_post.xlsx or Results_1.xlsx file or default parameters file?', ...
-                'Verify post-processing movie creatation', ...
+            answerPost = questdlg('Overwrite Results_1 using parameters saved in parameters_post.xlsx or Results_1.xlsx file or default parameters file?', ...
+                'Verify post-processing movie creation', ...
                 'YES','NO','YES');
             % Handle response
             switch answerPost
                 case 'YES'
                     disp('Loading post-processing parameters saved in Results_1.xlsx file or default parameters for creating new movies...')
-                    % PathtoParameters = fullfile(parameterFilePath,parameterFileName);
-
+                    % each movie is written separately so one failure does not stop the others
+                    failed = {};
                     for j = 1:length(processedPaths)
                         %create new results for each movie using loaded parameters
                         fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
-                        if exist(fullfile(processedPaths{j},'sphincRedo','results_1.xlsx'),'file') ~=2 % if first file does not exit
-                            disp('create the first results file using the previous saved parameters')
-                            createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                        try
+                            if exist(fullfile(processedPaths{j},'sphincRedo','Results_1.xlsx'),'file') ~=2 % if first file does not exit
+                                disp('create the first results file using the previous saved parameters')
+                                createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                            end
+                            createNewMovie_post(processedPaths{j});
+                        catch movieError
+                            [~, movieFolder, movieFolderExt] = fileparts(processedPaths{j});
+                            fprintf(2, 'Post-Process, %s%s: %s \n', movieFolder, movieFolderExt, getReport(movieError, 'extended', 'hyperlinks', 'off'));
+                            failed{end+1} = sprintf('%s%s: %s', movieFolder, movieFolderExt, movieError.message); %#ok<AGROW>
                         end
-                        createNewMovie_post(processedPaths{j});
+                    end
+                    if ~isempty(failed)
+                        uiwait(errordlg([{sprintf('Movies written: %d of %d', length(processedPaths)-numel(failed), length(processedPaths))}, ...
+                            {''}, {'Not written:'}, failed], 'Post-Process'))
                     end
 
                 case 'NO'
@@ -555,14 +562,10 @@ function sphinctalyzerInitializerGUI
             end
 
             postProcessingGUI(processedPaths)
-            
-
-        else
-            disp('NO valid output folder is selected')
-            return;
-            end
-       
-
+        catch postProcessError
+            fprintf(2, 'Post-Process: %s \n', getReport(postProcessError, 'extended', 'hyperlinks', 'off'));
+            errordlg(sprintf('Post-processing could not be opened.\n\nError: %s', postProcessError.message), 'Post-Process')
+        end
     end
 
     function load_param_callback(hObject, eventData)

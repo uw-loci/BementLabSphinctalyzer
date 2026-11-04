@@ -55,6 +55,12 @@ advancedOptions.closingCheckBasis = closingCheckBasisOption(advancedOptions.clos
         path{1}=uigetdir;
     elseif guiInput == 1
         path{1}=ParentFolderPath;
+        % without a results file nothing would be written, without any error
+        resultsFiles = dir(fullfile(ParentFolderPath,'sphincRedo','*sphinc*.mat'));
+        resultsFiles(strncmp({resultsFiles.name}, '._', 2)) = [];
+        if isempty(resultsFiles)
+            error('No analysis results (sphincRedo/sphinctalyzerResults.mat) were found in %s', ParentFolderPath)
+        end
     end
     for i=1:length(path)
         OutlinerFolderLoader(path{i}, ...

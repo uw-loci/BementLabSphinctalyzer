@@ -388,3 +388,44 @@ Bugs fixed on the way:
 ### Not changed
 - Other buttons in the main (analysis) window.
 - Validation messages of the settings fields, which already used `errordlg`.
+
+## Problems shown in dialogs in the main analysis window (2026-11-03)
+
+### Problem
+As in the post-processing window, the main window (`sphinctalyzerInitializerGUI.m`) reported through the console
+only, which the standalone app does not have. In addition, Sphinctalyze disables all buttons while it runs; an error
+outside its per-image `try` left them disabled, so the app looked frozen. Skipped images and their reasons were only
+printed, and when every image was skipped `skip_handling` raised `error('All is skipped...')`, which was invisible.
+
+### Changes
+- All 26 control callbacks (including the channel table edits, the slice selection and the frame-slider listener) run
+  through a nested `runCallback`: it records the buttons' enable states, runs the callback in `try/catch`, and on an
+  error restores those states, writes the full report to the console and shows `errordlg`.
+- Sphinctalyze: skipped images are collected with the stage ("path annotation" or "analysis") and the reason, and
+  shown in one dialog ("Analyzed: 3 of 4 images ... Skipped: img2.tif (analysis): <reason>"). When none were
+  analyzed it is an error dialog with "Load new image(s) to proceed" and the buttons are enabled; otherwise a warning,
+  and the results window opens for the analyzed images. `skip_handling` no longer raises an error. Cancel shows no
+  dialog.
+- Open Image(s): an image that cannot be read gives "<file> could not be opened: <reason>".
+- Load Parameters: if the `.mat` file that belongs with the chosen `.csv` is missing, a dialog explains that both
+  files must be in the same folder. "Load Parameters" being disabled after images are opened (or a parameters file is
+  loaded) is explained in its tooltip instead of only the console.
+- Update Parameters: confirms where the default parameters files were saved, or shows the folder and reason if they
+  could not be saved.
+
+### Default parameters location
+"Update Parameters" saves `parameters.csv`/`parameters.mat` in the current folder (`pwd`). In the standalone app this
+is the folder where the app is located. If that folder is not writable for the user, the save now fails with a dialog
+naming the folder instead of silently.
+
+### Testing
+- `tests/testAnalysisWindowErrors.m` opens the main window in a temporary folder and drives it through the control
+  callbacks, with `uigetfile` and `questdlg` stubbed (`tests/stubs`):
+  - opening a text file named `.tif`: dialog naming the file; button states restored
+  - Load Parameters with a `.csv` but no `.mat`: dialog explaining both files belong together
+  - Update Parameters: confirmation and `parameters.csv` written; with a folder in place of `parameters.csv`, a dialog
+    naming the folder
+  - Sphinctalyze with the opened image deleted: "Analyzed: 0 of 1", the image and stage listed, buttons enabled
+- A complete analysis needs the wound outline drawn by hand and is not covered by the tests. It was run by hand on
+  `sphintest_-2channlel-sub1.tif` after this change and went through (results in
+  `test_datasets/Sphincdata/Output_03-Nov-2026_22-52-08`, boundary saved in `test_datasets/Sphincdata/savedPath/`).

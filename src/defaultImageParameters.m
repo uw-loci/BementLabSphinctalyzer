@@ -1,0 +1,9 @@
+function obj = defaultImageParameters(imagePath, batchDirectory)
+% Image with the built-in default analysis parameters. Used for new images
+% when no parameters file is loaded, and for the default parameters files
+% shipped with the standalone app (writeDefaultParameters).
+obj = Image(0,1,0,3,1,1,3,0,8,0,0, ...
+    'gray',6,{'Distance (microns) from wound center',getDefaultYAxisTitle()}, ...
+    [0 10 30],[-0.2 0.2 1.2],1,0.192,imagePath,0,0, ...
+    {[1 0 0],[0 1 1],[0 0 1]},0,'NorthWest',3,batchDirectory, {}, [1 2]);
+end

@@ -719,10 +719,7 @@ function sphinctalyzerInitializerGUI
     function load_image(imageNames, imagePath, batchDirectory)
         % create an object array of length fileNames, with default values
         if loadParameters == 0
-            imgarray(1:length(imageNames)) = Image(0,1,0,3,1,1,3,0,8,0,0, ...
-                'gray',6,{'Distance (microns) from wound center',getDefaultYAxisTitle()}, ...
-                [0 10 30],[-0.2 0.2 1.2],1,0.192,imagePath,0,0, ...
-                {[1 0 0],[0 1 1],[0 0 1]},0,'NorthWest',3,batchDirectory, {}, [1 2]);
+            imgarray(1:length(imageNames)) = defaultImageParameters(imagePath, batchDirectory);
         else
             parameters = load(fullfile(parameterFilePath,parameterFileName));
             names = fieldnames(parameters);

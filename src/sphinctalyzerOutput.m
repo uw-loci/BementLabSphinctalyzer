@@ -1012,10 +1012,17 @@ function sphinctalyzerOutput(objarray)
                 % 16: Channel Names
                 saveCommonFlag = 1;
                 obj_current = objarray(currentObj);
+                renameProblems = {};
                 for objID = 1:length(objarray)
                     obj = objarray(objID);
                     moviePath = obj.moviePaths{1};
-                    save_post_parameters(obj_current,advancedOptions,saveCommonFlag,moviePath);
+                    renameMessage = save_post_parameters(obj_current,advancedOptions,saveCommonFlag,moviePath);
+                    if ~isempty(renameMessage)
+                        renameProblems{end+1} = sprintf('%s: %s', obj.imageName, renameMessage); %#ok<AGROW>
+                    end
+                end
+                if ~isempty(renameProblems)
+                    errordlg([{'Channel names were not changed in the results of:'}, renameProblems], 'Save Common Parameters')
                 end
         end
 
@@ -1189,62 +1196,55 @@ function sphinctalyzerOutput(objarray)
     end
 % call back fuction to changeChannelNames
     function changeChannelNames_callback(~, ~)
-        % prompt the user for new channel name
-        obj = objarray(currentObj);
-        nChannels = obj.nChannels;
-         % get the saved channle names from the results .mat file 
-        ParentFolderPath = fileparts(obj.filePath);
-        [ParentFolderPath] = fileparts(ParentFolderPath);
-        pathToResults = strcat(ParentFolderPath,'/sphincRedo/sphinctalyzerResults.mat');
-        SphincOutputs_load = load(pathToResults,'InputCells');
-        cellArray = SphincOutputs_load.InputCells;
-        % cellArray = SphincOutputs_load.InputCells;
-        oldChannelNames = cellArray(:,1);
-        %channel name change dialog window 
-        prompts = cell(obj.nChannels, 1);
-        for i = 1:length(prompts)
-            prompts{i} = "Enter name of channel " + i + ":";
-        end
-        dims = [1 35];
-        definput = cell(nChannels, 1);
-        if nChannels == 1
-            definput = {cellArray{1, 1}};
-        elseif nChannels == 2
-            definput = {cellArray{1, 1}, cellArray{2, 1}};
-        elseif nChannels == 3
-            definput = {cellArray{1, 1}, cellArray{2, 1}, cellArray{3, 1}};
-        end
-        dlgtitle = 'Edit Channel Names';
-        answer = inputdlg(prompts,dlgtitle,dims,definput);
-        unique_channels = unique(answer);
-        if numel(unique_channels) < numel(answer)
-            msgbox('Do not accept identical channel names. Channel name change failed')
-            return
-        end
-        if ~isempty(answer)
-            % update the channel name
-            for iC = 1:nChannels
-                if ~isempty(answer{iC})
-                    obj.cellArray{iC, 1} = answer{iC};
-                    obj.channelNames{iC} = answer{iC};
-                else
-                    fprintf('Name of Channel %d is not entered.Channel %d name NOT changed \n', iC, iC)
+        % errors are shown in a dialog: the standalone app has no command window
+        try
+            obj = objarray(currentObj);
+            % get the saved channel names from the results .mat file
+            ParentFolderPath = fileparts(obj.filePath);
+            [ParentFolderPath] = fileparts(ParentFolderPath);
+            pathToResults = fullfile(ParentFolderPath,'sphincRedo','sphinctalyzerResults.mat');
+            SphincOutputs_load = load(pathToResults,'InputCells');
+            oldChannelNames = SphincOutputs_load.InputCells(:,1);
+            %channel name change dialog window
+            prompts = cell(numel(oldChannelNames), 1);
+            for i = 1:length(prompts)
+                prompts{i} = "Enter name of channel " + i + ":";
+            end
+            dims = [1 35];
+            answer = inputdlg(prompts,'Edit Channel Names',dims,oldChannelNames');
+            if isempty(answer)
+                disp('Channel name NOT changed ')
+                return
+            end
+            % keep the current name where nothing was entered
+            newChannelNames = answer(:);
+            for iC = 1:numel(newChannelNames)
+                if isempty(strtrim(newChannelNames{iC}))
+                    newChannelNames{iC} = oldChannelNames{iC};
                 end
             end
-        else
-            disp('Channel name NOT changed ')
-        end
-        newChannelNames = obj.cellArray(:,1);
-        %find the current channel names in the .mat file
-        SphinctalyzerOutputs_update = updateChannelNamesInResultsMatFile(obj,oldChannelNames,newChannelNames);
-        if ~isempty(SphinctalyzerOutputs_update)
-            SphinctalyzerOutputs = SphinctalyzerOutputs_update;
-            objarray(currentObj) = obj; 
-        else
-            disp('Channel name is not changed, results mat file is not changed')
+            [SphinctalyzerOutputs_update, renameMessage] = updateChannelNamesInResultsMatFile(obj,oldChannelNames,newChannelNames);
+            if isempty(SphinctalyzerOutputs_update)
+                if strcmp(renameMessage,'Channel names are unchanged.')
+                    msgbox(renameMessage,'Edit Channel Names')
+                else
+                    errordlg(sprintf('Channel names were not changed. %s', renameMessage),'Edit Channel Names')
+                end
+                return
+            end
+            % the results file is updated, update the names in the GUI
+            for iC = 1:numel(newChannelNames)
+                obj.cellArray{iC, 1} = newChannelNames{iC};
+                obj.channelNames{iC} = newChannelNames{iC};
+            end
+            objarray(currentObj) = obj;
+            msgbox(sprintf(['%s\n\nWrite the movie again to update the Results file ' ...
+                'and the movie with the new names.'], renameMessage),'Edit Channel Names')
+        catch renameError
+            errordlg(sprintf('Channel names were not changed. Error: %s', renameError.message),'Edit Channel Names')
         end
     end
-    
+
     function cc_button(hObject, event, channelNumber)
         obj = objarray(currentObj);
         colors = {[1 0 0],[0 0.6 0],[0 0 1],[0 1 1],[1 0 1],[1 1 0],[0 0 0],[1 1 1]};

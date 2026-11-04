@@ -1,10 +1,13 @@
-function save_post_parameters(obj,advancedOptions,saveCommonFlag,moviePath)
+function renameMessage = save_post_parameters(obj,advancedOptions,saveCommonFlag,moviePath)
 %save post-processing parameters to an excel file
 %input:
 % obj: Image instance, include all the parameters for intitial analysis
 % advancedOptions: parameters for peak,velocity,and closing calculation
 % saveCommonFlag: 1: update all parameters; 2: only update specified common
 % moviePath: path the results movie
+%output:
+% renameMessage: why the channel names in the results .mat file could not
+% be changed ('' if they were changed or did not need changing)
 % parameters
 %save
 %moviePath = obj.moviePaths{1};
@@ -12,6 +15,7 @@ foldermarkerIndex = strfind(moviePath,'sphincRedo');
 postPath = moviePath(1:foldermarkerIndex-1);
 savePath = postPath;
 excelSavename = 'parameters_post.xlsx';
+renameMessage = '';
 parameters_post = cell(17,4); % add searchingRadius, closingCheckpoint, channelNames and closingCheckBasis
 
 if saveCommonFlag ~= 1
@@ -111,8 +115,11 @@ else  % save common parameters
     % update the results file
      oldChannelNames = (processingParametersLoad.channelNames)'; %row -> col
      newChannelNames = obj.channelNames;
-    if strcmp(oldChannelNames,newChannelNames)~= 1
-        updateChannelNamesInResultsMatFile(processingParametersLoad,oldChannelNames,newChannelNames);
+    if ~isequal(cellstr(oldChannelNames(:)), cellstr(newChannelNames(:)))
+        [renamedOutputs, message] = updateChannelNamesInResultsMatFile(processingParametersLoad,oldChannelNames,newChannelNames);
+        if isempty(renamedOutputs) && ~strcmp(message,'Channel names are unchanged.')
+            renameMessage = message;
+        end
     end
     parameters_post{16,1} = 'channelNames';
     nChannels = obj.nChannels;

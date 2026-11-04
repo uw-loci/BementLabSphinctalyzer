@@ -429,3 +429,25 @@ naming the folder instead of silently.
 - A complete analysis needs the wound outline drawn by hand and is not covered by the tests. It was run by hand on
   `sphintest_-2channlel-sub1.tif` after this change and went through (results in
   `test_datasets/Sphincdata/Output_03-Nov-2026_22-52-08`, boundary saved in `test_datasets/Sphincdata/savedPath/`).
+
+## End-to-end analysis test (2026-11-03)
+
+`tests/testEndToEndAnalysis.m` runs a complete analysis the way a user does, in the main window: Load Parameters ->
+Open Image(s) -> Sphinctalyze. A full analysis normally needs the wound outline drawn by hand; the test reuses an
+outline drawn by hand for `test_datasets/sphintest_-2channlel-sub1.tif`.
+
+How the outline is reused: before drawing, `validateSavedPath.m` looks for
+`<image folder>/Sphincdata/savedPath/SavedPath_<image>_ref_[<reference channel>]_framePosition_[<frame>].mat`. If it
+matches the image, reference channel and frame, it asks "Reuse Saved Path / Draw New Path"; the `questdlg` stub answers
+"Reuse Saved Path". The reference channel (CH1) and frame (2) come from the run's `parameters.csv`/`.mat`, loaded
+with Load Parameters.
+
+Fixtures (`tests/fixtures`):
+- `e2e_sub1/`: `parameters.csv`, `parameters.mat` and the outline, from the run by hand
+  (`test_datasets/Sphincdata/Output_03-Nov-2026_22-52-08`, not tracked by git)
+- `e2e_sub1_expected.mat`: that run's Results (six measurement sheets, closing sheet, parameters, movie frames),
+  recorded with `make_e2e_expected.m`. Regenerate it only when analysis results are meant to change.
+
+The scripted run reproduced the run by hand exactly (all sheets identical). If a future change adds a prompt the test
+does not answer, a timer stops the run after 3 minutes and the test fails with the names of the open windows (checked
+by answering "Draw New Path", which leaves the drawing window waiting).

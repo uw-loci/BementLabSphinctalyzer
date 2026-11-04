@@ -14,6 +14,7 @@ table(results)
 | `testClosingCheckpointFrames` | The closing checkpoint search for one channel: finds the same frames as the previous search on valid input, returns NaN with a reason for a reversed or equal velocity range, a range outside the frames, or no peak at the start or end frame, skips frames without a peak, uses the earliest frame on ties, and returns the actual open fraction (value at the frame ÷ value at start) for each frame found. |
 | `testUpdateChannelNames` | Renaming channels in the results .mat file on copies of the fixture: both channels, names with spaces, hyphens or leading digits, one channel, swapped names, current names with spaces, rejected names (file unchanged), unchanged names (file not rewritten), and post-processing after a rename. |
 | `testPostProcessingErrors` | The post-processing window, opened on temporary copies of the fixture and driven through its control callbacks: errors are shown in dialogs and the window keeps working (deleted movie, failed save), Write All continues past a broken movie and summarizes, Save confirms, and Overwrite Existing writes movie 12 rather than movie 2. Takes about 1.5 min and opens windows. |
+| `testAnalysisWindowErrors` | The main analysis window, driven through its control callbacks in a temporary folder: an unreadable image, a parameters `.csv` without its `.mat`, Update Parameters (confirmation, and a failed save naming the folder), and Sphinctalyze with every image skipped (summary dialog, buttons enabled). Opens windows. |
 | `testLegacyPostProcessing` | A folder analyzed by an earlier version can still be post-processed with `createNewMovie_post`. Peak locations come out as positive distances (−1 × the earlier values), all other results (peak intensity, half-widths, AUCs, closing velocity and checkpoint frames) are unchanged, the saved x axis is converted, and the movie has all frames. The new "Ring Area" sheet is filled wherever a peak was found, and the closing check basis is saved. Checkpoint labels end in `(position)` or `(area)`, and the actual open fraction rows match the Peak Locations / Ring Area sheets. A second run with the closing check basis set to `area` changes only the checkpoint rows. Takes about 45 s and opens a figure window while the movies are written. |
 
 ## Fixtures
@@ -23,6 +24,8 @@ table(results)
 
 ## Stubs
 
+- `stubs/uigetfile.m`: returns the `{fileName, filePath}` set with `setappdata(groot,'testUigetfile',{name, path})` instead of
+  opening a file dialog.
 - `stubs/questdlg.m`: returns the answer set with `setappdata(groot,'testQuestdlgAnswer',answer)` instead of waiting
   for a click. It is put on the path only by tests that need it (`PathFixture`), so it never replaces MATLAB's
   `questdlg` elsewhere.

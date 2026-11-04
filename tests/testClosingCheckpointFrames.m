@@ -18,6 +18,23 @@ verifyEqual(testCase, status, '');
 verifyEqual(testCase, frames, [11; 16]);
 end
 
+function testActualFractionsAtFoundFrames(testCase)
+% frames 11 (20) and 16 (15) relative to frame 1 (30)
+measure = testCase.TestData.measure;
+[frames, ~, actual] = closingCheckpointFrames(measure, 1, 20, [2/3 0.5]);
+verifyEqual(testCase, frames, [11; 16]);
+verifyEqual(testCase, actual, measure(frames)'/measure(1), 'AbsTol', 1e-12);
+verifyEqual(testCase, actual, [20/30; 15/30], 'AbsTol', 1e-12);
+end
+
+function testActualFractionIsNaNWithoutFrame(testCase)
+[frames, ~, actual] = closingCheckpointFrames(testCase.TestData.measure, 1, 20, [1/4 1/3]);
+verifyEqual(testCase, frames, [NaN; 20]);
+verifyEqual(testCase, actual, [NaN; 11/30], 'AbsTol', 1e-12);
+[~, ~, actual] = closingCheckpointFrames(testCase.TestData.measure, 20, 5, [0.75 0.5]);
+verifyEqual(testCase, actual, [NaN; NaN]);
+end
+
 function testCheckpointBeyondRangeIsNaN(testCase)
 % 1/4 open = 7.5 is 3.5 below frame 20 (11), more than the 1-per-frame tolerance;
 % 1/3 open = 10 is exactly 1 below frame 20, so it is still accepted

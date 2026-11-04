@@ -82,8 +82,31 @@ classdef testLegacyPostProcessing < matlab.unittest.TestCase
         end
 
         function closingVelocityAndCheckpointsAreUnchanged(testCase)
+            % velocity rows and checkpoint frames as before; actual open
+            % fractions are appended after the checkpoint frames
             new = readmatrix(testCase.ResultsFile,'Sheet','Closing Velocity and Location','Range','C2');
-            testCase.verifyEqual(new, testCase.Expected.closingVelocityLocation, 'AbsTol', 1e-9);
+            expected = testCase.Expected.closingVelocityLocation;
+            nCheckpoints = size(expected,1) - 3;
+            testCase.verifyEqual(size(new,1), 3 + 2*nCheckpoints);
+            testCase.verifyEqual(new(1:size(expected,1),:), expected, 'AbsTol', 1e-9);
+        end
+
+        function actualOpenFractionsMatchSheets(testCase)
+            runs = {testCase.ResultsFile, 'Peak Locations'; testCase.AreaResultsFile, 'Ring Area'};
+            for r = 1:size(runs,1)
+                values = readmatrix(runs{r,1},'Sheet','Closing Velocity and Location','Range','C2');
+                measure = readmatrix(runs{r,1},'Sheet',runs{r,2},'Range','B2');
+                nCheckpoints = (size(values,1) - 3)/2;
+                for c = 1:size(values,2)
+                    frames = values(4:3+nCheckpoints,c);
+                    fractions = values(4+nCheckpoints:end,c);
+                    channel = measure(:,1+c);
+                    expected = nan(nCheckpoints,1);
+                    found = ~isnan(frames);
+                    expected(found) = channel(frames(found)) / channel(values(1,c));
+                    testCase.verifyEqual(fractions, expected, 'AbsTol', 1e-9, runs{r,2});
+                end
+            end
         end
 
         function xAxisParameterIsConverted(testCase)
@@ -135,17 +158,20 @@ classdef testLegacyPostProcessing < matlab.unittest.TestCase
         function areaBasisCheckpointsAreLabeledAndInRange(testCase)
             labels = readcell(testCase.AreaResultsFile,'Sheet','Closing Velocity and Location','Range','B2');
             values = readmatrix(testCase.AreaResultsFile,'Sheet','Closing Velocity and Location','Range','C2');
-            checkpointLabels = labels(4:end,1);
+            checkpointLabels = labels(4:end,1);   % checkpoint frames and actual open fractions
+            nCheckpoints = numel(checkpointLabels)/2;
             testCase.verifyNotEmpty(checkpointLabels);
             testCase.verifyTrue(all(endsWith(checkpointLabels,'(area)')), strjoin(checkpointLabels,', '));
+            testCase.verifyTrue(all(startsWith(checkpointLabels(1:nCheckpoints),'frame at')));
+            testCase.verifyTrue(all(startsWith(checkpointLabels(nCheckpoints+1:end),'actual open fraction')));
             for c = 1:size(values,2)
-                frames = values(4:end,c);
+                frames = values(4:3+nCheckpoints,c);
                 frames = frames(~isnan(frames)); % NaN: no frame near the checkpoint
                 testCase.verifyTrue(all(frames >= values(1,c) & frames <= values(2,c)), ...
                     'Checkpoint frames should lie within the velocity range');
             end
             positionLabels = readcell(testCase.ResultsFile,'Sheet','Closing Velocity and Location','Range','B2');
-            testCase.verifyFalse(any(contains(positionLabels(4:end,1),'(area)')));
+            testCase.verifyTrue(all(endsWith(positionLabels(4:end,1),'(position)')), strjoin(positionLabels(4:end,1),', '));
         end
     end
 end

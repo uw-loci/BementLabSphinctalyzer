@@ -406,7 +406,7 @@ function sphinctalyzerOutput(objarray)
     addlistener(sliderTimepoint,'ContinuousValueChange',@(hObject, event) update_image_timepoint(hObject, event));
     imageSliderDataPanel = uitable('Parent',guiCtrl, ...
     'ColumnName',{'channel1','channel2','channel3'}, ...
-    'RowName', {'Peak Intens', 'Peak Locs', 'Halfwidths', 'AUCs', '% Abv Backg', 'Closing Vel','2/3 frame loc'},...
+    'RowName', {'Peak Intens', 'Peak Locs', 'Halfwidths', 'AUCs', '% Abv Backg', 'Ring Area', 'Closing Vel','2/3 frame loc'},...
     'Units','normalized', ...
     'Position',[0.3525 0.02 0.35 .275]);
     
@@ -472,7 +472,7 @@ function sphinctalyzerOutput(objarray)
         % xlsSheets{5} = readmatrix(strcat(ParentFolderPath,'/sphincRedo/Results_1.xlsx'), 'Sheet','Percent Above Background','Range',rangeStart);
         
         for m = 1:3
-            for n = 1:7
+            for n = 1:8
                 imageSliderDataPanel.Data{n, m} = ' ';
             end
         end
@@ -1439,16 +1439,26 @@ function sphinctalyzerOutput(objarray)
         obj = objarray(currentObj);
         %initialize the imageSliderDataPanel
         imageSliderDataPanel.Data=[];
-        imageSliderDataPanel.RowName= imageSliderDataPanel.RowName(1:6); % only keep the first 6 row names
+        imageSliderDataPanel.RowName= imageSliderDataPanel.RowName(1:7); % only keep the first 7 row names
+        % the slider position counts from the first analyzed frame; the sheets
+        % have one column per frame, numbered in xlsFrameNums
+        currentFrame = obj.timepointStart + currentTimepoint - 1;
+        frameColumn = find(xlsFrameNums == currentFrame, 1);
+        % rows 1-5: Peak Intensity, Peak Locations, Halfwidths, AUCs,
+        % Percent Above Background (xlsSheets 1-5); row 6: Ring Area (xlsSheets 7)
+        sheetIndexes = [1 2 3 4 5 7];
         for m = 1:obj.nChannels
-            for n = 1:5
-                sheet = xlsSheets{n}; % 
+            for n = 1:numel(sheetIndexes)
+                if isempty(frameColumn) || numel(xlsSheets) < sheetIndexes(n) || isempty(xlsSheets{sheetIndexes(n)})
+                    imageSliderDataPanel.Data{n, m} = 'N/A'; % e.g. no Ring Area in results from earlier versions
+                    continue
+                end
+                sheet = xlsSheets{sheetIndexes(n)};
                 try
-                    % imageSliderDataPanel.Data{n, m} = sheet(m, obj.timepointStart + currentTimepoint - 1);
-                    imageSliderDataPanel.Data{n, m} = sheet(m, currentTimepoint); % each sheet only contains the measurments from velocity start through end 
+                    imageSliderDataPanel.Data{n, m} = sheet(m, frameColumn);
                 catch exp1
-                    fprintf(' %s \n %s is empty \n',exp1.message,imageSliderDataPanel.RowName{n})
-                    imageSliderDataPanel.Data{n, m} = [];
+                    fprintf(' %s \n %s of frame %d is empty \n',exp1.message,imageSliderDataPanel.RowName{n},currentFrame)
+                    imageSliderDataPanel.Data{n, m} = 'N/A';
                 end
             end
         end
@@ -1462,7 +1472,7 @@ function sphinctalyzerOutput(objarray)
             if ismissing(woundClosingVelocity)
                 woundClosingVelocity = 'N/A';
             end
-            imageSliderDataPanel.Data{6, b} = woundClosingVelocity;
+            imageSliderDataPanel.Data{7, b} = woundClosingVelocity;
             checkpoint_num = size(closingVelocityLocation,1)-3;
             for cp = 1:checkpoint_num
                 closingVelocityLocation_load = closingVelocityLocation{3+cp,b+1};
@@ -1470,9 +1480,9 @@ function sphinctalyzerOutput(objarray)
                 if ismissing(closingVelocityLocation_load)
                     closingVelocityLocation_load = 'N/A';
                 end
-                imageSliderDataPanel.Data{6+cp, b} = closingVelocityLocation_load;
+                imageSliderDataPanel.Data{7+cp, b} = closingVelocityLocation_load;
                 if b == 1
-                     imageSliderDataPanel.RowName{6+cp} = strrep(closingVelocityLocation{3+cp,1},'closing position','close');
+                     imageSliderDataPanel.RowName{7+cp} = strrep(closingVelocityLocation{3+cp,1},'closing position','close');
                 end
             end
         end

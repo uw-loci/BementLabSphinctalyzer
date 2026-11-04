@@ -241,3 +241,42 @@ Post-processing GUI on exp049a, driven through the control callbacks:
 - new results: every row (peak intensity, location, half-width, AUC, % above background, ring area) equals frame 10
   in `Results_1.xlsx`; closing velocity and the `(area)` checkpoint rows follow
 - results in the pre-July-2025 layout: the table loads, measurements show "N/A", closing velocity and checkpoints show
+
+## Closing check basis in labels, and actual open fraction (2026-11-03)
+
+### Request
+1. The closing check can be based on the peak position or on the ring area, but only the area labels said so
+   ("frame at 66.7% open (area)"); the position labels read "frame at 66.7% open".
+2. Each checkpoint reports the frame closest to the target fraction, not how open the wound actually is at that frame.
+
+### Changes
+- Labels name the basis for both options: `frame at 66.7% open (position)` / `frame at 66.7% open (area)`.
+- `closingCheckpointFrames.m` returns a third output, the actual open fraction at each checkpoint frame:
+  value at that frame ÷ value at the velocity start frame, where the value is the peak location or the ring area
+  (the same quantity the target is computed from). NaN where no frame was found.
+- `SphinctalyzerMoviePlotterMulti.m`:
+  - "Closing Velocity and Location" gets one row per checkpoint after the checkpoint-frame rows, e.g.
+    `actual open fraction at 66.7% frame (area)` = 0.659. The existing rows keep their positions.
+  - the command window prints the basis ("Closing check based on the ring area (um^2)") and, per checkpoint, e.g.
+    "Channel 1: frame at 66.7% open (area) is frame 20, actual open fraction 65.9% (1090.36 of 1655.30 um^2)".
+- `sphinctalyzerOutput.m`, image data table: checkpoint and fraction rows are found by their labels; each checkpoint
+  cell shows the frame and the actual fraction, e.g. `20 (65.9%)`. Results without fraction rows show the frame only;
+  labels without a basis (earlier versions, peak position only) are shown with " (position)".
+
+### Compatibility
+- Checkpoint frames, closing velocity and all other sheets are unchanged; only the label text and the appended rows
+  are new.
+- Scripts outside this repository that look up rows by label text must use the new labels
+  ("frame at 66.7% open" is now "frame at 66.7% open (position)").
+- An older version of the GUI opening a new Results file lists the fraction rows as additional checkpoint rows, with
+  their own labels.
+
+### Testing
+- `tests/testClosingCheckpointFrames.m`: actual fractions at found frames; NaN without a frame or for an invalid range.
+- `tests/testLegacyPostProcessing.m`: velocity and checkpoint-frame rows still equal the saved expected values; the
+  fraction rows equal the Peak Locations / Ring Area values at the frame ÷ the start value; labels end in
+  `(position)` or `(area)`.
+- exp049a, both bases: frames and closing velocity unchanged, fractions match the sheets (e.g. area basis channel 1:
+  frames 20, 23, 30 at 65.9%, 51.0%, 35.6%).
+- Post-processing GUI, driven through the control callbacks: new results show `20 (65.9%)`; results without fraction
+  rows show `20`; older results show `frame at 66.7% open (position)`.

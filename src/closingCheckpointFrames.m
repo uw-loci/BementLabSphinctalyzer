@@ -1,4 +1,4 @@
-function [frames, status] = closingCheckpointFrames(measure, startFrame, endFrame, fractions)
+function [frames, status, actualFractions] = closingCheckpointFrames(measure, startFrame, endFrame, fractions)
 % find the frame at which the wound is a given fraction open, for one channel
 % input:
 % measure: peak location (distance to wound center) or ring area, one value
@@ -10,7 +10,10 @@ function [frames, status] = closingCheckpointFrames(measure, startFrame, endFram
 %         NaN if no frame is within the average change between adjacent
 %         frames, or if the range is not valid
 % status: '' if the range is valid, otherwise why no frames were searched
+% actualFractions: how open the wound actually is at each frame found,
+%         measure(frame)/measure(startFrame); NaN where no frame was found
 frames = nan(numel(fractions),1);
+actualFractions = nan(numel(fractions),1);
 status = '';
 nFrames = numel(measure);
 if ~isscalar(startFrame) || ~isscalar(endFrame) || any(isnan([startFrame endFrame])) || ...
@@ -38,6 +41,7 @@ for cp = 1:numel(fractions)
     [minimumDistance, nearestIndex] = min(distances2checkpoint); % skips NaN frames; first (earliest) frame on ties
     if minimumDistance <= averageChange
         frames(cp) = startFrame + nearestIndex - 1;
+        actualFractions(cp) = measure(frames(cp))/measure(startFrame);
         if nnz(distances2checkpoint == minimumDistance) > 1
             fprintf('  %d frames are equally close to the %3.1f%% checkpoint; the earliest (%d) is used \n', ...
                 nnz(distances2checkpoint == minimumDistance), fractions(cp)*100, frames(cp));

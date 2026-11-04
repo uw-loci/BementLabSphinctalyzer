@@ -506,20 +506,27 @@ if strcmp(advancedOptions.closingCheckBasis,'area')
     checkpointMeasure = RingAreas;
     checkpointUnit = 'um^2';
     checkpointLabelSuffix = ' (area)';
+    checkpointBasisName = 'ring area';
 else
     checkpointMeasure = peakLocations;
     checkpointUnit = 'um';
-    checkpointLabelSuffix = '';
+    checkpointLabelSuffix = ' (position)';
+    checkpointBasisName = 'peak position';
 end
+fraction_checkpoint_strings = cell(size(closing_checkpoint_values,2),1);
 for iCP = 1:size(closing_checkpoint_values,2)
     closing_checkpoint_strings{iCP,1} = sprintf('frame at %3.1f%% open%s',closing_checkpoint_values(1,iCP)*100,checkpointLabelSuffix);
+    fraction_checkpoint_strings{iCP,1} = sprintf('actual open fraction at %3.1f%% frame%s',closing_checkpoint_values(1,iCP)*100,checkpointLabelSuffix);
 end
 
 nChannels = size(InputCells,1);
-closingVelocityLocation_value = nan(3+size(closing_checkpoint_values,2),nChannels);
+nCheckpoints = size(closing_checkpoint_values,2);
+% rows: velocity start, end, closing velocity, checkpoint frames, then the
+% actual open fraction at each checkpoint frame
+closingVelocityLocation_value = nan(3+2*nCheckpoints,nChannels);
 closingVelocityLocation_label = [{'Velocity start frame';...
     'Velocity end frame';...
-    'Closing velocity (um/second)'};closing_checkpoint_strings];
+    'Closing velocity (um/second)'};closing_checkpoint_strings;fraction_checkpoint_strings];
 
 
 % add the options of using different velocity Start and Stop points
@@ -553,9 +560,10 @@ end
 % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
 % of the peak location (or ring area) at velocity start; each channel is
 % searched separately so a problem in one channel does not affect the others
+fprintf('Closing check based on the %s (%s) \n', checkpointBasisName, checkpointUnit)
 for b = 1:nChannels
     try
-        [checkpointFrames, checkpointStatus] = closingCheckpointFrames(checkpointMeasure(b,:), ...
+        [checkpointFrames, checkpointStatus, actualFractions] = closingCheckpointFrames(checkpointMeasure(b,:), ...
             velocityStartStop_channel(b,1), velocityStartStop_channel(b,2), closing_checkpoint_values);
         if ~isempty(checkpointStatus)
             fprintf('Channel %d: closing checkpoints are not calculated, %s \n', b, checkpointStatus)
@@ -566,10 +574,14 @@ for b = 1:nChannels
                 fprintf('Channel %d: no frame found near the %s (%3.2f %s) \n', ...
                     b, closing_checkpoint_strings{cp}, closing_checkpoint_values(cp)*checkpointMeasure(b,velocityStartStop_channel(b,1)), checkpointUnit)
             else
-                fprintf('Channel %d: %s is frame %d \n', b, closing_checkpoint_strings{cp}, checkpointFrames(cp))
+                fprintf('Channel %d: %s is frame %d, actual open fraction %3.1f%% (%3.2f of %3.2f %s) \n', ...
+                    b, closing_checkpoint_strings{cp}, checkpointFrames(cp), actualFractions(cp)*100, ...
+                    checkpointMeasure(b,checkpointFrames(cp)), checkpointMeasure(b,velocityStartStop_channel(b,1)), checkpointUnit)
             end
         end
-        closingVelocityLocation_value(4:end,b) = checkpointFrames; % rows stay NaN if the range is not valid
+        % rows stay NaN if the range is not valid
+        closingVelocityLocation_value(4:3+nCheckpoints,b) = checkpointFrames;
+        closingVelocityLocation_value(4+nCheckpoints:3+2*nCheckpoints,b) = actualFractions;
     catch closingLocationEXP
         fprintf('Channel %d: closing checkpoints are not found, error message: %s \n', b, closingLocationEXP.message)
     end

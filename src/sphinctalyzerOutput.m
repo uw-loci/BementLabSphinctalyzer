@@ -1463,26 +1463,35 @@ function sphinctalyzerOutput(objarray)
             end
         end
 
-        % calculate wound closing velocity
+        % closing velocity, checkpoint frames and the actual open fraction at
+        % each checkpoint frame (rows found by their labels)
         closingVelocityLocation = xlsSheets{6};
-        % calculate the nearest frame index corresponding to 2/3, 1/2, 1/3
-        % of closing location
+        rowLabels = closingVelocityLocation(:,1);
+        isLabel = cellfun(@(x) ischar(x) || isstring(x), rowLabels);
+        checkpointRows = find(isLabel & startsWith(string(rowLabels),'frame at'));
+        fractionRows = find(isLabel & startsWith(string(rowLabels),'actual open fraction'));
         for b = 1:obj.nChannels
             woundClosingVelocity = closingVelocityLocation{3,b+1}; %* obj.micronsPerPixel;
             if ismissing(woundClosingVelocity)
                 woundClosingVelocity = 'N/A';
             end
             imageSliderDataPanel.Data{7, b} = woundClosingVelocity;
-            checkpoint_num = size(closingVelocityLocation,1)-3;
-            for cp = 1:checkpoint_num
-                closingVelocityLocation_load = closingVelocityLocation{3+cp,b+1};
-
-                if ismissing(closingVelocityLocation_load)
-                    closingVelocityLocation_load = 'N/A';
+            for cp = 1:numel(checkpointRows)
+                checkpointFrame = closingVelocityLocation{checkpointRows(cp),b+1};
+                if ismissing(checkpointFrame)
+                    checkpointCell = 'N/A';
+                elseif numel(fractionRows) >= cp && ~ismissing(closingVelocityLocation{fractionRows(cp),b+1})
+                    checkpointCell = sprintf('%d (%.1f%%)', checkpointFrame, 100*closingVelocityLocation{fractionRows(cp),b+1});
+                else
+                    checkpointCell = checkpointFrame; % results from earlier versions have no actual fractions
                 end
-                imageSliderDataPanel.Data{7+cp, b} = closingVelocityLocation_load;
+                imageSliderDataPanel.Data{7+cp, b} = checkpointCell;
                 if b == 1
-                     imageSliderDataPanel.RowName{7+cp} = strrep(closingVelocityLocation{3+cp,1},'closing position','close');
+                    checkpointLabel = strrep(char(rowLabels{checkpointRows(cp)}),'closing position','close');
+                    if ~endsWith(checkpointLabel,{'(position)','(area)'})
+                        checkpointLabel = [checkpointLabel ' (position)']; % earlier versions only used the peak position
+                    end
+                    imageSliderDataPanel.RowName{7+cp} = checkpointLabel;
                 end
             end
         end

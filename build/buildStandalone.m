@@ -127,6 +127,14 @@ if ismac
     launcherFile = fullfile(packageDir,'Launch Sphinctalyzer.command');
     writelines(launcher, launcherFile, 'LineEnding', '\n');
     fileattrib(launcherFile, '+x', 'a');
+
+    % show the launcher with the app's icon and without ".command" in Finder
+    appIcon = fullfile(packageDir, [mainName '.app'], 'Contents', 'Resources', 'membrane.icns');
+    [iconStatus, iconOutput] = system(sprintf('osascript -l JavaScript "%s" "%s" "%s"', ...
+        fullfile(buildDir,'set_launcher_icon.js'), launcherFile, appIcon));
+    if iconStatus ~= 0
+        error('Could not set the launcher icon: %s', iconOutput)
+    end
 end
 
 % build information

@@ -47,6 +47,28 @@ classdef testAnalysisWindowErrors < matlab.unittest.TestCase
             testCase.verifySubstring(message, 'same folder');
         end
 
+        function displayFrameOutOfRangeIsNotKept(testCase)
+            testCase.openImage();
+            table = findall(0,'Type','uitable','-and','ColumnName',{'Display Frame';'Is Reference?'});
+            testCase.assertNotEmpty(table, 'Channel table not found');
+            table = table(1);
+            % type a display frame past the last frame for channel 1
+            previous = table.Data{1,1};
+            table.Data{1,1} = 99;
+            event = struct('Indices',[1 1],'DisplayIndices',[1 1],'NewData',99,'PreviousData',previous);
+            callback = table.CellEditCallback;
+            callback(table, event);
+            testCase.verifySubstring(testCase.dialogText('Error Dialog'), 'range of timepoints');
+            testCase.verifyEqual(table.Data{1,1}, previous, 'The table should show the previous value');
+            % the image keeps the previous display frame: check the saved parameters
+            setappdata(groot,'testQuestdlgAnswer','Proceed');
+            runCallback(testCase.control('Update Parameters'));
+            delete(findall(0,'Type','figure','Name','Update Common Parameters'));
+            csv = readcell(fullfile(testCase.Work,'parameters.csv'));
+            cellArray = csv(strcmp(csv(:,1),'cellArray'), :);
+            testCase.verifyEqual(cellArray{3}, previous, 'The invalid display frame should not be kept');
+        end
+
         function updateParametersConfirmsOrShowsError(testCase)
             testCase.openImage();
             setappdata(groot,'testQuestdlgAnswer','Proceed');

@@ -1199,6 +1199,7 @@ function sphinctalyzerInitializerGUI
             if event.NewData < 1 || event.NewData > objarray(currentObj).nTimepoints
                 hObject.Data{event.DisplayIndices(1),event.DisplayIndices(2)} = event.PreviousData;
                 errordlg('Please enter a display frame value in the range of timepoints.')
+                return
             end
             objarray(currentObj).cellArray{row, column + 1} = event.NewData;
         elseif column == 2

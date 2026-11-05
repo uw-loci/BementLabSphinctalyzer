@@ -514,3 +514,11 @@ copy one from an earlier analysis. The package now has `parameters.csv` and `par
 `tests/testDefaultParameters.m` checks the written values and that loading the files gives the same settings as
 opening the image without a parameters file (all settings saved by Update Parameters, except the output folder name,
 which has the time in it).
+
+## Display frame outside the movie was kept (2026-11-05)
+
+In the main window's Cell Inputs table, typing a Display Frame outside the movie showed an error and put the old value
+back in the table, but `cell_inputs_callback` still stored the invalid value for the image (a `return` was missing
+after the error). The analysis would then start tracking from that frame. Fixed by returning after the error.
+`testAnalysisWindowErrors/displayFrameOutOfRangeIsNotKept` types frame 99 into the 3-frame test image and checks the
+table and the parameters saved by Update Parameters; it fails without the fix.

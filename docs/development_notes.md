@@ -552,3 +552,19 @@ Checked on this Mac: a movie frame at 24 matches the earlier look; at 32 the tex
 32 with the Frame axis. Not checked on Windows.
 - Follow-up: in the Peak Locations data plot, the y label is always on two lines ("Peak Location" /
   "(µm from wound center)"); on one line it was too long for the figure at the default font size.
+
+## Write All: create new results or overwrite Results_1 (2026-11-16)
+
+Write All in the post-processing window could only overwrite `Results_1` in every results folder, so testing several
+parameter sets in batch (Save Parameters → "Save common parameters for all", then Write All) lost the earlier
+results. Write One already offered Create New / Overwrite Existing for one movie.
+
+- The Write All question now has **Create New**, **Overwrite Results_1** and **Cancel**. It reminds the user that
+  each folder's `parameters_post.xlsx` is used and names the new results: one line when every folder gets the same
+  number, otherwise one line per folder (up to 10).
+- **Create New** writes the next free number in each folder (`src/nextResultsIndex.m`: 1 + the highest number among
+  `Results_<n>.xlsx` and `*_scan_movietalyzerResults_<n>.avi` in `sphincRedo`, ignoring "._" files). Numbers stay
+  consecutive per folder, which the viewer's movie list relies on. The new movie is added to each image's movie list
+  and, for the current image, to the viewer.
+- `createNewMovie_post(outputPath, movieIndex)` takes the results number (default 1, as before).
+- The summary lists the results written in each folder.

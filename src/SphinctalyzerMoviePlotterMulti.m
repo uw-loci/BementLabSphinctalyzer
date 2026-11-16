@@ -26,6 +26,9 @@ if ~exist('advancedOptions','var') || ~isfield(advancedOptions,'closingCheckBasi
     advancedOptions.closingCheckBasis = 'position';  % 'position' (peak location) or 'area' (ring area)
 end
 advancedOptions.closingCheckBasis = closingCheckBasisOption(advancedOptions.closingCheckBasis);
+if ~isfield(advancedOptions,'movieFontSize') || isempty(advancedOptions.movieFontSize)
+    advancedOptions.movieFontSize = getDefaultMovieFontSize();  % font size of the movie figure (see movieFontSize)
+end
     if nargin == 0
         guiInput = 0;
         channelColors = 0;
@@ -401,6 +404,7 @@ for i= 1:size(Zr,1)
     hold on
     end
     set(gcf1,'Position',[1 1 1000 500]);
+    fontPoints = movieFontSize(advancedOptions.movieFontSize, gcf1); % same fraction of the figure on every computer
     if guiInput == 1
         xlim(gca,[xmin, xmax])
         ylim(gca,[yMinStepMax(1),yMinStepMax(3)])
@@ -408,7 +412,7 @@ for i= 1:size(Zr,1)
         set(gca,'XTick',xmin:round(xMinStepMax(2)/micronsPerPixel):xmax)
         set(gca,'XTickLabel',xMinStepMax(1):xMinStepMax(2):xMinStepMax(3))
         set(gca,'XDir','reverse') % keep wound center (0) on the right, as in previous versions
-        set(gca,'FontSize',16)
+        set(gca,'FontSize',fontPoints)
         set(gca,'FontName','Arial','FontWeight','bold')
         xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
     else
@@ -417,14 +421,14 @@ for i= 1:size(Zr,1)
         ylim(gca,ylims);
         set(gca,'YTick',yticks)
         set(gca,'YTickLabel',yticks)
-        set(gca,'FontSize',16)
+        set(gca,'FontSize',fontPoints)
         set(gca,'FontName','Arial','FontWeight','bold')
         xlabel(sprintf('%s \nTime = %.1f %s', xAxisTitle,(((min(Range)-TimeZeroFrame)+(i-1)/InterpolationFrames)*TimePerFrame),TimeUnit))
         if micronsPerPixel ~= 1
             set(gca,'XTickLabel',LabelConverter((cellfun(@str2num, get(gca,'XTickLabel')).*micronsPerPixel)))
         end
     end
-    lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',16,'FontName','Arial');
+    lgd = legend(ChannelStrings,'Location',legendLocation,'FontSize',fontPoints,'FontName','Arial');
     set(gcf1, 'Color', 'w')
     set(gca, 'Color', 'w')
     ylabel(ystring)
@@ -456,7 +460,7 @@ close(writerObj);
 % movefile([savename,'.avi'],savepath);
 close(gcf1)
 %save parameters to the excel file
-parameters_post = cell(17,4); % add searchingRadius, closingCheckpoint, channelNames and closingCheckBasis
+parameters_post = cell(18,4); % add searchingRadius, closingCheckpoint, channelNames, closingCheckBasis and movieFontSize
 parameters_post{1,1} = 'Channel Colors';
 nColors = length(channelColors);
 for i = 1:nColors
@@ -496,6 +500,7 @@ for i = 1:size(ChannelStrings,1)
     parameters_post{16,i+1} = ChannelStrings{i};
 end
 parameters_post{17,1} = 'closing check basis';parameters_post{17,2} = advancedOptions.closingCheckBasis;
+parameters_post{18,1} = 'movie font size';parameters_post{18,2} = advancedOptions.movieFontSize;
 writecell(parameters_post,[savepath, excelSavename],'Sheet','parameters','Range','A1');
 
 %% add a sheet of "Closing Velocity and Location" 

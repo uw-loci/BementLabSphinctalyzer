@@ -16,7 +16,8 @@ function sphinctalyzerOutput(objarray)
     frameRate = 20;
     readFunction = {@bf_reader, @circle_reader, @movie_reader};
     defaultPeakSearchingRadius = getDefaultPeakSearchingRadius();
-    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333],'closingCheckBasis','position');
+    advancedOptions = struct('peakSearchingRadius',defaultPeakSearchingRadius,'velocityStartStop',[],'closingCheckpoint',[0.667 0.500 0.333],'closingCheckBasis','position', ...
+        'movieFontSize',getDefaultMovieFontSize());
     dataPlotFig = [];    % handle for the floating 'Data over time' figure
     currentExcelSavename = 'Results_1.xlsx';  % tracks which Results file is active
     xlsChannelNames = {};  % channel names read from the active Excel results file
@@ -50,15 +51,32 @@ function sphinctalyzerOutput(objarray)
         'String','Edit X Axis', ...
         'FontSize',10, ...
         'Units','normalized', ...
-        'Position',[0.15 0.9 .70 .075], ...
+        'Position',[0.02 0.9 .47 .075], ...
         'Callback',@(h,e) runCallback(@change_x_axis,'Edit X Axis',h,e));   
     changeYAxis = uicontrol('Parent',moviePlotOptions, ...
         'Style','pushbutton', ...
         'String','Edit Y Axis', ...
         'FontSize',10, ...
         'Units','normalized', ...
-        'Position',[0.15 0.8 .70 .075], ...
+        'Position',[0.51 0.9 .47 .075], ...
         'Callback',@(h,e) runCallback(@change_y_axis,'Edit Y Axis',h,e));
+    fontSizeLabel = uicontrol('Parent',moviePlotOptions, ...
+        'Style','text', ...
+        'String','Font Size', ...
+        'FontSize',10, ...
+        'HorizontalAlignment','right',...
+        'Units','normalized', ...
+        'Position',[0 0.8 .7 .075]);
+    enterFontSize = uicontrol('Parent',moviePlotOptions, ...
+        'Style','edit', ...
+        'String',num2str(getDefaultMovieFontSize()), ...
+        'BackgroundColor','w', ...
+        'UserData',getDefaultMovieFontSize(), ...
+        'Units','normalized', ...
+        'Position',[0.725 0.815 .25 .075], ...
+        'Tooltip',['Size of all text in the movie and Data over time figures (labels, ticks, legend, time). ' ...
+            'The text keeps the same size relative to the figure on every computer.'], ...
+        'Callback',@(h,e) runCallback(@get_movie_font_size,'Font Size',h,e));
     % darkBackgroundLabel = uicontrol('Parent',moviePlotOptions, ...
     %     'Style','text', ...
     %     'String','Dark Background', ...
@@ -1243,6 +1261,18 @@ function sphinctalyzerOutput(objarray)
         obj = objarray(currentObj);
     end
     
+    function get_movie_font_size(hObject, event)
+        [fontSize, isValid] = movieFontSizeOption(get(hObject,'String'));
+        if ~isValid
+            set(hObject,'String',num2str(get(hObject,'UserData')))
+            errordlg('Please enter a font size from 8 to 48.','Font Size')
+            return
+        end
+        set(hObject,'String',num2str(fontSize),'UserData',fontSize)
+        advancedOptions.movieFontSize = fontSize;
+        refresh_data_plot()   % the movies use it at the next Write One / Write All
+    end
+
     function get_legend_location(hObject, event)
         legend_locations = {'NorthWest','NorthEast','SouthWest','SouthEast'};
         selected_legend_location = legend_locations{get(hObject, 'Value')};
@@ -1656,6 +1686,7 @@ function sphinctalyzerOutput(objarray)
               advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
               advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
               advancedOptions.closingCheckBasis = 'position';
+              advancedOptions.movieFontSize = getDefaultMovieFontSize();
         elseif size(movieOptions,1) >= 15
             for iC = 1:obj.nChannels
                 advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
@@ -1671,6 +1702,11 @@ function sphinctalyzerOutput(objarray)
                 advancedOptions.closingCheckBasis = closingCheckBasisOption(movieOptions{17,2});
             else
                 advancedOptions.closingCheckBasis = 'position'; % results from earlier versions
+            end
+            if size(movieOptions,1) >= 18
+                advancedOptions.movieFontSize = movieFontSizeOption(movieOptions{18,2});
+            else
+                advancedOptions.movieFontSize = getDefaultMovieFontSize(); % results from earlier versions
             end
 
         end
@@ -1696,6 +1732,7 @@ function sphinctalyzerOutput(objarray)
         set(enterClosingCheckpoint,'String',num2str(advancedOptions.closingCheckpoint,' %4.3f'),...
             'UserData',advancedOptions.closingCheckpoint);
         set(selectClosingCheckBasis,'Value',1+strcmp(advancedOptions.closingCheckBasis,'area'));
+        set(enterFontSize,'String',num2str(advancedOptions.movieFontSize),'UserData',advancedOptions.movieFontSize);
 
         objarray(currentObj) = obj;
         set(darkBackground, 'Value', obj.darkBackground);
@@ -1783,17 +1820,22 @@ function sphinctalyzerOutput(objarray)
         % Reuse the existing figure window if open; otherwise create it.
         % Delete all children (axes + their listeners) for a clean redraw.
         if isempty(dataPlotFig) || ~isvalid(dataPlotFig)
-            screenSize     = get(0, 'ScreenSize');          % [1 1 width_px height_px]
-            figWidthNorm   = 0.25;
-            figHeightNorm  = figWidthNorm * (3/4) * (screenSize(3) / screenSize(4));
+            % same size as the movie figure (1000x500 pixels), smaller only
+            % if the screen is, so it looks the same on every display
+            screenSize = get(0, 'ScreenSize');          % [1 1 width_px height_px]
+            figScale   = min([1, 0.9*screenSize(3)/1000, 0.8*screenSize(4)/500]);
+            figSize    = round([1000 500] * figScale);
             dataPlotFig = figure('Name', 'Data over time', 'NumberTitle', 'off', ...
-                'Units', 'normalized', 'Position', [0.01 0.25 figWidthNorm figHeightNorm], ...
+                'Units', 'pixels', ...
+                'Position', [round(0.01*screenSize(3)) round((screenSize(4)-figSize(2))/2) figSize], ...
                 'CloseRequestFcn', @data_plot_close_callback);
         else
             delete(dataPlotFig.Children);  % removes axes and orphaned listeners
         end
 
-        ax1 = axes('Parent', dataPlotFig);
+        % text keeps the same size relative to the figure as in the movies
+        fontPoints = movieFontSize(advancedOptions.movieFontSize, dataPlotFig);
+        ax1 = axes('Parent', dataPlotFig, 'FontName', 'Arial', 'FontSize', fontPoints);
         hold(ax1, 'on');
 
         ch1FrameStart = NaN;
@@ -1871,13 +1913,13 @@ function sphinctalyzerOutput(objarray)
             plot(ax1, xSec, yData, ...
                 'Color', obj.channelColors{ch}, ...
                 'DisplayName', chName, ...
-                'LineWidth', 1.5);
+                'LineWidth', 3);
         end
 
         hold(ax1, 'off');
         xlabel(ax1, xLabelStr, 'FontWeight', 'bold');
         ylabel(ax1, yLabelStr, 'FontWeight', 'bold');
-        lgd = legend(ax1, 'Location', obj.legendLocation);
+        lgd = legend(ax1, 'Location', obj.legendLocation, 'FontSize', fontPoints, 'FontName', 'Arial');
         lgd.Box = 'off';
         box(ax1, 'off');
         % Explicitly span the full defined analysis range so all frames are visible
@@ -1892,7 +1934,9 @@ function sphinctalyzerOutput(objarray)
             % to leave room for the secondary x-axis label
             drawnow;
             axPos = ax1.Position;
-            axPos(4) = axPos(4) - 0.07;   % reduce height to free top margin
+            % free a top margin for the frame axis's ticks and label: 2.5 lines
+            % of text, as a fraction of the figure height (see movieFontSize)
+            axPos(4) = axPos(4) - 2.5 * advancedOptions.movieFontSize / 500;
             ax1.Position = axPos;
             % Map ax1's actual rendered XLim (seconds) to frame numbers
             ax2XLimStart = ch1FrameStart + ax1.XLim(1) / obj.timePerFrame;
@@ -1906,7 +1950,9 @@ function sphinctalyzerOutput(objarray)
                 'YTick', [], ...
                 'YColor', 'none', ...
                 'HitTest', 'off', ...
-                'PickableParts', 'none');
+                'PickableParts', 'none', ...
+                'FontName', 'Arial', ...
+                'FontSize', fontPoints);
             ax2.XLim = [ax2XLimStart, ax2XLimEnd];
             xlabel(ax2, 'Frame', 'FontWeight', 'bold');
             % Explicitly restrict zoom/pan to ax1 only (toolbar tools use

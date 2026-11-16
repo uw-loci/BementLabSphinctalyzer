@@ -16,7 +16,7 @@ postPath = moviePath(1:foldermarkerIndex-1);
 savePath = postPath;
 excelSavename = 'parameters_post.xlsx';
 renameMessage = '';
-parameters_post = cell(17,4); % add searchingRadius, closingCheckpoint, channelNames and closingCheckBasis
+parameters_post = cell(18,4); % add searchingRadius, closingCheckpoint, channelNames, closingCheckBasis and movieFontSize
 
 if saveCommonFlag ~= 1
     parameters_post{1,1} = 'Channel Colors';
@@ -63,6 +63,7 @@ if saveCommonFlag ~= 1
         parameters_post{16,i+1} = obj.channelNames{i};
     end
     parameters_post{17,1} = 'closing check basis'; parameters_post{17,2} = closingCheckBasisOption(advancedOptions.closingCheckBasis);
+    parameters_post{18,1} = 'movie font size'; parameters_post{18,2} = movieFontSizeOption(fontSizeSetting(advancedOptions));
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 else  % save common parameters
@@ -127,7 +128,16 @@ else  % save common parameters
         parameters_post{16,i+1} = obj.channelNames{i};
     end
     parameters_post{17,1} = 'closing check basis'; parameters_post{17,2} = closingCheckBasisOption(advancedOptions.closingCheckBasis);
+    parameters_post{18,1} = 'movie font size'; parameters_post{18,2} = movieFontSizeOption(fontSizeSetting(advancedOptions));
     writecell(parameters_post,fullfile(savePath, excelSavename),'Sheet','parameters','Range','A1');
     fprintf('  created new post-processing parameters file: \n     %s \n',fullfile(savePath, excelSavename))
 
+end
+
+function value = fontSizeSetting(advancedOptions)
+% the movie font size in advancedOptions, or [] if it has none
+if isfield(advancedOptions,'movieFontSize')
+    value = advancedOptions.movieFontSize;
+else
+    value = [];
 end

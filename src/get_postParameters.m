@@ -39,6 +39,7 @@ if ~exist(fullfile(matFilePath,postParametersFileName),'file')
         advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
         advancedOptions.closingCheckBasis = 'position';
+        advancedOptions.movieFontSize = getDefaultMovieFontSize();
         return
     end
 end
@@ -70,6 +71,7 @@ try
         advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
         advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
         advancedOptions.closingCheckBasis = 'position';
+        advancedOptions.movieFontSize = getDefaultMovieFontSize();
     elseif size(movieOptions,1) >= 15
         for iC = 1:obj.nChannels
             advancedOptions.velocityStartStop(iC,:) = str2num(movieOptions{13,1+iC});
@@ -85,6 +87,11 @@ try
             advancedOptions.closingCheckBasis = closingCheckBasisOption(movieOptions{17,2});
         else
             advancedOptions.closingCheckBasis = 'position';
+        end
+        if size(movieOptions,1) >= 18
+            advancedOptions.movieFontSize = movieFontSizeOption(movieOptions{18,2});
+        else
+            advancedOptions.movieFontSize = getDefaultMovieFontSize();
         end
         if size(movieOptions,1) == 16
             movieOptions{16,1} = 'channelNames';
@@ -105,6 +112,7 @@ catch exp_post
     advancedOptions.peakSearchingRadius = defaultPeakSearchingRadius;
     advancedOptions.closingCheckpoint= [0.667 0.500 0.333];
     advancedOptions.closingCheckBasis = 'position';
+    advancedOptions.movieFontSize = getDefaultMovieFontSize();
 end
 
 end

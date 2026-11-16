@@ -522,3 +522,31 @@ back in the table, but `cell_inputs_callback` still stored the invalid value for
 after the error). The analysis would then start tracking from that frame. Fixed by returning after the error.
 `testAnalysisWindowErrors/displayFrameOutOfRangeIsNotKept` types frame 99 into the 3-frame test image and checks the
 table and the parameters saved by Update Parameters; it fails without the fix.
+
+## Font size of the movie and "Data over time" figures (2026-11-16)
+
+Collaborators found the text in the movies too small and preferred the earlier look. The font size had been changed
+from 24 to 16 (`ade5b9a`, 2026-03-06). A fixed point size cannot look the same everywhere: MATLAB font sizes are in
+points and figure sizes in pixels, and a pixel is 1 point on a Mac (72 pixels per inch) but 0.75 point on Windows
+(96). So 16-point text in the 1000×500-pixel movie figure is 16 pixels tall on a Mac and 21 on Windows.
+
+- `src/movieFontSize.m` converts a font size, given as it looks in the 1000×500 movie figure on a Mac, into points for
+  a given figure: font size × figure height in points / 500. Text is then the same fraction of the figure on every
+  computer and display.
+- One setting, "Font Size", in the Movie Plot panel of the post-processing window (default 24,
+  `getDefaultMovieFontSize.m`; 8 to 48, checked by `movieFontSizeOption.m`). Edit X Axis and Edit Y Axis now share a
+  row to make room.
+  - It is stored as `advancedOptions.movieFontSize` and saved as row 18 ("movie font size") of `parameters_post.xlsx`
+    and of the parameters sheet of `Results_N.xlsx`.
+  - Results from earlier versions have no row 18 and use 24.
+- Movie figure (`SphinctalyzerMoviePlotterMulti.m`): axes and legend use it. The figure size is unchanged
+  (1000×500).
+- "Data over time" figure (`show_data_over_time_plot` in `sphinctalyzerOutput.m`):
+  - it is now 1000×500 pixels like the movie, instead of 25% of the screen width at 4:3, so it no longer depends on
+    the display; it is smaller only if the screen is;
+  - it uses the same font size (Arial), with 3-point lines;
+  - the top margin for the Frame axis grows with the font, so its label is not cut off;
+  - changing Font Size redraws an open plot.
+
+Checked on this Mac: a movie frame at 24 matches the earlier look; at 32 the text is larger; the data plot at 24 and
+32 with the Frame axis. Not checked on Windows.

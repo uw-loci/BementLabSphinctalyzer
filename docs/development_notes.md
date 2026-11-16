@@ -568,3 +568,15 @@ results. Write One already offered Create New / Overwrite Existing for one movie
   and, for the current image, to the viewer.
 - `createNewMovie_post(outputPath, movieIndex)` takes the results number (default 1, as before).
 - The summary lists the results written in each folder.
+
+## Which settings are used: parameters_post.xlsx and Results_N.xlsx (2026-11-16)
+
+With Write All able to create new results, `parameters_post.xlsx` need not match `Results_1.xlsx`. Nothing changed in
+what is computed or saved; the window's text now says which settings are used:
+- `parameters_post.xlsx` holds the settings for the next batch run: written by Save Parameters, read by Write All
+  and the main window's Post Process.
+- Write One uses the settings shown in the window.
+- Each `Results_N.xlsx` records the settings it was made with (sheet "parameters"); selecting a result shows them.
+
+Updated: the tooltips of Write One, Save Parameters and Write All (Write All no longer says it always writes
+Results_1), the Save Parameters confirmations, and the Write All question.

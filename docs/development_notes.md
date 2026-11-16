@@ -483,3 +483,42 @@ use light colors. Fixed by:
   dark mode: scroll bars, table text and the Check Basis choices are fixed.
 - black text on a white background set explicitly for the data table and list boxes in the post-processing window
   and the channel table and image list in the main window.
+
+## Mac launcher: app icon and Runtime search (2026-11-04)
+
+- **Icon:** in Finder, `Launch Sphinctalyzer.command` showed a shell-script icon. `build/set_launcher_icon.js`
+  (run by `buildStandalone.m` through `osascript`) gives it the app's icon (`membrane.icns`) and hides its `.command`
+  extension, so it shows as "Launch Sphinctalyzer". Both are kept in the zip made by `ditto --sequesterRsrc` and
+  restored when the zip is opened in Finder. Checked by zipping and unzipping a copy.
+- **Runtime search:** on another Intel Mac the launcher said "MATLAB Runtime R2023b (maci64) was not found" while
+  opening the app from Finder worked. The app's own launcher (`applauncher`) also looks for a MATLAB R2023b
+  installation (`/Applications/MATLAB_R2023b.app`) and a Runtime folder saved in its preferences; ours only looked in
+  `/Applications/MATLAB/MATLAB_Runtime`. The launcher now also checks `/Applications/MATLAB_R2023b.app` and
+  `~/Applications/MATLAB_R2023b.app`, and if it finds nothing it starts the app with `open`, i.e. with the app's own
+  launcher (no log in that case). Both paths were tried with stand-ins for the app; the rebuilt package then started
+  on the Mac that had shown the error.
+
+## Default parameters files in the standalone package (2026-11-04)
+
+Users who want to change parameters before an analysis had to save a parameters file first (Update Parameters) or
+copy one from an earlier analysis. The package now has `parameters.csv` and `parameters.mat` next to the app, where
+"Load Parameters" opens when the app is started with the launcher.
+- `src/defaultImageParameters.m` holds the built-in defaults that were written out in `load_image` of
+  `sphinctalyzerInitializerGUI.m`; `load_image` now calls it, so the app and the shipped files share one set of values.
+- `src/writeDefaultParameters.m` writes the pair with those defaults, with `timepointStart`/`timepointEnd` = -1
+  (`load_image` then uses all frames of each image) and channel rows for up to three channels. `build/buildStandalone.m`
+  calls it for every platform.
+- `src/parameters.csv`/`.mat` in the repository are left from a test run (frames 22-26, `[0 9.6 28.8]`, Windows
+  paths) and are not shipped as defaults.
+
+`tests/testDefaultParameters.m` checks the written values and that loading the files gives the same settings as
+opening the image without a parameters file (all settings saved by Update Parameters, except the output folder name,
+which has the time in it).
+
+## Display frame outside the movie was kept (2026-11-05)
+
+In the main window's Cell Inputs table, typing a Display Frame outside the movie showed an error and put the old value
+back in the table, but `cell_inputs_callback` still stored the invalid value for the image (a `return` was missing
+after the error). The analysis would then start tracking from that frame. Fixed by returning after the error.
+`testAnalysisWindowErrors/displayFrameOutOfRangeIsNotKept` types frame 99 into the 3-frame test image and checks the
+table and the parameters saved by Update Parameters; it fails without the fix.

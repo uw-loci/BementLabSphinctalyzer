@@ -8,7 +8,8 @@ function zipFile = buildStandalone(varargin)
 %
 % Output (build/output, not tracked by git):
 %   Sphinctalyzer_v<version>_<platform>2023b_<yyyymmdd>/   app files from MATLAB Compiler,
-%       "Launch Sphinctalyzer.command" (Mac) and build_info.txt
+%       "Launch Sphinctalyzer.command" (Mac), the default parameters.csv and
+%       parameters.mat, and build_info.txt
 %   Sphinctalyzer_v<version>_<platform>2023b_<yyyymmdd>.zip
 % The version comes from src/sphinctalyzerVersion.m. See build/README.md.
 
@@ -127,7 +128,19 @@ if ismac
     launcherFile = fullfile(packageDir,'Launch Sphinctalyzer.command');
     writelines(launcher, launcherFile, 'LineEnding', '\n');
     fileattrib(launcherFile, '+x', 'a');
+
+    % show the launcher with the app's icon and without ".command" in Finder
+    appIcon = fullfile(packageDir, [mainName '.app'], 'Contents', 'Resources', 'membrane.icns');
+    [iconStatus, iconOutput] = system(sprintf('osascript -l JavaScript "%s" "%s" "%s"', ...
+        fullfile(buildDir,'set_launcher_icon.js'), launcherFile, appIcon));
+    if iconStatus ~= 0
+        error('Could not set the launcher icon: %s', iconOutput)
+    end
 end
+
+% default parameters files next to the app: "Load Parameters" opens in the
+% app's folder, where users can edit parameters.csv before an analysis
+writeDefaultParameters(packageDir);
 
 % build information
 info = {sprintf('Sphinctalyzer v%s', appVersion), ...

@@ -378,8 +378,30 @@ function sphinctalyzerOutput(objarray)
         'ForegroundColor',[0 0 0], 'BackgroundColor',[1 1 1], ... % readable in macOS dark mode
         'String',{'Image Timepoints', 'scan movietalyzerResults_1'}, ...
         'Units','normalized', ...
-        'Position',[0.05 0.05 0.9 0.54], ...
+        'Position',[0.05 0.14 0.9 0.45], ...
         'Callback',@(h,e) runCallback(@viewer_selection,'Viewer',h,e));
+    % delete the results after Results_1 for the selected image or for all images
+    uicontrol('Parent',viewOptionsPanel, ...
+        'Style','pushbutton', ...
+        'String','Clean Up This Movie', ...
+        'Units','normalized', ...
+        'Position',[0.05 0.02 0.44 0.09], ...
+        'Tooltip',sprintf(['Delete the extra results of the selected image, keeping Results_1:\n' ...
+            'Results_2 and later (Results_N.xlsx, its movie and saved data plots) in this image''s sphincRedo folder.\n' ...
+            'parameters_post.xlsx is reset to the settings of Results_1.\n' ...
+            'Asks before deleting; deleted files cannot be restored.']), ...
+        'Callback',@(h,e) runCallback(@(~,~) clean_up_results(false),'Clean Up Results',h,e));
+    uicontrol('Parent',viewOptionsPanel, ...
+        'Style','pushbutton', ...
+        'String','Clean Up All Movies', ...
+        'Units','normalized', ...
+        'Position',[0.51 0.02 0.44 0.09], ...
+        'Tooltip',sprintf(['For every image in the image list (not only the selected one), delete Results_2 and later\n' ...
+            'in that image''s sphincRedo folder: Results_N.xlsx, its movie (..._scan_movietalyzerResults_N.avi)\n' ...
+            'and saved data plots (Results_N_*.tif). Results_1 of every image and the analysis results\n' ...
+            '(sphinctalyzerResults.mat) are kept, and each parameters_post.xlsx is reset to the settings of Results_1.\n' ...
+            'Asks before deleting; deleted files cannot be restored.']), ...
+        'Callback',@(h,e) runCallback(@(~,~) clean_up_results(true),'Clean Up Results',h,e));
 
     % stack previewer 
     imagePanel = uipanel('Parent',guiCtrl, ...
@@ -1068,6 +1090,104 @@ function sphinctalyzerOutput(objarray)
             end
         end
     end
+    function clean_up_results(allImages)
+        % delete the results after Results_1 (Results_N.xlsx, movies and saved
+        % data plots, N >= 2) and reset parameters_post.xlsx to Results_1
+        if allImages
+            imageIndexes = 1:size(objarray,2);
+        else
+            imageIndexes = currentObj;
+        end
+        postPaths = {};
+        folderNames = {};
+        filesToDelete = {};
+        lines = {};
+        for k = imageIndexes
+            moviePath = objarray(k).moviePaths{1};
+            postPath = moviePath(1:strfind(moviePath,'sphincRedo')-1);
+            [files, numbers] = extraResultsFiles(postPath);
+            if isempty(files), continue; end
+            [outputFolderPath, dataFolder, dataFolderExt] = fileparts(fileparts(postPath));
+            [~, outputFolder] = fileparts(outputFolderPath);
+            postPaths{end+1} = postPath; %#ok<AGROW>
+            folderNames{end+1} = [outputFolder '/' dataFolder dataFolderExt]; %#ok<AGROW>
+            filesToDelete{end+1} = files; %#ok<AGROW>
+            lines{end+1,1} = sprintf('%s: %s (%d files)', folderNames{end}, ...
+                strjoin(arrayfun(@(n) sprintf('Results_%d', n), numbers, 'UniformOutput', false), ', '), numel(files)); %#ok<AGROW>
+        end
+        if isempty(postPaths)
+            msgbox('No extra results to delete. Only Results_1 is kept.', 'Clean Up Results')
+            return
+        end
+        if numel(lines) > 10
+            lines = [lines(1:10); {sprintf('and %d more', numel(lines) - 10)}];
+        end
+        answer = questdlg([{'Delete these results? Results_1 is kept.'}, {''}, lines(:)', {''}, ...
+            {'parameters_post.xlsx will be reset to the settings of Results_1 (settings saved for the next Write All are replaced).'}, ...
+            {'This cannot be undone.'}], ...
+            'Clean Up Results', 'Delete', 'Cancel', 'Cancel');
+        if ~strcmp(answer, 'Delete')
+            return
+        end
+        % a data plot may show a result that is deleted
+        if ~isempty(dataPlotFig) && isvalid(dataPlotFig)
+            data_plot_close_callback();
+        end
+        nDeleted = 0;
+        notDeleted = {};
+        notReset = {};
+        for f = 1:numel(postPaths)
+            for i = 1:numel(filesToDelete{f})
+                try
+                    delete(filesToDelete{f}{i});
+                    if isfile(filesToDelete{f}{i})
+                        error('the file is still there');
+                    end
+                    nDeleted = nDeleted + 1;
+                catch deleteError
+                    notDeleted{end+1} = sprintf('%s: %s', filesToDelete{f}{i}, deleteError.message); %#ok<AGROW>
+                end
+            end
+            % parameters_post.xlsx gets the settings of Results_1 (same layout)
+            firstResults = fullfile(postPaths{f},'sphincRedo','Results_1.xlsx');
+            try
+                if ~isfile(firstResults)
+                    error('Results_1.xlsx not found');
+                end
+                parameters = readcell(firstResults,'Sheet','parameters');
+                parameters(cellfun(@(x) any(ismissing(x)), parameters)) = {[]};
+                parametersFile = fullfile(postPaths{f},'parameters_post.xlsx');
+                if isfile(parametersFile)
+                    delete(parametersFile);
+                end
+                writecell(parameters, parametersFile, 'Sheet', 'parameters');
+            catch resetError
+                notReset{end+1} = sprintf('%s: %s', folderNames{f}, resetError.message); %#ok<AGROW>
+            end
+        end
+        % keep only the first movie in the movie lists
+        for k = imageIndexes
+            objarray(k).moviePaths = objarray(k).moviePaths(1);
+        end
+        set(viewerSelectionTable,'String',{'Image Timepoints','Circle Scan','scan movietalyzerResults_1'}, 'Value', 3)
+        viewer_selection(viewerSelectionTable)
+        folderWord = 'folders';
+        if numel(postPaths) == 1, folderWord = 'folder'; end
+        summary = {sprintf('Deleted %d files in %d %s. Results_1 is kept.', nDeleted, numel(postPaths), folderWord)};
+        if isempty(notDeleted) && isempty(notReset)
+            msgbox(summary, 'Clean Up Results')
+        else
+            details = {};
+            if ~isempty(notDeleted)
+                details = [details, {''}, {'Not deleted:'}, notDeleted]; %#ok<AGROW>
+            end
+            if ~isempty(notReset)
+                details = [details, {''}, {'parameters_post.xlsx not reset:'}, notReset]; %#ok<AGROW>
+            end
+            errordlg([summary, details], 'Clean Up Results')
+        end
+    end
+
     function save_postParameters(~,~)
         % add a question dialog to update parameters for current movie or common parameters to all movies
         saveCommonFlag = [];

@@ -580,3 +580,21 @@ what is computed or saved; the window's text now says which settings are used:
 
 Updated: the tooltips of Write One, Save Parameters and Write All (Write All no longer says it always writes
 Results_1), the Save Parameters confirmations, and the Write All question.
+
+## Clean up extra results (2026-11-16)
+
+With Write One and Write All both able to create new results, results folders fill up. Two buttons under the movie
+list in View Options (the list is a little shorter to make room):
+- **Clean Up This Movie:** for the selected image.
+- **Clean Up All Movies:** for every image in the image list.
+
+They delete, after a confirmation (default Cancel), the results after the first in each image's `sphincRedo`
+folder: `Results_N.xlsx`, `*_scan_movietalyzerResults_N.avi` and saved data plots `Results_N_*.tif` for N ≥ 2,
+with their "._" files (`src/extraResultsFiles.m`).
+- **Kept:** `Results_1`, its movie, `sphinctalyzerResults.mat` and every other file.
+- **Reset:** `parameters_post.xlsx` is reset to the "parameters" sheet of `Results_1.xlsx` (same layout), so the
+  saved settings match the remaining results.
+- **No restore:** files are deleted, not moved, so there is no restore.
+
+The question lists the results to delete per folder; the movie list then shows only Results_1, and an open Data over
+time plot is closed.

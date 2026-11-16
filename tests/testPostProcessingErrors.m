@@ -28,6 +28,7 @@ classdef testPostProcessingErrors < matlab.unittest.TestCase
     methods (TestMethodTeardown)
         function closeWindows(~)
             setappdata(groot,'testQuestdlgAnswer',[]);
+            setappdata(groot,'testQuestdlgQuestion',[]);
             delete(findall(0,'Type','figure'));
         end
     end
@@ -74,12 +75,66 @@ classdef testPostProcessingErrors < matlab.unittest.TestCase
             resultsFile = fullfile(good,'sphincRedo','Results_1.xlsx');
             before = dir(resultsFile).datenum;
             pause(1.1)   % file times have one-second resolution
-            setappdata(groot,'testQuestdlgAnswer','YES');
+            setappdata(groot,'testQuestdlgAnswer','Overwrite Results_1');
             runCallback(testCase.control('Style','pushbutton','Write All'));
             message = testCase.dialogText('Write All Movies');
             testCase.verifySubstring(message, 'Movies written: 1 of 2');
             testCase.verifySubstring(message, 'Output_B/data_sphintest_-2channlel-sub1.tif');
             testCase.verifyGreaterThan(dir(resultsFile).datenum, before, 'The good movie should be written');
+        end
+
+        function writeAllCreatesNewResults(testCase)
+            % folder A already has Results_1 and Results_2, folder B only Results_1
+            folderA = testCase.analyzedCopy('Output_A', 2);
+            evalc('createNewMovie_post(folderA, 2)');
+            folderB = testCase.analyzedCopy('Output_B', 1);
+            testCase.openWindow({folderA, folderB});
+            firstResults = {fullfile(folderA,'sphincRedo','Results_1.xlsx'), fullfile(folderB,'sphincRedo','Results_1.xlsx')};
+            before = cellfun(@(f) dir(f).datenum, firstResults);
+            pause(1.1)   % file times have one-second resolution
+            setappdata(groot,'testQuestdlgAnswer','Create New');
+            runCallback(testCase.control('Style','pushbutton','Write All'));
+            % the question names each folder's new results
+            question = strjoin(string(getappdata(groot,'testQuestdlgQuestion')), ' ');
+            testCase.verifySubstring(question, 'Output_A/data_sphintest_-2channlel-sub1.tif: Results_3');
+            testCase.verifySubstring(question, 'Output_B/data_sphintest_-2channlel-sub1.tif: Results_2');
+            message = testCase.dialogText('Write All Movies');
+            testCase.verifySubstring(message, 'Movies written: 2 of 2');
+            testCase.verifySubstring(message, 'Output_A/data_sphintest_-2channlel-sub1.tif: Results_3');
+            testCase.verifySubstring(message, 'Output_B/data_sphintest_-2channlel-sub1.tif: Results_2');
+            movie = 'sphintest_-2channlel-sub1.tif_scan_movietalyzerResults_';
+            testCase.verifyTrue(isfile(fullfile(folderA,'sphincRedo','Results_3.xlsx')));
+            testCase.verifyTrue(isfile(fullfile(folderA,'sphincRedo',[movie '3.avi'])));
+            testCase.verifyTrue(isfile(fullfile(folderB,'sphincRedo','Results_2.xlsx')));
+            testCase.verifyTrue(isfile(fullfile(folderB,'sphincRedo',[movie '2.avi'])));
+            testCase.verifyEqual(cellfun(@(f) dir(f).datenum, firstResults), before, 'Results_1 should not be overwritten');
+            % the current image's new movie is listed in the viewer
+            viewer = findall(0,'Type','uicontrol','Style','listbox');
+            viewer = viewer(arrayfun(@(c) any(strcmp(cellstr(c.String),'Circle Scan')), viewer));
+            testCase.verifyTrue(any(strcmp(cellstr(viewer(1).String), 'scan movietalyzerResults_3')));
+        end
+
+        function writeAllCancelWritesNothing(testCase)
+            data = testCase.analyzedCopy('Output_A', 1);
+            testCase.openWindow({data});
+            setappdata(groot,'testQuestdlgAnswer','Cancel');
+            runCallback(testCase.control('Style','pushbutton','Write All'));
+            testCase.verifyEmpty(findall(0,'Type','figure','Name','Write All Movies'));
+            testCase.verifyFalse(isfile(fullfile(data,'sphincRedo','Results_2.xlsx')));
+        end
+
+        function nextResultsIndexCountsResultsAndMovies(testCase)
+            tempFolder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            folder = tempFolder.Folder;
+            testCase.verifyEqual(nextResultsIndex(folder), 1, 'No sphincRedo folder');
+            mkdir(fullfile(folder,'sphincRedo'));
+            testCase.verifyEqual(nextResultsIndex(folder), 1, 'Empty sphincRedo folder');
+            writelines("x", fullfile(folder,'sphincRedo','Results_2.xlsx'));
+            testCase.verifyEqual(nextResultsIndex(folder), 3);
+            writelines("x", fullfile(folder,'sphincRedo','img.tif_scan_movietalyzerResults_4.avi'));
+            testCase.verifyEqual(nextResultsIndex(folder), 5);
+            writelines("x", fullfile(folder,'sphincRedo','._Results_9.xlsx'));
+            testCase.verifyEqual(nextResultsIndex(folder), 5, 'macOS "._" files are ignored');
         end
 
         function overwriteUsesTwoDigitMovieNumber(testCase)

@@ -550,3 +550,5 @@ points and figure sizes in pixels, and a pixel is 1 point on a Mac (72 pixels pe
 
 Checked on this Mac: a movie frame at 24 matches the earlier look; at 32 the text is larger; the data plot at 24 and
 32 with the Frame axis. Not checked on Windows.
+- Follow-up: in the Peak Locations data plot, the y label is always on two lines ("Peak Location" /
+  "(µm from wound center)"); on one line it was too long for the figure at the default font size.

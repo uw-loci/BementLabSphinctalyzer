@@ -1773,7 +1773,7 @@ function sphinctalyzerOutput(objarray)
         switch dropVal
             case 2  % Peak Locations
                 rawSheet   = xlsSheets{2};
-                yLabelStr  = 'Peak Location (\mum from wound center)';
+                yLabelStr  = {'Peak Location', '(\mum from wound center)'};  % two lines: one is too long for the figure
                 xLabelStr  = 'Time (s) After Zone Appearance';
                 useVelRange = true;
                 computeDiff = false;

@@ -41,6 +41,16 @@ The platform part of the name follows the earlier releases: `MACintel`, `MacMchi
 Bio-Formats (`bfmatlab`) does not need to be inside `src`: `bfCheckJavaPath.m` finds `bioformats_package.jar` next to
 itself, wherever the folder is inside the app.
 
+## Beta builds
+
+To let collaborators test before a release:
+1. Set the version in `src/sphinctalyzerVersion.m`, e.g. `'0.3.0-beta1'`, then `'0.3.0-beta2'` and so on.
+2. Commit, tag the commit `v<version>` (e.g. `git tag -a v0.3.0-beta1 -m "..."`) and push the tag.
+3. Run `buildStandalone`. The package, zip, window title, start message and launcher show the full version; MATLAB
+   Compiler gets only the numeric part (`0.3.0`), because its `version=` accepts numbers only.
+
+For the release, set the version to `'0.3.0'`, merge into `main`, tag (or move) `v0.3.0`, and build again.
+
 ## Platforms
 
 - **Mac (Intel)**: build on an Intel Mac (`computer('arch')` is `maci64`).

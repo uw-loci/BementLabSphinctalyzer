@@ -55,6 +55,8 @@ classdef testPostProcessingErrors < matlab.unittest.TestCase
             setappdata(groot,'testQuestdlgAnswer','Save current');
             runCallback(saveButton);
             testCase.verifySubstring(testCase.dialogText('Save Post-Processing Parameters'), 'parameters_post.xlsx');
+            saved = readcell(fullfile(data,'parameters_post.xlsx'),'Sheet','parameters');
+            testCase.verifyEqual(saved(18,1:2), {'movie font size', getDefaultMovieFontSize()});
             % a folder where parameters_post.xlsx should be: the save fails with a dialog
             parametersFile = fullfile(data,'parameters_post.xlsx');
             delete(parametersFile);

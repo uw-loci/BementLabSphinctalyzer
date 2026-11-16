@@ -40,10 +40,12 @@ classdef testLegacyPostProcessing < matlab.unittest.TestCase
             testCase.assertNotEmpty(movies, 'No movie was created');
             testCase.MovieFile = fullfile(movies(1).folder, movies(1).name);
 
-            % second copy with the closing check based on the ring area
+            % second copy with the closing check based on the ring area and
+            % a movie font size of 30
             areaFolder = fullfile(tempFolder.Folder,'legacy_sub1_area');
             copyfile(fullfile(testsDir,'fixtures','legacy_sub1'), areaFolder);
-            setClosingCheckBasis(fullfile(areaFolder,'parameters_post.xlsx'), 'area');
+            setPostParameter(fullfile(areaFolder,'parameters_post.xlsx'), 17, 'closing check basis', 'area');
+            setPostParameter(fullfile(areaFolder,'parameters_post.xlsx'), 18, 'movie font size', 30);
             evalc('createNewMovie_post(areaFolder)');
             testCase.AreaResultsFile = fullfile(areaFolder,'sphincRedo','Results_1.xlsx');
         end
@@ -142,6 +144,15 @@ classdef testLegacyPostProcessing < matlab.unittest.TestCase
             testCase.verifyEqual(parameters{17,2}, 'area');
         end
 
+        function movieFontSizeIsSaved(testCase)
+            % results from an earlier version have no font size: the default is used
+            parameters = readcell(testCase.ResultsFile,'Sheet','parameters');
+            testCase.verifyEqual(parameters{18,1}, 'movie font size');
+            testCase.verifyEqual(parameters{18,2}, getDefaultMovieFontSize());
+            parameters = readcell(testCase.AreaResultsFile,'Sheet','parameters');
+            testCase.verifyEqual(parameters{18,2}, 30);
+        end
+
         function areaBasisChangesOnlyCheckpoints(testCase)
             sheets = {'Peak Intensity','Peak Locations','Halfwidths','AUCs','Percent Above Background','Ring Area'};
             for s = 1:numel(sheets)
@@ -176,12 +187,13 @@ classdef testLegacyPostProcessing < matlab.unittest.TestCase
     end
 end
 
-function setClosingCheckBasis(parametersFile, basis)
-% write the closing check basis (row 17) into a parameters_post.xlsx file
+function setPostParameter(parametersFile, row, name, value)
+% write one post-processing parameter (name and value in a row) into a
+% parameters_post.xlsx file
 parameters = readcell(parametersFile,'Sheet','parameters');
 parameters(cellfun(@(x) any(ismissing(x)), parameters)) = {[]};
-parameters{17,1} = 'closing check basis';
-parameters{17,2} = basis;
+parameters{row,1} = name;
+parameters{row,2} = value;
 delete(parametersFile);
 writecell(parameters, parametersFile, 'Sheet', 'parameters');
 end

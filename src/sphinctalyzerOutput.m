@@ -976,59 +976,94 @@ function sphinctalyzerOutput(objarray)
     function write_movies(~,~)
         numImages = size(objarray,2);
         processedPaths = cell(numImages,1);
+        folderNames = cell(numImages,1);
+        nextIndexes = zeros(numImages,1);
         for imageIndex = 1: numImages
             moviePath = objarray(imageIndex).moviePaths{1};
             foldermarkerIndex = strfind(moviePath,'sphincRedo');
             postPath = moviePath(1:foldermarkerIndex-1);
             processedPaths{imageIndex} = postPath;
+            % name the movie by its output and data folders, e.g. Output_<date>/data_<image>
+            [outputFolderPath, movieFolder, movieFolderExt] = fileparts(fileparts(postPath));
+            [~, outputFolder] = fileparts(outputFolderPath);
+            folderNames{imageIndex} = [outputFolder '/' movieFolder movieFolderExt];
+            nextIndexes(imageIndex) = nextResultsIndex(postPath);
         end
-        % update previously processed images
-        answerPost = questdlg('Overwrite Results_1 for all movies using the parameters saved in parameters_post.xlsx or Results_1.xlsx?', ...
+        % new results get the next free number in each folder
+        if all(nextIndexes == nextIndexes(1))
+            newNames = {sprintf('New results: Results_%d.xlsx and movie _%d.avi in each folder.', nextIndexes(1), nextIndexes(1))};
+        else
+            newNames = [{'New results:'}; shortList(cellfun(@(f,n) sprintf('%s: Results_%d', f, n), ...
+                folderNames, num2cell(nextIndexes), 'UniformOutput', false))];
+        end
+        answerPost = questdlg([{sprintf('Write movies for all %d results folders with the parameters saved in each folder (parameters_post.xlsx).', numImages)}, ...
+            {'To use the current parameters, first click Save Parameters and save them for all movies.'}, {''}, ...
+            {'Create New: keep the existing results and save new ones.'}, {'Overwrite Results_1: replace the first results.'}, {''}, ...
+            newNames(:)'], ...
             'Verify post-processing movie creation', ...
-            'YES','NO','YES');
-        % Handle response
+            'Create New','Overwrite Results_1','Cancel','Create New');
         switch answerPost
-            case 'YES'
-                disp('Loading post-processing parameters saved in Results_1.xlsx file or default parameters for creating new movies...')
-                % PathtoParameters = fullfile(parameterFilePath,parameterFileName);
-                % each movie is written separately so one failure does not stop the others
-                written = {};
-                failed = {};
-                progress = waitbar(0, 'Writing movies...', 'Name', 'Write All Movies');
-                for j = 1:length(processedPaths)
-                    % name the movie by its output and data folders, e.g. Output_<date>/data_<image>
-                    [outputFolderPath, movieFolder, movieFolderExt] = fileparts(fileparts(processedPaths{j}));
-                    [~, outputFolder] = fileparts(outputFolderPath);
-                    movieFolder = [outputFolder '/' movieFolder movieFolderExt];
-                    if isvalid(progress)
-                        waitbar((j-1)/length(processedPaths), progress, sprintf('Movie %d of %d: %s', j, length(processedPaths), movieFolder));
-                    end
-                    %create new results for each movie using loaded parameters
-                    fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
-                    try
-                        if exist(fullfile(processedPaths{j},'sphincRedo','Results_1.xlsx'),'file') ~=2 % if first file does not exit
-                            disp('create the first results file using the previous saved parameters')
-                            createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
-                        end
-                        createNewMovie_post(processedPaths{j});
-                        written{end+1} = movieFolder; %#ok<AGROW>
-                    catch movieError
-                        fprintf(2, 'Write All Movies, %s: %s \n', movieFolder, getReport(movieError, 'extended', 'hyperlinks', 'off'));
-                        failed{end+1} = sprintf('%s: %s', movieFolder, movieError.message); %#ok<AGROW>
-                    end
-                end
-                if isvalid(progress), delete(progress); end
-                summary = {sprintf('Movies written: %d of %d', numel(written), length(processedPaths))};
-                if isempty(failed)
-                    msgbox(summary, 'Write All Movies')
-                else
-                    errordlg([summary, {''}, {'Not written:'}, failed], 'Write All Movies')
-                end
-
-            case 'NO'
+            case 'Create New'
+                createNew = true;
+            case 'Overwrite Results_1'
+                createNew = false;
+            otherwise
                 disp('No new movie created the post-processing. Launch the post-processing GUI.')
+                return
+        end
+        disp('Loading post-processing parameters saved in parameters_post.xlsx or default parameters for creating new movies...')
+        % each movie is written separately so one failure does not stop the others
+        written = {};
+        failed = {};
+        progress = waitbar(0, 'Writing movies...', 'Name', 'Write All Movies');
+        for j = 1:length(processedPaths)
+            movieFolder = folderNames{j};
+            if isvalid(progress)
+                waitbar((j-1)/length(processedPaths), progress, sprintf('Movie %d of %d: %s', j, length(processedPaths), movieFolder));
+            end
+            fprintf('Movie creation: %d/%d \n',j,length(processedPaths));
+            try
+                if createNew
+                    movieIndex = nextIndexes(j);
+                    createNewMovie_post(processedPaths{j}, movieIndex);
+                    newMovie = dir(fullfile(processedPaths{j},'sphincRedo',sprintf('*_scan_movietalyzerResults_%d.avi', movieIndex)));
+                    newMovie(strncmp({newMovie.name},'._',2)) = [];
+                    if ~isempty(newMovie)
+                        newMoviePath = fullfile(newMovie(1).folder, newMovie(1).name);
+                        objarray(j).moviePaths = [objarray(j).moviePaths; newMoviePath];
+                        if j == currentObj
+                            current = get(viewerSelectionTable, 'String');
+                            set(viewerSelectionTable,'String',[current; {sprintf('scan movietalyzerResults_%d', movieIndex)}])
+                        end
+                    end
+                else
+                    movieIndex = 1;
+                    if exist(fullfile(processedPaths{j},'sphincRedo','Results_1.xlsx'),'file') ~=2 % if first file does not exit
+                        disp('create the first results file using the previous saved parameters')
+                        createNewMovie_post(processedPaths{j}); % create the first file using the previously saved parameters
+                    end
+                    createNewMovie_post(processedPaths{j});
+                end
+                written{end+1} = sprintf('%s: Results_%d', movieFolder, movieIndex); %#ok<AGROW>
+            catch movieError
+                fprintf(2, 'Write All Movies, %s: %s \n', movieFolder, getReport(movieError, 'extended', 'hyperlinks', 'off'));
+                failed{end+1} = sprintf('%s: %s', movieFolder, movieError.message); %#ok<AGROW>
+            end
+        end
+        if isvalid(progress), delete(progress); end
+        summary = [{sprintf('Movies written: %d of %d', numel(written), length(processedPaths))}; shortList(written(:))];
+        if isempty(failed)
+            msgbox(summary, 'Write All Movies')
+        else
+            errordlg([summary; {''}; {'Not written:'}; failed(:)], 'Write All Movies')
         end
 
+        function lines = shortList(lines)
+            % at most 10 lines, then "and N more"
+            if numel(lines) > 10
+                lines = [lines(1:10); {sprintf('and %d more', numel(lines) - 10)}];
+            end
+        end
     end
     function save_postParameters(~,~)
         % add a question dialog to update parameters for current movie or common parameters to all movies

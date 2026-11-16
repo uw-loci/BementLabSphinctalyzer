@@ -1,10 +1,14 @@
-function createNewMovie_post(outputPath)
+function createNewMovie_post(outputPath, movieIndex)
 %creat new movie use post-processing parameters
 %use parameters in the results file or default mat file to upate parameters
+%movieIndex: number of the results to write (Results_<movieIndex>.xlsx and
+%movie _<movieIndex>.avi), 1 by default (overwrites the first results)
+if nargin < 2
+    movieIndex = 1;
+end
 matFilePath = outputPath;
 [processingParameters, advancedOptions] = get_postParameters(matFilePath);
 obj = processingParameters;
-movieIndex = 1; %length(dir(fullfile(outputPath,'sphincRedo','*.avi')))+1;
 
 ParentFolderPath = outputPath;
 SphinctalyzerMoviePlotterMulti(ParentFolderPath, ...

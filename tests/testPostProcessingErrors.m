@@ -137,6 +137,78 @@ classdef testPostProcessingErrors < matlab.unittest.TestCase
             testCase.verifyEqual(nextResultsIndex(folder), 5, 'macOS "._" files are ignored');
         end
 
+        function cleanUpThisMovieDeletesExtraResults(testCase)
+            data = testCase.analyzedCopy('Output_A', 3);
+            evalc('createNewMovie_post(data, 2)');
+            evalc('createNewMovie_post(data, 3)');
+            redo = fullfile(data,'sphincRedo');
+            writelines("plot", fullfile(redo,'Results_2_AUCs.tif'));
+            % settings saved for a later run differ from those of Results_1
+            setPostParameter(fullfile(data,'parameters_post.xlsx'), 18, 'movie font size', 30);
+            testCase.openWindow({data});
+            setappdata(groot,'testQuestdlgAnswer','Delete');
+            runCallback(testCase.control('Style','pushbutton','Clean Up This Movie'));
+            question = strjoin(string(getappdata(groot,'testQuestdlgQuestion')), ' ');
+            testCase.verifySubstring(question, 'Output_A/data_sphintest_-2channlel-sub1.tif: Results_2, Results_3 (5 files)');
+            testCase.verifySubstring(testCase.dialogText('Clean Up Results'), 'Deleted 5 files in 1 folder.');
+            remaining = sort({dir(redo).name});
+            remaining = remaining(~startsWith(remaining,'.'));
+            testCase.verifyEqual(remaining, sort({'Results_1.xlsx','sphinctalyzerResults.mat', ...
+                'sphintest_-2channlel-sub1.tif_scan_movietalyzerResults_1.avi'}));
+            testCase.verifyTrue(isfile(fullfile(data,'parameters_post.xlsx')));
+            % parameters_post.xlsx now holds the settings of Results_1
+            post = readcell(fullfile(data,'parameters_post.xlsx'),'Sheet','parameters');
+            first = readcell(fullfile(redo,'Results_1.xlsx'),'Sheet','parameters');
+            testCase.verifyEqual(post(:,1:2), first(:,1:2));
+            testCase.verifyEqual(post{18,2}, getDefaultMovieFontSize());
+            % the movie list shows only Results_1
+            viewer = findall(0,'Type','uicontrol','Style','listbox');
+            viewer = viewer(arrayfun(@(c) any(strcmp(cellstr(c.String),'Circle Scan')), viewer));
+            testCase.verifyEqual(cellstr(viewer(1).String)', {'Image Timepoints','Circle Scan','scan movietalyzerResults_1'});
+        end
+
+        function cleanUpCancelDeletesNothing(testCase)
+            data = testCase.analyzedCopy('Output_A', 2);
+            evalc('createNewMovie_post(data, 2)');
+            testCase.openWindow({data});
+            setappdata(groot,'testQuestdlgAnswer','Cancel');
+            runCallback(testCase.control('Style','pushbutton','Clean Up This Movie'));
+            testCase.verifyEmpty(findall(0,'Type','figure','Name','Clean Up Results'));
+            testCase.verifyTrue(isfile(fullfile(data,'sphincRedo','Results_2.xlsx')));
+        end
+
+        function cleanUpAllMoviesCleansEveryFolder(testCase)
+            folderA = testCase.analyzedCopy('Output_A', 2);
+            evalc('createNewMovie_post(folderA, 2)');
+            folderB = testCase.analyzedCopy('Output_B', 2);
+            evalc('createNewMovie_post(folderB, 2)');
+            testCase.openWindow({folderA, folderB});
+            setappdata(groot,'testQuestdlgAnswer','Delete');
+            runCallback(testCase.control('Style','pushbutton','Clean Up All Movies'));
+            testCase.verifySubstring(testCase.dialogText('Clean Up Results'), 'Deleted 4 files in 2 folders');
+            for folder = {folderA, folderB}
+                testCase.verifyFalse(isfile(fullfile(folder{1},'sphincRedo','Results_2.xlsx')));
+                testCase.verifyTrue(isfile(fullfile(folder{1},'sphincRedo','Results_1.xlsx')));
+            end
+        end
+
+        function extraResultsFilesListsOnlyLaterResults(testCase)
+            tempFolder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            redo = fullfile(tempFolder.Folder,'sphincRedo');
+            mkdir(redo);
+            names = {'Results_1.xlsx','img.tif_scan_movietalyzerResults_1.avi','Results_1_AUCs.tif', ...
+                'Results_2.xlsx','._Results_2.xlsx','img.tif_scan_movietalyzerResults_12.avi','Results_12_Halfwidths.tif', ...
+                'sphinctalyzerResults.mat','notes_2.xlsx'};
+            for i = 1:numel(names)
+                writelines("x", fullfile(redo,names{i}));
+            end
+            [files, numbers] = extraResultsFiles(tempFolder.Folder);
+            [~, listed, ext] = fileparts(files);
+            testCase.verifyEqual(sort(strcat(listed, ext))', sort({'Results_2.xlsx','._Results_2.xlsx', ...
+                'img.tif_scan_movietalyzerResults_12.avi','Results_12_Halfwidths.tif'}));
+            testCase.verifyEqual(numbers, [2 12]);
+        end
+
         function overwriteUsesTwoDigitMovieNumber(testCase)
             data = testCase.analyzedCopy('Output_A', 12);
             testCase.openWindow({data});
@@ -202,4 +274,15 @@ if iscell(callback)
 else
     callback(h, []);
 end
+end
+
+function setPostParameter(parametersFile, row, name, value)
+% write one post-processing parameter (name and value in a row) into a
+% parameters_post.xlsx file
+parameters = readcell(parametersFile,'Sheet','parameters');
+parameters(cellfun(@(x) any(ismissing(x)), parameters)) = {[]};
+parameters{row,1} = name;
+parameters{row,2} = value;
+delete(parametersFile);
+writecell(parameters, parametersFile, 'Sheet', 'parameters');
 end
